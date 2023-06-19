@@ -153,7 +153,7 @@ print('Removed 7 sensors:', time.time() - st, 'seconds')
 #plot sensor data data
 df1 = final_df_list[0]
 
-fig, axes = plt.subplots(nrows=2, ncols=9, sharex=True,
+fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                     figsize=(25, 8))
 id_equipment = 1
 mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x

@@ -10,6 +10,7 @@ import numpy as np
 np.random.seed(seed=42)
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from scipy.signal import savgol_filter
 import joblib
 import matplotlib.pyplot as plt
 
@@ -42,6 +43,9 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     else:
         scaler = MinMaxScaler(feature_range=(-1, 1))
         df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
+
+    #apply a Savitzky-Golav filter to the noisy data
+    df.iloc[:, 1 : df.shape[1]] = savgol_filter(df.iloc[:, 1 : df.shape[1]], 50, 3)
 
     # group by trajectory
     grouped = df.groupby("trajectory_id")
@@ -335,11 +339,11 @@ if __name__ == "__main__":
         print("Extracting dataframes...")
         df_train, df_validation, df_test = extract_dataframes(file_train=file_train, file_test=file_test, subset=subset, validation=validation)
 
-        # build train data
+        #%% build train data
         print("Preprocessing training data...")
         scaler = build_train_data(df=df_train, out_path="data/" + subset + "/" + normalization, window=window, normalization=normalization, maxRUL=maxRUl)
 
-        # build validation data
+        #%% build validation data
         if len(df_validation) > 0:
             print("Preprocessing validation data...")
             build_validation_data(df=df_validation, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, maxRUL=maxRUl)
