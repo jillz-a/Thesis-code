@@ -1,3 +1,4 @@
+#%% Import packages
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,9 +11,9 @@ import mpl_toolkits.mplot3d
 from scipy.signal import savgol_filter
 from sklearn.cluster import KMeans
 
-#_____________________________definitions___________________________________
-def add_rul(g):
-    """Adds Remaining usefull life column to data frames based on final cycle
+#%%_____________________________definitions___________________________________
+def add_rul(g, maxRUL=120):
+    """Adds Remaining usefull life column to data frames based on final cycle, but limits it to a maximum value (piece wise linear correction)
 
     Args:
         g (pandas dataframe): dataframe containing cycle, operational and sensor data
@@ -21,8 +22,10 @@ def add_rul(g):
         dataframe: dataframe g including final RUL column
     """
     g['RUL'] = max(g['Cycle']) - g['Cycle']
+    g['RUL'] = g['RUL'].clip(upper=maxRUL)
     return g
 
+#%%
 #____________________________import data files_________________________________
 st = time.time()
 names = ['Engine', 'Cycle', 'Op1', 'Op2', 'Op3', 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
@@ -46,6 +49,7 @@ for df in df_list:
     df.columns = names
     df.columns = df.columns.astype(str)
 
+    #add RUL to data set
     df = df.groupby('Engine', group_keys=False).apply(add_rul)
     new_df_list.append(df)
 
@@ -59,7 +63,7 @@ df4 = new_df_list[3]
 
 print('Columns edited: ', time.time() - st, 'seconds')
 
-#____________________________________denoising signal___________________________________
+#%%____________________________________denoising signal___________________________________
 denoise_df_list = []
 
 for df in new_df_list:
@@ -69,7 +73,7 @@ for df in new_df_list:
     for engine in engines:
         for name_signal in range(21):
             signal = df.loc[df.Engine == engine, str(name_signal + 1)]
-            signal_sav = savgol_filter(signal, 60, 2) #apply a Savitzky-Golav filter to the noisy data
+            signal_sav = savgol_filter(signal, 50, 3) #apply a Savitzky-Golav filter to the noisy data
             # signal_mav = signal.rolling(10).mean().values #apply mean average filter
             # signal_mav[:10] = signal[:10].values
             df_denoise.loc[df_denoise.Engine == engine, str(name_signal + 1)] = signal_sav
@@ -87,7 +91,7 @@ print('Signal denoised: ', time.time() - st, 'seconds')
 # plt.xlabel('Operating Cycles')
 # plt.show()
 
-#____________________________data normalization___________________________________
+#%%____________________________data normalization___________________________________
 #data needs to be normalized for model to better process data
 #also, the different operating conditions need to be normalized for df2 and df4 to be able to compare
 
@@ -98,7 +102,7 @@ for i in range(len(denoise_df_list)):
     if i == 0 or i == 2:
         for sensor in range(21):
             data = denoise_df_list[i][str(sensor + 1)]
-            data = (data - np.mean(data))/np.std(data)
+            data = data/max(data)
             denoise_df_list[i][str(sensor + 1)] = data.values
 
         normalize_df_list.append(denoise_df_list[i])
@@ -110,7 +114,7 @@ for i in range(len(denoise_df_list)):
         for sensor in range(21):
             for cluster in np.unique(clusters):
                 data_cluster = denoise_df_list[i][clusters == cluster][str(sensor + 1)]
-                data_cluster = ( data_cluster - np.mean(data_cluster) ) / np.std(data_cluster)
+                data_cluster = data_cluster/max(data_cluster)
                 denoise_df_list[i].loc[clusters == cluster, str(sensor + 1)] = data_cluster.values
 
         normalize_df_list.append(denoise_df_list[i])
@@ -136,7 +140,7 @@ print('Data normalized: ', time.time() - st, 'seconds')
 
 # plt.show()
 
-#______________________Sensor selection________________________
+#%%______________________Sensor selection________________________
 #From the data, it can be seen that sensors 1, 5, 6, 10, 16, 18 and 19 do not provide any usefull data that could be used to model the RUL prediction
 #thus they are removed
 
@@ -169,7 +173,7 @@ for ax in axes.ravel():
 
 plt.show()
 
-#_________________Data export____________________________
+#%%_________________Data export____________________________
 #export the pre processed data files to csv
 
 for i in range(len(final_df_list)):
@@ -178,3 +182,4 @@ for i in range(len(final_df_list)):
     final_df_list[i].to_csv(filepath, index=False)
 
 print('Data exported to csv:', time.time() - st)
+# %%
