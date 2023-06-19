@@ -2,12 +2,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import math
-import scipy.stats
 import time
 import os
 
-import mpl_toolkits.mplot3d
 from scipy.signal import savgol_filter
 from sklearn.cluster import KMeans
 
