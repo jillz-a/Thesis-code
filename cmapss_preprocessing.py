@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+# code based on repository by kkangshen
 """C-MAPSS preprocessing."""
 
+#%% import packages
 import os
 import zipfile
 
@@ -9,9 +11,10 @@ np.random.seed(seed=42)
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import joblib
+import matplotlib.pyplot as plt
 
-
-def build_train_data(df, out_path, window=30, normalization="min-max"):
+#%%
+def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
     """Build train data.
     
     Parameters
@@ -69,7 +72,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max"):
         num_samples = len(t) - window + 1
         for i in range(num_samples):
             sample = t[i : (i + window)]
-            label = len(t) - i - window
+            label = min(len(t) - i - window, maxRUL)
             path = os.path.join(out_path, "train")
             if not os.path.exists(path): os.makedirs(path)
             file_name = os.path.join(path, "train_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
@@ -80,7 +83,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max"):
     return scaler
 
 
-def build_validation_data(df, out_path, scaler, window=30):
+def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
     """Build validation data.
     
     Parameters
@@ -128,7 +131,7 @@ def build_validation_data(df, out_path, scaler, window=30):
         num_samples = len(t) - window + 1
         for i in range(num_samples):
             sample = t[i : (i + window)]
-            label = len(t) - i - window          
+            label = min(len(t) - i - window, maxRUL)          
             path = os.path.join(out_path, "validation")
             if not os.path.exists(path): os.makedirs(path)
             file_name = os.path.join(path, "validation_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
@@ -138,7 +141,7 @@ def build_validation_data(df, out_path, scaler, window=30):
     print("Done.")
 
 
-def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False):
+def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, maxRUL=120):
     """Build test data.
     
     Parameters
@@ -187,7 +190,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False):
     assert window <= min_length, "'window' cannot be greater than " + str(min(len(traj) for traj_id, traj in grouped)) + ", got %d." % window
     
     # get ground truth
-    rul = np.asarray(file_rul.readlines(), dtype=np.int32)   
+    rul = np.asarray(file_rul.readlines(), dtype=np.int32).clip(max = maxRUl)   
 
     # sample each trajectory through sliding window segmentation
     sample_id = 0
@@ -207,7 +210,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False):
             num_samples = len(t) - window + 1
             for i in range(num_samples):
                 sample = t[i : (i + window)]
-                label = len(t) - i - window + rul[traj_id - 1]
+                label = len(t) - i - window, maxRUL + rul[traj_id - 1]
                 path = os.path.join(out_path, "test")   
                 if not os.path.exists(path): os.makedirs(path)
                 file_name = os.path.join(path, "test_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
@@ -315,6 +318,7 @@ if __name__ == "__main__":
     """Preprocessing."""
     normalization = "min-max"
     validation = 0.00
+    maxRUl = 120
 
     for subset, window in [("FD001", 30), ("FD002", 20), ("FD003", 30), ("FD004", 15)]:
         print("**** %s ****" % subset)
@@ -333,16 +337,16 @@ if __name__ == "__main__":
 
         # build train data
         print("Preprocessing training data...")
-        scaler = build_train_data(df=df_train, out_path="data/" + subset + "/" + normalization, window=window, normalization=normalization)
+        scaler = build_train_data(df=df_train, out_path="data/" + subset + "/" + normalization, window=window, normalization=normalization, maxRUL=maxRUl)
 
         # build validation data
         if len(df_validation) > 0:
             print("Preprocessing validation data...")
-            build_validation_data(df=df_validation, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window)
+            build_validation_data(df=df_validation, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, maxRUL=maxRUl)
 
         # build test data
         print("Preprocessing test data...")
-        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False)
+        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False, maxRUL=maxRUl)
 
         # save scaler
         print("Saving scaler object to file...")
@@ -354,3 +358,25 @@ if __name__ == "__main__":
         file_test.close()
         file_rul.close()
         print("Done.")
+
+        #%% _______________Plot sensor data________________
+        #plot sensor data data
+        df1 = pd.read_csv('data/FD001/min-max/train/train_000-120.txt', sep=' ', header=None)
+
+        fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+                                            figsize=(25, 8))
+        id_equipment = 1
+        # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+        nrow = 0
+        ncol = 0
+
+        i = 0
+        m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+        for ax in axes.ravel():
+            signal = df1[i]
+            ax.plot(range(len(signal)), signal)
+            ax.set_xlabel('Sensor ' + str(m[i]))
+            i += 1
+
+        plt.show()
+# %%
