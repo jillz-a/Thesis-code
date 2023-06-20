@@ -44,9 +44,6 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
         scaler = MinMaxScaler(feature_range=(-1, 1))
         df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
 
-    #apply a Savitzky-Golav filter to the noisy data
-    df.iloc[:, 1 : df.shape[1]] = savgol_filter(df.iloc[:, 1 : df.shape[1]], 50, 3)
-
     # group by trajectory
     grouped = df.groupby("trajectory_id")
 
@@ -59,6 +56,8 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
         total_samples += len(t) - window + 1
+            
+
 
     # print info
     print("Number of trajectories = " + str(len(grouped)))
@@ -73,6 +72,11 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     sample_id = 0
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
+
+        for i in range(t.shape[1]):
+            t[:,i] = savgol_filter(t[:,i], 50, 3)
+        # t = np.array([savgol_filter(t[:,i], 50, 3) for i in range(t.shape[1])]).T
+        
         num_samples = len(t) - window + 1
         for i in range(num_samples):
             sample = t[i : (i + window)]
@@ -363,24 +367,24 @@ if __name__ == "__main__":
         file_rul.close()
         print("Done.")
 
-        #%% _______________Plot sensor data________________
-        #plot sensor data data
-        df1 = pd.read_csv('data/FD001/min-max/train/train_000-120.txt', sep=' ', header=None)
+    #%% _______________Plot sensor data________________
+    #plot sensor data data
+    df1 = pd.read_csv('data/FD001/min-max/train/train_000-120.txt', sep=' ', header=None)
 
-        fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-                                            figsize=(25, 8))
-        id_equipment = 1
-        # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-        nrow = 0
-        ncol = 0
+    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+                                        figsize=(25, 8))
+    id_equipment = 1
+    # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+    nrow = 0
+    ncol = 0
 
-        i = 0
-        m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-        for ax in axes.ravel():
-            signal = df1[i]
-            ax.plot(range(len(signal)), signal)
-            ax.set_xlabel('Sensor ' + str(m[i]))
-            i += 1
+    i = 0
+    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+    for ax in axes.ravel():
+        signal = df1[i]
+        ax.plot(range(len(signal)), signal)
+        ax.set_xlabel('Sensor ' + str(m[i]))
+        i += 1
 
-        plt.show()
+    plt.show()
 # %%
