@@ -17,7 +17,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 device = 'mps'
 TRAINDATASET = os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/train')
 TESTDATASET = os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/test')
-BATCHSIZE = 10
+BATCHSIZE = 5
 EPOCHS = 10
 TRAIN = True
 
@@ -30,9 +30,9 @@ class NeuralNetwork(nn.Module):
         self.linear_relu_stack = nn.Sequential(
             nn.Linear(30*14, 20),
             nn.ReLU(),
-            nn.Linear(20,5),
+            nn.Linear(20,10),
             nn.ReLU(),
-            nn.Linear(5, 1),
+            nn.Linear(10, 1),
         )
 
     def forward(self, x):
