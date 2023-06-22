@@ -12,7 +12,7 @@ device = 'mps'
 
 #import data
 folder_path = 'data/FD001/min-max/train'  # Specify the path to your folder
-num_files_to_select = 162  # Specify the number of files to select
+num_files_to_select = 163  # Specify the number of files to select
 
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
