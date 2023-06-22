@@ -50,6 +50,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     # compute trajectory min and max length
     min_length = min(len(traj) for traj_id, traj in grouped)
     max_length = max(len(traj) for traj_id, traj in grouped)
+    
 
     # count total number of samples
     total_samples = 0
@@ -74,7 +75,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], 50, 3)
+            t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
         # t = np.array([savgol_filter(t[:,i], 50, 3) for i in range(t.shape[1])]).T
         
         num_samples = len(t) - window + 1
@@ -136,6 +137,10 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
     sample_id = 0
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
+
+        for i in range(t.shape[1]):
+            t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+
         num_samples = len(t) - window + 1
         for i in range(num_samples):
             sample = t[i : (i + window)]
@@ -205,6 +210,10 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
     if not keep_all:
         for traj_id, traj in grouped:
             t = traj.drop(["trajectory_id"], axis=1).values
+
+            for i in range(t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+
             sample = t[-window :]
             label = rul[traj_id - 1]
             path = os.path.join(out_path, "test")
@@ -215,6 +224,10 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
     else:
         for traj_id, traj in grouped:
             t = traj.drop(["trajectory_id"], axis=1).values
+
+            for i in range(t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+
             num_samples = len(t) - window + 1
             for i in range(num_samples):
                 sample = t[i : (i + window)]
@@ -368,23 +381,22 @@ if __name__ == "__main__":
         print("Done.")
 
     #%% _______________Plot sensor data________________
-    #plot sensor data data
-    # df1 = pd.read_csv('data/FD001/min-max/train/train_000-120.txt', sep=' ', header=None)
+    df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
 
-    # fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-    #                                     figsize=(25, 8))
-    # id_equipment = 1
-    # # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-    # nrow = 0
-    # ncol = 0
+    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+                                        figsize=(25, 8))
+    id_equipment = 1
+    # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+    nrow = 0
+    ncol = 0
 
-    # i = 0
-    # m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-    # for ax in axes.ravel():
-    #     signal = df1[i]
-    #     ax.plot(range(len(signal)), signal)
-    #     ax.set_xlabel('Sensor ' + str(m[i]))
-    #     i += 1
+    i = 0
+    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+    for ax in axes.ravel():
+        signal = df1[i]
+        ax.plot(range(len(signal)), signal)
+        ax.set_xlabel('Sensor ' + str(m[i]))
+        i += 1
 
-    # plt.show()
+    plt.show()
 # %%
