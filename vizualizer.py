@@ -12,7 +12,7 @@ device = 'mps'
 
 #import data
 folder_path = 'data/FD001/min-max/train'  # Specify the path to your folder
-num_files_to_select = 500  # Specify the number of files to select
+num_files_to_select = 162  # Specify the number of files to select
 
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
@@ -23,6 +23,11 @@ selected_file_paths = file_paths[:num_files_to_select]  # Select the desired num
 y_pred_lst = []
 y_lst = []
 
+# Model input parameters
+input_size = 14 #number of features
+hidden_size = 64
+num_layers = 2
+
 #%%Go through each sample
 for file_path in selected_file_paths:
     # Process each selected file
@@ -30,12 +35,12 @@ for file_path in selected_file_paths:
     label = float(file_path[-7:-4])
 
     #Import into trained machine learning models
-    NNmodel = NeuralNetwork().to(device)
+    NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
     with open('BNN/model_state.pt', 'rb') as f: 
-            NNmodel.load_state_dict(load(f)) 
+        NNmodel.load_state_dict(load(f)) 
 
     #predict RUL from samples
-    X = ToTensor()(sample).unsqueeze(0).to(device)
+    X = ToTensor()(sample).to(device)
     y_pred = NNmodel(X)
     y_pred = y_pred.to('cpu')
     y_pred = y_pred.detach().numpy()
@@ -49,4 +54,7 @@ for file_path in selected_file_paths:
 
 plt.plot(y_pred_lst, label= 'Predicted RUL values')
 plt.plot(y_lst, label='True RUL values')
+plt.xlabel('Cycles')
+plt.ylabel('RUL')
+plt.legend()
 plt.show()
