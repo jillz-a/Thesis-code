@@ -138,6 +138,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
 
     # sample each trajectory through sliding window segmentation
     sample_id = 0
+    traj_len_lst = []
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
 
@@ -145,6 +146,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
             t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
 
         num_samples = len(t) - window + 1
+        traj_len_lst.append(num_samples)
         for i in range(num_samples):
             sample = t[i : (i + window)]
             label = min(len(t) - i - window, maxRUL)          
@@ -154,6 +156,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
             sample_id += 1
             np.savetxt(file_name, sample, fmt="%.10f")
 
+    np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
     print("Done.")
 
 
@@ -210,6 +213,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
 
     # sample each trajectory through sliding window segmentation
     sample_id = 0
+    traj_len_lst = []
     if not keep_all:
         for traj_id, traj in grouped:
             t = traj.drop(["trajectory_id"], axis=1).values
@@ -232,6 +236,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
                 t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
 
             num_samples = len(t) - window + 1
+            traj_len_lst.append(num_samples)
             for i in range(num_samples):
                 sample = t[i : (i + window)]
                 label = len(t) - i - window, maxRUL + rul[traj_id - 1]
@@ -240,7 +245,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
                 file_name = os.path.join(path, "test_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
                 sample_id += 1
                 np.savetxt(file_name, sample, fmt="%.10f")
-    
+                
+    np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
     print("Done.")
 
 
@@ -384,22 +390,22 @@ if __name__ == "__main__":
         print("Done.")
 
     #%% _______________Plot sensor data________________
-    df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
+    # df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
 
-    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-                                        figsize=(25, 8))
-    id_equipment = 1
-    # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-    nrow = 0
-    ncol = 0
+    # fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+    #                                     figsize=(25, 8))
+    # id_equipment = 1
+    # # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+    # nrow = 0
+    # ncol = 0
 
-    i = 0
-    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-    for ax in axes.ravel():
-        signal = df1[i]
-        ax.plot(range(len(signal)), signal)
-        ax.set_xlabel('Sensor ' + str(m[i]))
-        i += 1
+    # i = 0
+    # m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+    # for ax in axes.ravel():
+    #     signal = df1[i]
+    #     ax.plot(range(len(signal)), signal)
+    #     ax.set_xlabel('Sensor ' + str(m[i]))
+    #     i += 1
 
-    plt.show()
+    # plt.show()
 # %%
