@@ -221,6 +221,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             for i in range(t.shape[1]):
                 t[:,i] = savgol_filter(t[:,i], int(len(t[:,i])/2), 3) #denoising
 
+            num_samples = len(t) - window + 1
+            traj_len_lst.append(num_samples)
             sample = t[-window :]
             label = rul[traj_id - 1]
             path = os.path.join(out_path, "test")
@@ -239,10 +241,10 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             traj_len_lst.append(num_samples)
             for i in range(num_samples):
                 sample = t[i : (i + window)]
-                label = len(t) - i - window, maxRUL + rul[traj_id - 1]
+                label = len(t) - i - window + rul[traj_id - 1]
                 path = os.path.join(out_path, "test")   
                 if not os.path.exists(path): os.makedirs(path)
-                file_name = os.path.join(path, "test_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
+                file_name = os.path.join(path, "test_{0:0=5d}-{1:0=3d}.txt".format(sample_id, label))
                 sample_id += 1
                 np.savetxt(file_name, sample, fmt="%.10f")
 
@@ -376,7 +378,7 @@ if __name__ == "__main__":
 
         # build test data
         print("Preprocessing test data...")
-        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False, maxRUL=maxRUl)
+        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=True, maxRUL=maxRUl)
 
         # save scaler
         print("Saving scaler object to file...")

@@ -1,5 +1,6 @@
 #%% import dependencies
 import os
+import glob
 import sys
 import numpy as np
 import torch
@@ -20,7 +21,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/test'))
 BATCHSIZE = 10
 EPOCHS = 5
-TRAIN = True
+TRAIN = False
 
 
 
@@ -78,6 +79,7 @@ if __name__ == "__main__":
     train_data = DataLoader(train, batch_size=BATCHSIZE)
     test_data = DataLoader(test, batch_size=BATCHSIZE)
 
+    #%% Train the model
     if TRAIN == True:
         for epoch in range(EPOCHS):
             loop = tqdm(train_data)
@@ -100,13 +102,28 @@ if __name__ == "__main__":
         with open('BNN/model_state.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
+    #%% Test the model
     else:
         with open('BNN/model_state.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
-        
-        input = np.genfromtxt('/Users/jillesandringa/Documents/AE/MSc/Thesis/Thesis code/data/FD001/min-max/train/train_00000-120.txt', delimiter=" ", dtype=np.float32)
-        input_tensor = ToTensor()(input).to(device)
 
-        print(NNmodel(input_tensor))
+        file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) 
+        file_paths.sort()
+
+        error_lst = []
+        loop = tqdm(file_paths)
+        for file_path in loop:
+        # Process each selected file
+            input = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+            
+            input_tensor = ToTensor()(input).to(device)
+
+            y_pred = NNmodel(input_tensor)
+            y = float(file_path[-7:-4])
+            error = y_pred.item() - y
+            error_lst.append(error)
+
+        RMSE = np.sqrt(np.average(error**2))
+        print(f'RMSE = {RMSE}')
 # %%
 
