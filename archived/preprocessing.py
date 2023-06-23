@@ -70,7 +70,7 @@ for df in new_df_list:
     for engine in engines:
         for name_signal in range(21):
             signal = df.loc[df.Engine == engine, str(name_signal + 1)]
-            signal_sav = savgol_filter(signal, 50, 3) #apply a Savitzky-Golav filter to the noisy data
+            signal_sav = savgol_filter(signal, int(len(signal)/2), 3) #apply a Savitzky-Golav filter to the noisy data
             # signal_mav = signal.rolling(10).mean().values #apply mean average filter
             # signal_mav[:10] = signal[:10].values
             df_denoise.loc[df_denoise.Engine == engine, str(name_signal + 1)] = signal_sav

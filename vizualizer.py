@@ -20,11 +20,10 @@ with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-for engine in range(2):
-    if engine == 0:
-        selected_file_paths = file_paths[:int(sample_len[engine][0])]  # Select the desired number of files
-    else:
-        selected_file_paths = file_paths[int(sample_len[engine-1][0]):int(sample_len[engine][0])+int(sample_len[engine-1][0])]  # Select the desired number of files
+index = 0
+for engine in range(4):
+    selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
+    index += int(sample_len[engine][0])
 
     #setup data to plot
     y_pred_lst = []
@@ -32,7 +31,7 @@ for engine in range(2):
 
     # Model input parameters
     input_size = 14 #number of features
-    hidden_size = 64
+    hidden_size = 128
     num_layers = 2
 
     #%%Go through each sample

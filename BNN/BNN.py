@@ -18,7 +18,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 device = 'mps'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/test'))
-BATCHSIZE = 5
+BATCHSIZE = 10
 EPOCHS = 5
 TRAIN = True
 
@@ -33,8 +33,13 @@ class NeuralNetwork(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.dense_layers = nn.Sequential(
-            nn.Linear(hidden_size, 32),  # Additional dense layer
-            nn.Linear(32, 1)  # Additional dense layer
+            nn.Linear(hidden_size, 128), 
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128,128),
+            nn.ReLU(),
+            nn.Linear(128,1)
         )
         
         
@@ -57,7 +62,7 @@ if __name__ == "__main__":
 
     # Model input parameters
     input_size = 14 #number of features
-    hidden_size = 64
+    hidden_size = 128
     num_layers = 2
 
     #Model, optimizer and loss function
@@ -89,7 +94,7 @@ if __name__ == "__main__":
                 loss.backward()
                 opt.step()
             
-                loop.set_description(f"Epoch: {epoch}/{EPOCHS}")
+                loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
                 loop.set_postfix(loss = loss.item())
 
         with open('BNN/model_state.pt', 'wb') as f:

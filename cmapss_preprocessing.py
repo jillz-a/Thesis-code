@@ -76,7 +76,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+            t[:,i] = savgol_filter(t[:,i], int(len(t[:,i])/2), 3) #denoising
             
         
         num_samples = len(t) - window + 1
@@ -143,7 +143,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+            t[:,i] = savgol_filter(t[:,i], int(len(t[:,i])/2), 3) #denoising
 
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
@@ -219,7 +219,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+                t[:,i] = savgol_filter(t[:,i], int(len(t[:,i])/2), 3) #denoising
 
             sample = t[-window :]
             label = rul[traj_id - 1]
@@ -233,7 +233,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
+                t[:,i] = savgol_filter(t[:,i], int(len(t[:,i])/2), 3) #denoising
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
@@ -245,7 +245,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
                 file_name = os.path.join(path, "test_{0:0=3d}-{1:0=3d}.txt".format(sample_id, label))
                 sample_id += 1
                 np.savetxt(file_name, sample, fmt="%.10f")
-                
+
     np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
     print("Done.")
 
@@ -390,22 +390,22 @@ if __name__ == "__main__":
         print("Done.")
 
     #%% _______________Plot sensor data________________
-    # df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
+    df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
 
-    # fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-    #                                     figsize=(25, 8))
-    # id_equipment = 1
-    # # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-    # nrow = 0
-    # ncol = 0
+    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+                                        figsize=(25, 8))
+    id_equipment = 1
+    # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+    nrow = 0
+    ncol = 0
 
-    # i = 0
-    # m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-    # for ax in axes.ravel():
-    #     signal = df1[i]
-    #     ax.plot(range(len(signal)), signal)
-    #     ax.set_xlabel('Sensor ' + str(m[i]))
-    #     i += 1
+    i = 0
+    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+    for ax in axes.ravel():
+        signal = df1[i]
+        ax.plot(range(len(signal)), signal)
+        ax.set_xlabel('Sensor ' + str(m[i]))
+        i += 1
 
-    # plt.show()
+    plt.show()
 # %%
