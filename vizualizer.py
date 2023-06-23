@@ -1,6 +1,7 @@
 #%%Vizualizing script for the ML models
 import os
 import glob
+import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn, load
@@ -12,49 +13,59 @@ device = 'mps'
 
 #import data
 folder_path = 'data/FD001/min-max/train'  # Specify the path to your folder
-num_files_to_select = 163  # Specify the number of files to select
+
+with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
+    sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-selected_file_paths = file_paths[:num_files_to_select]  # Select the desired number of files
+for engine in range(2):
+    if engine == 0:
+        selected_file_paths = file_paths[:int(sample_len[engine][0])]  # Select the desired number of files
+    else:
+        selected_file_paths = file_paths[int(sample_len[engine-1][0]):int(sample_len[engine][0])+int(sample_len[engine-1][0])]  # Select the desired number of files
 
-#setup data to plot
-y_pred_lst = []
-y_lst = []
+    #setup data to plot
+    y_pred_lst = []
+    y_lst = []
 
-# Model input parameters
-input_size = 14 #number of features
-hidden_size = 64
-num_layers = 2
+    # Model input parameters
+    input_size = 14 #number of features
+    hidden_size = 64
+    num_layers = 2
 
-#%%Go through each sample
-for file_path in selected_file_paths:
-    # Process each selected file
-    sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-    label = float(file_path[-7:-4])
+    #%%Go through each sample
+    for file_path in selected_file_paths:
+        # Process each selected file
+        sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+        label = float(file_path[-7:-4])
 
-    #Import into trained machine learning models
-    NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-    with open('BNN/model_state.pt', 'rb') as f: 
-        NNmodel.load_state_dict(load(f)) 
+        #Import into trained machine learning models
+        NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
+        with open('BNN/model_state.pt', 'rb') as f: 
+            NNmodel.load_state_dict(load(f)) 
 
-    #predict RUL from samples
-    X = ToTensor()(sample).to(device)
-    y_pred = NNmodel(X)
-    y_pred = y_pred.to('cpu')
-    y_pred = y_pred.detach().numpy()
+        #predict RUL from samples
+        X = ToTensor()(sample).to(device)
+        y_pred = NNmodel(X)
+        y_pred = y_pred.to('cpu')
+        y_pred = y_pred.detach().numpy()
 
-    y = label #True RUL
+        y = label #True RUL
 
-    #add predictions and true labels to lists
-    y_pred_lst.append(y_pred.item())
-    y_lst.append(y)
+        #add predictions and true labels to lists
+        y_pred_lst.append(y_pred.item())
+        y_lst.append(y)
+
+    error = [y_pred_lst[i] - y_lst[i] for i in range(len(y_lst))]
+
+    plt.plot(y_pred_lst, label= 'Predicted RUL values')
+    plt.plot(y_lst, label='True RUL values')
 #%%
 
-plt.plot(y_pred_lst, label= 'Predicted RUL values')
-plt.plot(y_lst, label='True RUL values')
+
 plt.xlabel('Cycles')
 plt.ylabel('RUL')
-plt.legend()
+# plt.legend()
 plt.show()

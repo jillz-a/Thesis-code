@@ -71,14 +71,16 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
 
     # sample each trajectory through sliding window segmentation
     sample_id = 0
+    traj_len_lst = []
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
             t[:,i] = savgol_filter(t[:,i], window, 3) #denoising
-        # t = np.array([savgol_filter(t[:,i], 50, 3) for i in range(t.shape[1])]).T
+            
         
         num_samples = len(t) - window + 1
+        traj_len_lst.append(num_samples)
         for i in range(num_samples):
             sample = t[i : (i + window)]
             label = min(len(t) - i - window, maxRUL)
@@ -88,6 +90,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
             sample_id += 1
             np.savetxt(file_name, sample, fmt="%.10f")
     
+    np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
     print("Done.")
     return scaler
 
