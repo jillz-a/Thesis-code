@@ -8,19 +8,21 @@ from tqdm import tqdm
 
 from torch import nn, save, load
 from torch.utils.data import DataLoader, Dataset
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
+import matplotlib.pyplot as plt
 
 
-
+torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
 device = 'mps'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/test'))
-BATCHSIZE = 10
-EPOCHS = 5
+BATCHSIZE = 5
+EPOCHS = 10
 TRAIN = False
 
 
@@ -40,7 +42,8 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(128,128),
             nn.ReLU(),
-            nn.Linear(128,1)
+            nn.Linear(128,1),
+            nn.ReLU()
         )
         
         
@@ -69,6 +72,7 @@ if __name__ == "__main__":
     #Model, optimizer and loss function
     NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
     opt = Adam(NNmodel.parameters(), lr=1e-3)
+    scheduler = MultiStepLR(opt, milestones=[5, 10, 20], gamma=0.1) #update the learning rate
     loss_fn = nn.MSELoss()
 
     #training and validation data
@@ -80,6 +84,7 @@ if __name__ == "__main__":
     test_data = DataLoader(test, batch_size=BATCHSIZE)
 
     #%% Train the model
+    loss_lst = []
     if TRAIN == True:
         for epoch in range(EPOCHS):
             loop = tqdm(train_data)
@@ -89,6 +94,8 @@ if __name__ == "__main__":
                 X, y = X.to(device), y.to(device)
                 y_pred = NNmodel(X)
                 loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
+                loss_lst.append(loss.item())
+
                 
 
                 #Backprop
@@ -97,10 +104,15 @@ if __name__ == "__main__":
                 opt.step()
             
                 loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
-                loop.set_postfix(loss = loss.item())
+                loop.set_postfix(loss = loss.item(), lr = opt.param_groups[0]['lr'])
+
+            scheduler.step()   
 
         with open('BNN/model_state.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
+
+        plt.plot(loss_lst)
+        plt.show()
 
     #%% Test the model
     else:
