@@ -12,7 +12,7 @@ from BNN.DNN import NeuralNetwork
 device = 'cpu'
 
 #import data
-DATASET = 'FD002'
+DATASET = 'FD001'
 folder_path = f'data/{DATASET}/min-max/train'  # Specify the path to your folder
 
 with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
@@ -22,7 +22,7 @@ file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all 
 file_paths.sort() 
 
 index = 0
-for engine in range(5):
+for engine in range(3):
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
     index += int(sample_len[engine][0])
 
@@ -43,7 +43,7 @@ for engine in range(5):
 
         #Import into trained machine learning models
         NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-        with open(f'BNN/model_state_{DATASET}.pt', 'rb') as f: 
+        with open(f'BNN/model_state_{DATASET}_test.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples
