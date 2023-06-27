@@ -31,8 +31,8 @@ for engine in range(5):
 
     # Model input parameters
     input_size = 14 #number of features
-    hidden_size = 128
-    num_layers = 2
+    hidden_size = 32
+    num_layers = 1
 
     #%%Go through each sample
     for file_path in selected_file_paths:

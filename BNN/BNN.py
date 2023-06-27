@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from torch import nn, save, load
 from torch.utils.data import DataLoader, Dataset
-from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingWarmRestarts, LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
@@ -21,11 +21,9 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 device = 'mps'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, 'Thesis Code/data/FD001/min-max/test'))
-BATCHSIZE = 5
-EPOCHS = 10
-TRAIN = False
-
-
+BATCHSIZE = 10
+EPOCHS = 100
+TRAIN = True
 
 
 #Frequentist neural network class
@@ -36,14 +34,12 @@ class NeuralNetwork(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.dense_layers = nn.Sequential(
-            nn.Linear(hidden_size, 128), 
-            nn.ReLU(),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.Linear(128,128),
-            nn.ReLU(),
-            nn.Linear(128,1),
-            nn.ReLU()
+            nn.Linear(hidden_size, 32), 
+            nn.Softplus(),
+            nn.Linear(32, 16),
+            nn.Softplus(),
+            nn.Linear(16,1),
+            nn.Softplus(),
         )
         
         
@@ -64,17 +60,6 @@ class NeuralNetwork(nn.Module):
 #%% Training
 if __name__ == "__main__":
 
-    # Model input parameters
-    input_size = 14 #number of features
-    hidden_size = 128
-    num_layers = 2
-
-    #Model, optimizer and loss function
-    NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-    opt = Adam(NNmodel.parameters(), lr=1e-3)
-    scheduler = MultiStepLR(opt, milestones=[5, 10, 20], gamma=0.1) #update the learning rate
-    loss_fn = nn.MSELoss()
-
     #training and validation data
     # %%Create an instance of the custom dataset
     from Data_loader import CustomDataset
@@ -82,6 +67,23 @@ if __name__ == "__main__":
     test = CustomDataset(TESTDATASET)
     train_data = DataLoader(train, batch_size=BATCHSIZE)
     test_data = DataLoader(test, batch_size=BATCHSIZE)
+
+    # Model input parameters
+    input_size = 14 #number of features
+    hidden_size = 32
+    num_layers = 1
+
+    #Model, optimizer and loss function
+    NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
+    opt = Adam(NNmodel.parameters(), lr=1e-3)
+
+    # Define the lambda function for decaying the learning rate
+    lr_lambda = lambda epoch: (1 - min(60-1, epoch) / 60) ** 0.7
+    # Create the learning rate scheduler
+    scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
+
+    loss_fn = nn.MSELoss()
+
 
     #%% Train the model
     loss_lst = []
@@ -94,10 +96,9 @@ if __name__ == "__main__":
                 X, y = X.to(device), y.to(device)
                 y_pred = NNmodel(X)
                 loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
-                loss_lst.append(loss.item())
-
                 
 
+            
                 #Backprop
                 opt.zero_grad()
                 loss.backward()
@@ -106,7 +107,8 @@ if __name__ == "__main__":
                 loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
                 loop.set_postfix(loss = loss.item(), lr = opt.param_groups[0]['lr'])
 
-            scheduler.step()   
+            scheduler.step() 
+            loss_lst.append(loss.item())  
 
         with open('BNN/model_state.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
@@ -116,7 +118,7 @@ if __name__ == "__main__":
 
     #%% Test the model
     else:
-        with open('BNN/model_state.pt', 'rb') as f: 
+        with open('BNN/model_state_b5_e10.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) 
@@ -137,5 +139,6 @@ if __name__ == "__main__":
 
         RMSE = np.sqrt(np.average(error**2))
         print(f'RMSE = {RMSE}')
+    
 # %%
 
