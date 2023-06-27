@@ -119,23 +119,24 @@ for i in range(len(denoise_df_list)):
 print('Data normalized: ', time.time() - st, 'seconds')
 
 #plot normalized data
-# df1 = normalize_df_list[0]
+df1 = normalize_df_list[3]
 
-# fig, axes = plt.subplots(nrows=3, ncols=7, sharex=True,
-#                                     figsize=(25, 8))
-# id_equipment = 1
-# mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-# nrow = 0
-# ncol = 0
+fig, axes = plt.subplots(nrows=3, ncols=7, sharex=True,
+                                    figsize=(25, 8))
+id_equipment = 1
+mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+nrow = 0
+ncol = 0
 
-# m=1
-# for ax in axes.ravel():
-#     signal = df1.loc[mask_equip1,str(m)]
-#     ax.plot(range(len(signal)), signal)
-#     ax.set_xlabel('Sensor ' + str(m))
-#     m += 1
+m=1
+for ax in axes.ravel():
+    # signal = df1.loc[mask_equip1,str(m)]
+    signal = df1.loc[mask_equip1, f'Op{m}']
+    ax.plot(range(len(signal)), signal)
+    ax.set_xlabel('Sensor ' + str(m))
+    m += 1
 
-# plt.show()
+plt.show()
 
 #%%______________________Sensor selection________________________
 #From the data, it can be seen that sensors 1, 5, 6, 10, 16, 18 and 19 do not provide any usefull data that could be used to model the RUL prediction
@@ -151,32 +152,32 @@ for df in normalize_df_list:
 print('Removed 7 sensors:', time.time() - st, 'seconds')
 
 #plot sensor data data
-df1 = final_df_list[0]
+# df1 = final_df_list[0]
 
-fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-                                    figsize=(25, 8))
-id_equipment = 1
-mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-nrow = 0
-ncol = 0
+# fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+#                                     figsize=(25, 8))
+# id_equipment = 1
+# mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
+# nrow = 0
+# ncol = 0
 
-i = 0
-m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-for ax in axes.ravel():
-    signal = df1.loc[mask_equip1,str(m[i])]
-    ax.plot(range(len(signal)), signal)
-    ax.set_xlabel('Sensor ' + str(m[i]))
-    i += 1
+# i = 0
+# m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+# for ax in axes.ravel():
+#     signal = df1.loc[mask_equip1,str(m[i])]
+#     ax.plot(range(len(signal)), signal)
+#     ax.set_xlabel('Sensor ' + str(m[i]))
+#     i += 1
 
-plt.show()
+# plt.show()
 
-#%%_________________Data export____________________________
-#export the pre processed data files to csv
+# #%%_________________Data export____________________________
+# #export the pre processed data files to csv
 
-for i in range(len(final_df_list)):
-    path = 'processed_data'
-    filepath = os.path.join(path, f'train_FD00{i+1}_processed.csv')
-    final_df_list[i].to_csv(filepath, index=False)
+# for i in range(len(final_df_list)):
+#     path = 'processed_data'
+#     filepath = os.path.join(path, f'train_FD00{i+1}_processed.csv')
+#     final_df_list[i].to_csv(filepath, index=False)
 
-print('Data exported to csv:', time.time() - st)
-# %%
+# print('Data exported to csv:', time.time() - st)
+# # %%

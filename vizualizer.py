@@ -7,12 +7,13 @@ import matplotlib.pyplot as plt
 from torch import nn, load
 from torchvision.transforms import ToTensor
 
-from BNN.BNN import NeuralNetwork
+from BNN.DNN import NeuralNetwork
 
-device = 'mps'
+device = 'cpu'
 
 #import data
-folder_path = 'data/FD001/min-max/train'  # Specify the path to your folder
+DATASET = 'FD002'
+folder_path = f'data/{DATASET}/min-max/train'  # Specify the path to your folder
 
 with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -42,7 +43,7 @@ for engine in range(5):
 
         #Import into trained machine learning models
         NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-        with open('BNN/model_state.pt', 'rb') as f: 
+        with open(f'BNN/model_state_{DATASET}.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples

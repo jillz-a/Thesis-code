@@ -335,13 +335,18 @@ def _load_data_from_file(file, subset="FD001"):
     # drop t
     df = df.drop(["t"], axis=1)
 
-    if subset in ["FD001", "FD003"]:
-        # drop operating_modes
-        df = df.drop(["setting_" + str(i + 1) for i in range(n_operational_settings)], axis=1)
+    # drop sensors which are useless according to the literature
+    to_drop = [1, 5, 6, 10, 16, 18, 19]
+    df = df.drop(["sensor_" + str(d) for d in to_drop], axis=1)
 
-        # drop sensors which are useless according to the literature
-        to_drop = [1, 5, 6, 10, 16, 18, 19]
-        df = df.drop(["sensor_" + str(d) for d in to_drop], axis=1)
+    # drop operating_modes
+    df = df.drop(["setting_" + str(i + 1) for i in range(n_operational_settings)], axis=1)
+
+    # if subset in ["FD001", "FD003"]:
+    #     # drop operating_modes
+    #     df = df.drop(["setting_" + str(i + 1) for i in range(n_operational_settings)], axis=1)
+
+
 
     return df
 
@@ -392,7 +397,7 @@ if __name__ == "__main__":
         print("Done.")
 
     #%% _______________Plot sensor data________________
-    df1 = pd.read_csv('data/FD001/min-max/train/train_00000-120.txt', sep=' ', header=None)
+    df1 = pd.read_csv('data/FD002/min-max/train/train_00000-120.txt', sep=' ', header=None)
 
     fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))
