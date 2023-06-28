@@ -85,6 +85,8 @@ if __name__ == "__main__":
     #%% Train the model
     loss_lst = []
     if TRAIN == True:
+        print(f"Training model: {DATASET}")
+        print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
         for epoch in range(EPOCHS):
             loop = tqdm(train_data)
             for batch in loop:
@@ -92,7 +94,7 @@ if __name__ == "__main__":
                 y = torch.t(y) #Transpose to fit X dimension
                 X, y = X.to(device), y.to(device) #send to device
                 y_pred = NNmodel(X) #Run model
-                loss = loss_fn(y_pred[:,0], y) #MSE loss function
+                loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
                 # print(y_pred, y_pred[:,0],y, loss)
                 
 
@@ -108,7 +110,7 @@ if __name__ == "__main__":
             scheduler.step() 
             loss_lst.append(loss.item())  
 
-        with open(f'BNN/model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_state_{DATASET}.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)
@@ -116,8 +118,10 @@ if __name__ == "__main__":
 
     #%% Test the model
     else:
+        model = f'BNN/model_state_{DATASET}.pt'
+        print(f"Testing model: {model}")
         #load pre trained model
-        with open(f'BNN/model_state_{DATASET}_test.pt', 'rb') as f: 
+        with open(model, 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
