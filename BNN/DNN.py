@@ -5,9 +5,10 @@ import sys
 import numpy as np
 import torch
 from tqdm import tqdm
+from sklearn.model_selection import KFold
 
 from torch import nn, save, load
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from torch.optim.lr_scheduler import LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
@@ -24,7 +25,10 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 BATCHSIZE = 100
 EPOCHS = 10
-TRAIN = False
+k = 10 #amount of folds for cross validation
+
+TRAIN = True
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 
 #Frequentist neural network class
@@ -53,7 +57,49 @@ class NeuralNetwork(nn.Module):
         
         return out
 
-    
+def train_epoch(train_data):
+    loop = tqdm(train_data)
+    loss_lst = []
+    for batch in loop:
+        
+        X, y = batch #Input sample, true RUL
+        y = torch.t(y) #Transpose to fit X dimension
+        X, y = X.to(device), y.to(device) #send to device
+        y_pred = NNmodel(X) #Run model
+        loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
+        loss_lst.append(loss.item())
+
+        #Backprop
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+        
+
+        train_loss = np.average(loss_lst)
+        loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
+        loop.set_postfix(loss = train_loss, lr = opt.param_groups[0]['lr']) 
+   
+    return train_loss
+
+def val_epoch(val_data):
+    loop = tqdm(val_data)
+    loss_lst = []
+    for batch in loop:
+        
+        X, y = batch #Input sample, true RUL
+        y = torch.t(y) #Transpose to fit X dimension
+        X, y = X.to(device), y.to(device) #send to device
+        y_pred = NNmodel(X) #Run model
+        loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
+        loss_lst.append(loss.item())
+
+
+        val_loss = np.average(loss_lst)
+        loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
+        loop.set_postfix(loss = val_loss) 
+   
+    return val_loss
 
 
 #%% Training
@@ -64,8 +110,6 @@ if __name__ == "__main__":
     from Data_loader import CustomDataset
     train = CustomDataset(TRAINDATASET)
     test = CustomDataset(TESTDATASET)
-    train_data = DataLoader(train, batch_size=BATCHSIZE)
-    test_data = DataLoader(test, batch_size=BATCHSIZE)
 
     # Model input parameters
     input_size = 14 #number of features
@@ -78,43 +122,66 @@ if __name__ == "__main__":
     loss_fn = nn.MSELoss()
 
     # Define the lambda function for decaying the learning rate
-    lr_lambda = lambda epoch: (1 - min(60-1, epoch) / 60) ** 0.7
+    lr_lambda = lambda epoch: (1 - min(int(0.6*EPOCHS)-1, epoch) / int(0.6*EPOCHS)) ** 0.7 #after 60% of epochs reach 70% of learning rate
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
     #%% Train the model
     loss_lst = []
-    if TRAIN == True:
+    if TRAIN == True and CV == False: #Train the model on the entire data set
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
+
+        train_data = DataLoader(train, batch_size=BATCHSIZE)
+        test_data = DataLoader(test, batch_size=BATCHSIZE)
         for epoch in range(EPOCHS):
-            loop = tqdm(train_data)
-            for batch in loop:
-                X, y = batch #Input sample, true RUL
-                y = torch.t(y) #Transpose to fit X dimension
-                X, y = X.to(device), y.to(device) #send to device
-                y_pred = NNmodel(X) #Run model
-                loss = torch.sqrt(loss_fn(y_pred[:,0], y)) #RMSE loss function
-                # print(y_pred, y_pred[:,0],y, loss)
-                
-
             
-                #Backprop
-                opt.zero_grad()
-                loss.backward()
-                opt.step()
+            train_loss = train_epoch(train_data=train_data)
             
-                loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
-                loop.set_postfix(loss = np.sqrt(loss.item()), lr = opt.param_groups[0]['lr'])
-
             scheduler.step() 
-            loss_lst.append(loss.item())  
+            loss_lst.append(train_loss)  
 
         with open(f'BNN/model_state_{DATASET}_test.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)
         plt.show()
+
+    elif TRAIN == True and CV == True: #Perfrom Cross Validation
+        splits = KFold(n_splits=k)
+        history = {'train loss': [], 'validation loss': []}
+
+        for fold , (train_idx, val_idx) in enumerate(splits.split(np.arange(len(train)))):
+            
+            print(f'Fold {fold + 1}')
+
+            train_sampler = SubsetRandomSampler(train_idx)
+            test_sampler = SubsetRandomSampler(val_idx)
+            train_data = DataLoader(train, batch_size=BATCHSIZE, sampler=train_sampler)
+            val_data = DataLoader(train, batch_size=BATCHSIZE, sampler=test_sampler)
+
+            NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
+            opt = Adam(NNmodel.parameters(), lr=1e-3)
+
+            # Define the lambda function for decaying the learning rate
+            lr_lambda = lambda epoch: (1 - min(int(0.6*EPOCHS)-1, epoch) / int(0.6*EPOCHS)) ** 0.7 #after 60% of epochs reach 70% of learning rate
+            # Create the learning rate scheduler
+            scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
+
+            for epoch in range(EPOCHS):
+                train_loss = train_epoch(train_data=train_data)
+                val_loss = val_epoch(val_data=val_data)
+
+                history['train loss'].append(train_loss)
+                history['validation loss'].append(val_loss)
+
+                scheduler.step()
+
+        print(f'Performance of {k} fold cross validation')
+        print(f'Average training loss: {np.mean(history["train loss"])}')
+        print(f'Average validation loss: {np.mean(history["validation loss"])}')
+
+                
 
     #%% Test the model
     else:
