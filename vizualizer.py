@@ -43,7 +43,7 @@ for engine in range(3):
 
         #Import into trained machine learning models
         NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-        with open(f'BNN/model_state_{DATASET}_test.pt', 'rb') as f: 
+        with open(f'BNN/model_state_{DATASET}.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples

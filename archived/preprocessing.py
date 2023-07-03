@@ -70,7 +70,7 @@ for df in new_df_list:
     for engine in engines:
         for name_signal in range(21):
             signal = df.loc[df.Engine == engine, str(name_signal + 1)]
-            signal_sav = savgol_filter(signal, int(len(signal)/2), 3) #apply a Savitzky-Golav filter to the noisy data
+            signal_sav = savgol_filter(signal, 15, 3) #apply a Savitzky-Golav filter to the noisy data
             # signal_mav = signal.rolling(10).mean().values #apply mean average filter
             # signal_mav[:10] = signal[:10].values
             df_denoise.loc[df_denoise.Engine == engine, str(name_signal + 1)] = signal_sav
@@ -78,15 +78,15 @@ for df in new_df_list:
 
 print('Signal denoised: ', time.time() - st, 'seconds')
 
-# #Plot original vs denoised signal
-# raw_signal = df1.loc[df2.Engine == 1, str(2)]
-# noisy_signal = denoise_df_list[0].loc[df2.Engine == 1, str(2)]
+#Plot original vs denoised signal
+raw_signal = df1.loc[df2.Engine == 1, str(2)]
+noisy_signal = denoise_df_list[0].loc[df2.Engine == 1, str(2)]
 
-# plt.plot(raw_signal)
-# plt.plot(noisy_signal)
-# plt.title('Engine 1, Sensor 2 - Noise removal')
-# plt.xlabel('Operating Cycles')
-# plt.show()
+plt.plot(raw_signal)
+plt.plot(noisy_signal)
+plt.title('Engine 1, Sensor 2 - Noise removal')
+plt.xlabel('Operating Cycles')
+plt.show()
 
 #%%____________________________data normalization___________________________________
 #data needs to be normalized for model to better process data
@@ -130,8 +130,8 @@ ncol = 0
 
 m=1
 for ax in axes.ravel():
-    # signal = df1.loc[mask_equip1,str(m)]
-    signal = df1.loc[mask_equip1, f'Op{m}']
+    signal = df1.loc[mask_equip1,str(m)]
+    # signal = df1.loc[mask_equip1, f'Op{m}']
     ax.plot(range(len(signal)), signal)
     ax.set_xlabel('Sensor ' + str(m))
     m += 1
