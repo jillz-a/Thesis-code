@@ -110,7 +110,7 @@ if __name__ == "__main__":
             scheduler.step() 
             loss_lst.append(loss.item())  
 
-        with open(f'BNN/model_state_{DATASET}.pt', 'wb') as f:
+        with open(f'BNN/model_state_{DATASET}_test.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     #%% Test the model
     else:
-        model = f'BNN/model_state_{DATASET}.pt'
+        model = f'BNN/model_state_{DATASET}_test.pt'
         print(f"Testing model: {model}")
         #load pre trained model
         with open(model, 'rb') as f: 
@@ -155,6 +155,7 @@ if __name__ == "__main__":
         plt.scatter([i for i in range(len(y_pred_lst))], y_pred_lst, label='Predicted RUL', c='red')
         plt.xlabel('Engine (test)')
         plt.ylabel('RUL')
+        plt.title(f'RUL prediction for {DATASET}. RMSE = {np.round(RMSE, 2)}')
         plt.legend()
         plt.show()
         
