@@ -8,6 +8,7 @@ from torch import nn, load
 from torchvision.transforms import ToTensor
 
 from BNN.DNN import NeuralNetwork
+from BNN.BNN import BayesianNeuralNetwork
 
 device = 'cpu'
 
@@ -22,7 +23,7 @@ file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all 
 file_paths.sort() 
 
 index = 0
-for engine in range(3):
+for engine in range(1):
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
     index += int(sample_len[engine][0])
 
@@ -42,14 +43,14 @@ for engine in range(3):
         label = float(file_path[-7:-4])
 
         #Import into trained machine learning models
-        NNmodel = NeuralNetwork(input_size, hidden_size, num_layers).to(device)
-        with open(f'BNN/model_state_{DATASET}.pt', 'rb') as f: 
+        NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
+        with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples
         X = ToTensor()(sample).to(device)
         y_pred = NNmodel(X)
-        y_pred = y_pred.to('cpu')
+        y_pred = y_pred[0].to('cpu')
         y_pred = y_pred.detach().numpy()
 
         y = label #True RUL
