@@ -10,6 +10,8 @@ from torchvision.transforms import ToTensor
 from BNN.DNN import NeuralNetwork
 from BNN.BNN import BayesianNeuralNetwork
 
+from bayesian_torch.utils.util import predictive_entropy, mutual_information
+
 device = 'cpu'
 
 #import data
@@ -30,6 +32,7 @@ for engine in range(1):
     #setup data to plot
     y_pred_lst = []
     y_lst = []
+    pred_unc_lst = []
 
     # Model input parameters
     input_size = 14 #number of features
@@ -50,6 +53,8 @@ for engine in range(1):
         #predict RUL from samples
         X = ToTensor()(sample).to(device)
         y_pred = NNmodel(X)
+        pred_uncertainty = y_pred.std()
+      
         y_pred = y_pred[0].to('cpu')
         y_pred = y_pred.detach().numpy()
 
@@ -58,15 +63,18 @@ for engine in range(1):
         #add predictions and true labels to lists
         y_pred_lst.append(y_pred.item())
         y_lst.append(y)
+        pred_unc_lst.append(pred_uncertainty)
 
-    error = [y_pred_lst[i] - y_lst[i] for i in range(len(y_lst))]
+    error = [(y_pred_lst[i] - y_lst[i])**2 for i in range(len(y_lst))]
 
-    plt.plot(y_pred_lst, label= 'Predicted RUL values')
-    plt.plot(y_lst, label='True RUL values')
+    # plt.plot(y_pred_lst, label= 'Predicted RUL values')
+    # plt.plot(y_lst, label='True RUL values')
+    plt.plot(pred_unc_lst)
 #%%
 
 
 plt.xlabel('Cycles')
 plt.ylabel('RUL')
-# plt.legend()
+plt.title(f'Dataset {DATASET}, RMSE = {np.round(np.sqrt(np.mean(error)), 2)}')
+plt.legend()
 plt.show()

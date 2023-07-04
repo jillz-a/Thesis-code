@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 
 from bayesian_torch.models.dnn_to_bnn import dnn_to_bnn, get_kl_loss
 import bayesian_torch.layers as bl
+from bayesian_torch.utils.util import predictive_entropy, mutual_information
 
 torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
@@ -25,8 +26,8 @@ device = 'cpu'
 DATASET = 'FD001'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
-BATCHSIZE = 100
-EPOCHS = 50
+BATCHSIZE = 50
+EPOCHS = 20
 k = 10 #amount of folds for cross validation
 
 TRAIN = True
@@ -61,19 +62,20 @@ class BayesianNeuralNetwork(nn.Module):
        
         out = self.l2(out[0])
     
-        
         return out
 
 #Training loop per epoch
 def train_epoch(train_data):
     loop = tqdm(train_data)
     loss_lst = []
+    
     for batch in loop:
         X, y = batch #Input sample, true RUL
         y = torch.t(y) #Transpose to fit X dimension
        
         X, y = X.to(device), y.to(device) #send to device
         y_pred = BNNmodel(X) #Run model
+
         kl = get_kl_loss(BNNmodel) #Kullback Leibler loss
         ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
         loss = ce_loss + kl / BATCHSIZE
