@@ -23,12 +23,12 @@ device = 'cpu'
 DATASET = 'FD001'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
-BATCHSIZE = 100
-EPOCHS = 10
+BATCHSIZE = 50
+EPOCHS = 20
 k = 10 #amount of folds for cross validation
 
 TRAIN = True
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 
 #Frequentist neural network class
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
 
         train_data = DataLoader(train, batch_size=BATCHSIZE)
-        test_data = DataLoader(test, batch_size=BATCHSIZE)
+        
         for epoch in range(EPOCHS):
             
             train_loss = train_epoch(train_data=train_data)
