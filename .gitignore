@@ -2,3 +2,5 @@
 .python-version
 .vscode/
 data/
+verification_set/test/
+verification_set/train/
