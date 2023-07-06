@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 from bayesian_torch.models.dnn_to_bnn import dnn_to_bnn, get_kl_loss
 import bayesian_torch.layers as bl
-from bayesian_torch.utils.util import predictive_entropy, mutual_information
+
 
 torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
@@ -65,7 +65,7 @@ class BayesianNeuralNetwork(nn.Module):
         return out
 
 #Training loop per epoch
-def train_epoch(train_data):
+def train_epoch(train_data, model, loss_fn, opt):
     loop = tqdm(train_data)
     loss_lst = []
     
@@ -74,12 +74,12 @@ def train_epoch(train_data):
         y = torch.t(y) #Transpose to fit X dimension
        
         X, y = X.to(device), y.to(device) #send to device
-        y_pred = BNNmodel(X) #Run model
+        y_pred = model(X) #Run model
 
-        kl = get_kl_loss(BNNmodel) #Kullback Leibler loss
+        kl = get_kl_loss(model) #Kullback Leibler loss
         ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
-        loss = ce_loss + kl / BATCHSIZE
-        loss_lst.append(loss.item())
+        loss = ce_loss + kl / BATCHSIZE #Loss including the KL loss
+        loss_lst.append(ce_loss.item())
         # print(y_pred, y_pred[:,0],y, loss)
         
     
@@ -89,13 +89,14 @@ def train_epoch(train_data):
         opt.step()
     
         train_loss = np.average(loss_lst)
+
         loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
         loop.set_postfix(loss = train_loss, lr = opt.param_groups[0]['lr']) 
     
     return train_loss
 
 #Validation loop per epoch
-def val_epoch(val_data):
+def val_epoch(val_data, model, loss_fn):
     loop = tqdm(val_data)
     loss_lst = []
     for batch in loop:
@@ -103,11 +104,11 @@ def val_epoch(val_data):
         X, y = batch #Input sample, true RUL
         y = torch.t(y) #Transpose to fit X dimension
         X, y = X.to(device), y.to(device) #send to device
-        y_pred = BNNmodel(X) #Run model
-        kl = get_kl_loss(BNNmodel)
+        y_pred = model(X) #Run model
+        kl = get_kl_loss(model)
         ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
         loss = ce_loss + kl / BATCHSIZE
-        loss_lst.append(loss.item())
+        loss_lst.append(ce_loss.item())
 
 
         val_loss = np.average(loss_lst)
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     loss_fn = nn.MSELoss()
 
     # Define the lambda function for decaying the learning rate
-    lr_lambda = lambda epoch: (1 - min(60-1, epoch) / 60) ** 0.7
+    lr_lambda = lambda epoch: (1 - min(int(0.6*EPOCHS)-1, epoch) / int(0.6*EPOCHS)) ** 0.7 #after 60% of epochs reach 70% of learning rate
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
@@ -165,7 +166,7 @@ if __name__ == '__main__':
         loss_lst = []
         for epoch in range(EPOCHS):
 
-            train_loss = train_epoch(train_data=train_data)
+            train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
             
             scheduler.step() 
             loss_lst.append(train_loss)  
@@ -199,8 +200,8 @@ if __name__ == '__main__':
             scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
             for epoch in range(EPOCHS):
-                train_loss = train_epoch(train_data=train_data)
-                val_loss = val_epoch(val_data=val_data)
+                train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
+                val_loss = val_epoch(val_data=val_data, model=BNNmodel, loss_fn=loss_fn)
 
                 history['train loss'].append(train_loss)
                 history['validation loss'].append(val_loss)

@@ -4,42 +4,56 @@ import pandas as pd
 import numpy as np
 
 
-def simple_linear(num_sensors, output):
-    """Generates test and train data sets where the output should be the sum of the inputs
+
+def simple_linear(window, sensors, output):
+    """Generates mock input data where all columns (sensors) are linear functions that all add up to a desired output.
 
     Args:
-        num_sensors (int, optional): amount of inputs Defaults to 14.
+        window (int): sequence length of the input (amount of rows)
+        sensors (int): feature size of the input (amount of columns)
+        output (int): desired output that the input must add up to
 
     Returns:
-        list, int : list of input values and corresponding output value
+        array, int: input array of size [window, sensors] of floats, the desired output
     """
-
-    input = [np.random.uniform(0, output) for _ in range(num_sensors - 1)]
-    input.append(output - sum(input))
-    np.random.shuffle(input)
-
+    # Generate random coefficients for the linear functions
+    coefficients = np.random.rand(sensors, window)
     
+    # Normalize the coefficients to ensure the total sum is equal to the output
+    coefficients /= np.sum(coefficients, axis=1, keepdims=True)
+    
+    # Generate the linear array
+    input = np.zeros((window, sensors))
+    for i in range(sensors):
+        input[:, i] = np.arange(window) * coefficients[i]
+    
+    # Scale the linear array to match the desired output
+    scaling_factor = output / np.sum(input)
+    input *= scaling_factor
+
     
     return input, output
 
 
 if __name__ == '__main__':
-    n_train = 100
+    n_train = 1000
     n_test = 10
     num_sensors = 14
+    window = 30
 
-    for i in range(n_train):
+    for i in range(1,n_train):
 
-        input, output = simple_linear(num_sensors, i)
+        input, output = simple_linear(window=window, sensors=num_sensors, output=i)
+        
+        np.savetxt('verification_set/train/ver-train-{0:0=3d}.txt'.format(output), input, fmt = '%.10f')
+      
 
-        with open('verification_set/train/ver-train-{0:0=3d}.txt'.format(output), 'w') as f:
-            f.write(" ".join(map(str, input)))
+    for i in range(1,n_test):
 
-    for i in range(n_test):
+        input, output = simple_linear(window=window, sensors=num_sensors, output=10*i)
 
-        input, output = simple_linear(num_sensors, i)
+        np.savetxt('verification_set/test/ver-test-{0:0=3d}.txt'.format(output), input, fmt = '%.10f')
 
-        with open('verification_set/test/ver-test-{0:0=3d}.txt'.format(output), 'w') as f:
-            f.write(" ".join(map(str, input)))
+       
 
     
