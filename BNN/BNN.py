@@ -124,19 +124,6 @@ def val_epoch(val_data, model, loss_fn):
 #%% main script
 if __name__ == '__main__':
 
-    const_bnn_prior_parameters = {
-        "prior_mu": 0.0,
-        "prior_sigma": 1.0,
-        "posterior_mu_init": 0.0,
-        "posterior_rho_init": -3.0,
-        "type": "Reparameterization",  # Flipout or Reparameterization
-        "moped_enable": False,  # True to initialize mu/sigma from the pretrained dnn weights
-        "moped_delta": 0,
-}
-
-    # dnn_to_bnn(NNmodel, const_bnn_prior_parameters)
- 
-
     from Data_loader import CustomDataset
     train = CustomDataset(TRAINDATASET)
     test = CustomDataset(TESTDATASET)
@@ -151,7 +138,7 @@ if __name__ == '__main__':
     loss_fn = nn.MSELoss()
 
     # Define the lambda function for decaying the learning rate
-    lr_lambda = lambda epoch: (1 - min(int(0.6*EPOCHS)-1, epoch) / int(0.6*EPOCHS)) ** 0.7 #after 60% of epochs reach 70% of learning rate
+    lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.7) #after 60% of epochs reach 70% of learning rate
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
