@@ -52,14 +52,15 @@ def train_epoch(train_data, model, loss_fn, opt):
     return train_loss, lr
 
 
+
 device = 'cpu'
-DATASET = 'FD001'
+DATASET = 'Verification'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/verification_set/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/verification_set/test'))
-BATCHSIZE = 10
-EPOCHS = 100
+BATCHSIZE = 100
+EPOCHS = 10
 
-TRAIN = False
+TRAIN = True
 
 train = CustomDataset(TRAINDATASET)
 test = CustomDataset(TESTDATASET)
@@ -75,7 +76,7 @@ opt = Adam(model.parameters(), lr=1e-2)
 loss_fn = nn.MSELoss()
 
 # Define the lambda function for decaying the learning rate
-lr_lambda = lambda epoch: (1 - min(int(0.6*EPOCHS)-1, epoch) / int(0.6*EPOCHS)) ** 0.07 #after 60% of epochs reach 70% of learning rate
+lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.7)
 # Create the learning rate schedule
 scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
@@ -134,7 +135,7 @@ else:
 
         #predict RUL from samples using Monte Carlo Sampling
         X = ToTensor()(sample).to(device)
-        n_samples = 100
+        n_samples = 10
 
         mc_pred = [model(X)[0] for _ in range(n_samples)]
 
@@ -170,6 +171,6 @@ else:
     #%%
     plt.xlabel('Sample')
     plt.ylabel('Output')
-    plt.title(f'Dataset {DATASET}, {n_samples} samples per data point')
+    plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
     plt.legend()
     plt.show()

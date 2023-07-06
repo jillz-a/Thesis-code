@@ -1,5 +1,6 @@
 #Creates mock data files with knwon properties to test the behaviour of the models
 
+#%% import data files
 import pandas as pd
 import numpy as np
 
@@ -34,26 +35,36 @@ def simple_linear(window, sensors, output):
     
     return input, output
 
+def gen_RUL():
 
+    maxRUL = np.random.randint(80,300)
+    RUL = np.arange(maxRUL)
+    RUL = [min(120, RUL[len(RUL) - 1 - i]) for i in range(len(RUL))]
+
+    return RUL
+
+#%% Main script
 if __name__ == '__main__':
-    n_train = 1000
-    n_test = 10
+    n_train = 10
+    n_test = 2
     num_sensors = 14
     window = 30
 
+    index = 0
     for i in range(1,n_train):
-
-        input, output = simple_linear(window=window, sensors=num_sensors, output=i)
-        
-        np.savetxt('verification_set/train/ver-train-{0:0=3d}.txt'.format(output), input, fmt = '%.10f')
+        RUL_lst = gen_RUL()
+        for RUL in RUL_lst:
+            input, output = simple_linear(window=window, sensors=num_sensors, output=RUL)
+            np.savetxt('verification_set/train/ver-train-{0:0=5d}-{1:0=3d}.txt'.format(index,output), input, fmt = '%.10f')
+            index += 1
       
-
+    index = 0
     for i in range(1,n_test):
-
-        input, output = simple_linear(window=window, sensors=num_sensors, output=10*i)
-
-        np.savetxt('verification_set/test/ver-test-{0:0=3d}.txt'.format(output), input, fmt = '%.10f')
-
+        RUL_lst = gen_RUL()
+        for RUL in RUL_lst:
+            input, output = simple_linear(window=window, sensors=num_sensors, output=RUL)
+            np.savetxt('verification_set/test/ver-test-{0:0=5d}-{1:0=3d}.txt'.format(index,output), input, fmt = '%.10f')
+            index += 1
        
 
     
