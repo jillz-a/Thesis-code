@@ -57,10 +57,10 @@ device = 'cpu'
 DATASET = 'Verification'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/verification_set/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/verification_set/test'))
-BATCHSIZE = 100
-EPOCHS = 10
+BATCHSIZE = 10
+EPOCHS = 100
 
-TRAIN = True
+TRAIN = False
 
 train = CustomDataset(TRAINDATASET)
 test = CustomDataset(TESTDATASET)
@@ -76,7 +76,7 @@ opt = Adam(model.parameters(), lr=1e-2)
 loss_fn = nn.MSELoss()
 
 # Define the lambda function for decaying the learning rate
-lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.7)
+lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.1)
 # Create the learning rate schedule
 scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
