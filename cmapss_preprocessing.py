@@ -76,7 +76,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], 15, 3)  #denoising
+            t[:,i] = savgol_filter(t[:,i], window, 3)  #denoising
             
         
         num_samples = len(t) - window + 1
@@ -143,7 +143,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
         t = traj.drop(["trajectory_id"], axis=1).values
 
         for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], 15, 3)   #denoising
+            t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
@@ -219,7 +219,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], 15, 3)   #denoising
+                t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
@@ -235,7 +235,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], 15, 3)   #denoising
+                t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
