@@ -220,14 +220,11 @@ if __name__ == '__main__':
         num_layers = 1
 
         #%%Go through each sample
-        i = 0
-        loop = file_paths
-        for file_path in file_paths:
-            print(f'Processing sample {i}')
-            i +=1
+        loop = tqdm(file_paths)
+        for file_path in loop:
             # Process each selected file
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-            label = float(file_path[-7:-4])
+            label = float(file_path[-7:-4]) #true RUL
 
             #Import into trained machine learning models
             NNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers=num_layers).to(device)

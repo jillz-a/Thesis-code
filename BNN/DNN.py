@@ -14,21 +14,18 @@ from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
+from variables import *
+
 
 torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-device = 'cpu'
-DATASET = 'FD001'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
-BATCHSIZE = 50
-EPOCHS = 20
-k = 10 #amount of folds for cross validation
 
 TRAIN = True
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 
 #Frequentist neural network class
@@ -96,7 +93,7 @@ def val_epoch(val_data):
 
 
         val_loss = np.average(loss_lst)
-        loop.set_description(f"Validation: {epoch+1}/{EPOCHS}")
+        loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
         loop.set_postfix(loss = val_loss) 
    
     return val_loss
@@ -170,12 +167,12 @@ if __name__ == "__main__":
 
             for epoch in range(EPOCHS):
                 train_loss = train_epoch(train_data=train_data)
-                history['train loss'].append(train_loss)
-        
-                scheduler.step()
+                val_loss = val_epoch(val_data=val_data)
 
-            val_loss = val_epoch(val_data=val_data)
-            history['validation loss'].append(val_loss)
+                history['train loss'].append(train_loss)
+                history['validation loss'].append(val_loss)
+
+                scheduler.step()
 
         print(f'Performance of {k} fold cross validation')
         print(f'Average training loss: {np.mean(history["train loss"])}')
