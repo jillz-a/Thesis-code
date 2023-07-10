@@ -59,7 +59,7 @@ for engine in range(1):
 
         #predict RUL from samples using Monte Carlo Sampling
         X = ToTensor()(sample).to(device)
-        n_samples = 100
+        n_samples = 10
 
         mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
 

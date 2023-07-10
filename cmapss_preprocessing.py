@@ -39,10 +39,11 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     # normalize data
     if normalization == "z-score":
         scaler = StandardScaler()
-        df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
+        # df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
     else:
         scaler = MinMaxScaler(feature_range=(-1, 1))
-        df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
+        # df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
+        
 
     # group by trajectory
     grouped = df.groupby("trajectory_id")
@@ -77,8 +78,9 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
 
         for i in range(t.shape[1]):
             t[:,i] = savgol_filter(t[:,i], window, 3)  #denoising
-            
-        
+           
+        t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
+
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
         for i in range(num_samples):
@@ -111,9 +113,6 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
     """
     assert scaler, "'scaler' type cannot be None."
 
-    # normalize data    
-    df.iloc[:, 1 : df.shape[1]] = scaler.transform(df.iloc[:, 1 : df.shape[1]])
-
     # group by trajectory
     grouped = df.groupby("trajectory_id")
 
@@ -144,6 +143,8 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
 
         for i in range(t.shape[1]):
             t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
+
+        t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
@@ -179,9 +180,6 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
         True to keep all the segments extracted from the series, False to keep only the last one.
     """
     assert scaler, "'scaler' type cannot be None."
-
-    # normalize data    
-    df.iloc[:, 1 : df.shape[1]] = scaler.transform(df.iloc[:, 1 : df.shape[1]])
 
     # group by trajectory
     grouped = df.groupby("trajectory_id")
@@ -221,6 +219,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             for i in range(t.shape[1]):
                 t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
+            t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
+
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
             sample = t[-window :]
@@ -236,6 +236,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
 
             for i in range(t.shape[1]):
                 t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
+
+            t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
