@@ -138,7 +138,7 @@ if __name__ == '__main__':
     loss_fn = nn.MSELoss()
 
     # Define the lambda function for decaying the learning rate
-    lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.5) #after 60% of epochs reach 70% of learning rate
+    lr_lambda = lambda epoch: 1 - (min(int(0.6*EPOCHS), epoch) / int(0.6*EPOCHS)) * (1 - 0.7) #after 60% of epochs reach 70% of learning rate
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
