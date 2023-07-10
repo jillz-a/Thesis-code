@@ -17,21 +17,18 @@ import matplotlib.pyplot as plt
 from bayesian_torch.models.dnn_to_bnn import dnn_to_bnn, get_kl_loss
 import bayesian_torch.layers as bl
 
+from variables import *
+
 
 torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-device = 'cpu'
-DATASET = 'FD001'
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
-BATCHSIZE = 50
-EPOCHS = 20
-k = 10 #amount of folds for cross validation
 
 TRAIN = True
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -102,17 +99,22 @@ def val_epoch(val_data, model, loss_fn):
     for batch in loop:
         
         X, y = batch #Input sample, true RUL
-        y = torch.t(y) #Transpose to fit X dimension
+        # y = torch.t(y) #Transpose to fit X dimension
         X, y = X.to(device), y.to(device) #send to device
-        y_pred = model(X) #Run model
-        kl = get_kl_loss(model)
-        ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
-        loss = ce_loss + kl / BATCHSIZE
+
+        n_samples = 10
+
+        mc_pred = [model(X)[0] for _ in range(n_samples)]
+
+        predictions = torch.stack(mc_pred)
+        mean_pred = torch.mean(predictions, dim=0)
+
+        ce_loss = torch.sqrt(loss_fn(mean_pred[:,0], y)) #RMSE loss function
         loss_lst.append(ce_loss.item())
 
 
         val_loss = np.average(loss_lst)
-        loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
+        loop.set_description(f"Validation: {epoch+1}/{EPOCHS}")
         loop.set_postfix(loss = val_loss) 
    
     return val_loss
@@ -176,7 +178,7 @@ if __name__ == '__main__':
             train_sampler = SubsetRandomSampler(train_idx)
             test_sampler = SubsetRandomSampler(val_idx)
             train_data = DataLoader(train, batch_size=BATCHSIZE, sampler=train_sampler)
-            val_data = DataLoader(train, batch_size=BATCHSIZE, sampler=test_sampler)
+            val_data = DataLoader(train, batch_size= BATCHSIZE, sampler=test_sampler)
 
             BNNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers).to(device)
             opt = Adam(BNNmodel.parameters(), lr=1e-3)
@@ -186,12 +188,12 @@ if __name__ == '__main__':
 
             for epoch in range(EPOCHS):
                 train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
-                val_loss = val_epoch(val_data=val_data, model=BNNmodel, loss_fn=loss_fn)
-
                 history['train loss'].append(train_loss)
-                history['validation loss'].append(val_loss)
-
+                
                 scheduler.step()
+
+            val_loss = val_epoch(val_data=val_data, model=BNNmodel, loss_fn=loss_fn)
+            history['validation loss'].append(val_loss)
 
         print(f'Performance of {k} fold cross validation')
         print(f'Average training loss: {np.mean(history["train loss"])}')
@@ -199,43 +201,78 @@ if __name__ == '__main__':
 
     #%% Test the model
     else:
-        model = f'BNN/BNN_model_state_{DATASET}.pt'
+        model = f'BNN/BNN_model_state_{DATASET}_test.pt'
         print(f"Testing model: {model}")
-        #load pre trained model
-        with open(model, 'rb') as f: 
-            BNNmodel.load_state_dict(load(f)) 
+       
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
         file_paths.sort() #sort in chronological order
+        print(file_paths)
 
-        error_lst = [] #difference between true and predicted RUL
-        y_lst = [] #True RUL values
-        y_pred_lst = [] #Predicted RUL values
-        loop = tqdm(file_paths)
-        for file_path in loop:
-        # Process each selected file
-            input = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-            input_tensor = ToTensor()(input).to(device)
+        #setup data to plot
+        mean_pred_lst = []
+        true_lst = []
+        var_pred_lst = []
 
-            y_pred = BNNmodel(input_tensor) #Run model
-            # print(torch.mean(y_pred[0,:,0]))
-            y = float(file_path[-7:-4]) #True value in file name
+        # Model input parameters
+        input_size = 14 #number of features
+        hidden_size = 32
+        num_layers = 1
 
-            if y > 0: #avoid division by 0
-                error = (torch.mean(y_pred[0,:,0]).item() - y)/y * 100
+        #%%Go through each sample
+        i = 0
+        loop = file_paths
+        for file_path in file_paths:
+            print(file_path)
+            print(f'Processing sample {i}')
+            i +=1
+            # Process each selected file
+            sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+            label = float(file_path[-7:-4])
 
-            error_lst.append(error)
-            y_lst.append(y)
-            y_pred_lst.append(torch.mean(y_pred[0,:,0]).item())
+            #Import into trained machine learning models
+            NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
+            with open(model, 'rb') as f: 
+                NNmodel.load_state_dict(load(f)) 
 
-        RMSE = np.sqrt(np.average([i**2 for i in error_lst])) #Root Mean Squared Error
-        print(f'RMSE = {RMSE}')
+            #predict RUL from samples using Monte Carlo Sampling
+            X = ToTensor()(sample).to(device)
+            n_samples = 10
 
-        y_lst, y_pred_lst = (list(t) for t in zip(*sorted(zip(y_lst, y_pred_lst), reverse=True, key=lambda x: x[0])))
-        
-        plt.plot(y_lst, label='True RUL')
-        plt.scatter([i for i in range(len(y_pred_lst))], y_pred_lst, label='Predicted RUL', c='red')
-        plt.xlabel('Engine (test)')
+            mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
+
+
+            predictions = torch.stack(mc_pred)
+            mean_pred = torch.mean(predictions, dim=0)
+            var_pred = torch.var(predictions, dim=0)
+            y = label #True RUL
+
+            #add predictions and true labels to lists
+            mean_pred_lst.append(mean_pred.item())
+            true_lst.append(y)
+            var_pred_lst.append(var_pred.item())
+
+
+        error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
+        B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
+
+        plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values, RMSE = {B_RMSE}')
+        plt.plot(true_lst, label='True RUL values')
+        plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+                        y1= mean_pred_lst + np.sqrt(var_pred_lst), 
+                        y2=mean_pred_lst - np.sqrt(var_pred_lst),
+                        alpha= 0.5,
+                        label= '1 STD interval'
+                        )
+        plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+                        y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
+                        y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
+                        alpha= 0.3,
+                        label= '2 STD interval'
+                        )
+
+        plt.xlabel('Cycles')
         plt.ylabel('RUL')
+        plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
         plt.legend()
         plt.show()
