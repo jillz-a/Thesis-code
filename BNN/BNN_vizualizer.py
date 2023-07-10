@@ -14,12 +14,10 @@ from DNN import NeuralNetwork
 from BNN import BayesianNeuralNetwork
 from DNN_vizualizer import y_pred_lst, D_RMSE
 
+from variables import *
+
 start = time.time()
 
-device = 'cpu'
-
-#import data
-DATASET = 'FD001'
 folder_path = f'data/{DATASET}/min-max/train'  # Specify the path to your folder
 
 with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:

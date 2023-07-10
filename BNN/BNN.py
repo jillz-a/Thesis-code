@@ -27,8 +27,8 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+TRAIN = False
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -175,6 +175,7 @@ if __name__ == '__main__':
             
             print(f'Fold {fold + 1}')
 
+            #Train and test data split according to amount of folds
             train_sampler = SubsetRandomSampler(train_idx)
             test_sampler = SubsetRandomSampler(val_idx)
             train_data = DataLoader(train, batch_size=BATCHSIZE, sampler=train_sampler)
@@ -207,7 +208,6 @@ if __name__ == '__main__':
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
         file_paths.sort() #sort in chronological order
-        print(file_paths)
 
         #setup data to plot
         mean_pred_lst = []
@@ -223,7 +223,6 @@ if __name__ == '__main__':
         i = 0
         loop = file_paths
         for file_path in file_paths:
-            print(file_path)
             print(f'Processing sample {i}')
             i +=1
             # Process each selected file
@@ -231,7 +230,7 @@ if __name__ == '__main__':
             label = float(file_path[-7:-4])
 
             #Import into trained machine learning models
-            NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
+            NNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers=num_layers).to(device)
             with open(model, 'rb') as f: 
                 NNmodel.load_state_dict(load(f)) 
 
@@ -252,7 +251,7 @@ if __name__ == '__main__':
             true_lst.append(y)
             var_pred_lst.append(var_pred.item())
 
-
+        true_lst, mean_pred_lst = (list(t) for t in zip(*sorted(zip(true_lst, mean_pred_lst), reverse=True, key=lambda x: x[0])))
         error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
         B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
 

@@ -399,7 +399,7 @@ if __name__ == "__main__":
         print("Done.")
 
     #%% _______________Plot sensor data________________
-    df1 = pd.read_csv('data/FD002/min-max/train/train_00000-120.txt', sep=' ', header=None)
+    df1 = pd.read_csv('data/FD001/min-max/test/test_00000-112.txt', sep=' ', header=None)
 
     fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))

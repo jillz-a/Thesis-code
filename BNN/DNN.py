@@ -28,7 +28,7 @@ EPOCHS = 20
 k = 10 #amount of folds for cross validation
 
 TRAIN = True
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 
 #Frequentist neural network class
@@ -96,7 +96,7 @@ def val_epoch(val_data):
 
 
         val_loss = np.average(loss_lst)
-        loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
+        loop.set_description(f"Validation: {epoch+1}/{EPOCHS}")
         loop.set_postfix(loss = val_loss) 
    
     return val_loss
@@ -170,12 +170,12 @@ if __name__ == "__main__":
 
             for epoch in range(EPOCHS):
                 train_loss = train_epoch(train_data=train_data)
-                val_loss = val_epoch(val_data=val_data)
-
                 history['train loss'].append(train_loss)
-                history['validation loss'].append(val_loss)
-
+        
                 scheduler.step()
+
+            val_loss = val_epoch(val_data=val_data)
+            history['validation loss'].append(val_loss)
 
         print(f'Performance of {k} fold cross validation')
         print(f'Average training loss: {np.mean(history["train loss"])}')
