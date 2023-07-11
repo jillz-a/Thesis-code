@@ -63,6 +63,17 @@ class BayesianNeuralNetwork(nn.Module):
 
 #Training loop per epoch
 def train_epoch(train_data, model, loss_fn, opt):
+    """Trains the model over one epoch
+
+    Args:
+        train_data (array (torch)): Input time series data [30, 14]
+        model (torch model): (neural network) pytorch model
+        loss_fn (_type_): Loss function
+        opt (_type_): Optimizer
+
+    Returns:
+        float : RMSE training loss
+    """
     loop = tqdm(train_data)
     loss_lst = []
     
@@ -94,6 +105,16 @@ def train_epoch(train_data, model, loss_fn, opt):
 
 #Validation loop per epoch
 def val_epoch(val_data, model, loss_fn):
+    """Trains the model over one epoch
+
+    Args:
+        train_data (array (torch)): Input time series data [30, 14]
+        model (torch model): (neural network) pytorch model
+        loss_fn (_type_): Loss function
+
+    Returns:
+        float : RMSE validation loss
+    """
     loop = tqdm(val_data)
     loss_lst = []
     for batch in loop:
@@ -207,17 +228,18 @@ if __name__ == '__main__':
        
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
-        file_paths.sort() #sort in chronological order
+        # file_paths.sort() #sort in chronological order
+        file_paths = sorted(file_paths, key=lambda x: x[-7:-4], reverse=True)
+       
 
         #setup data to plot
         mean_pred_lst = []
         true_lst = []
         var_pred_lst = []
 
-        # Model input parameters
-        input_size = 14 #number of features
-        hidden_size = 32
-        num_layers = 1
+        #Import into trained machine learning models
+        with open(model, 'rb') as f: 
+            BNNmodel.load_state_dict(load(f)) 
 
         #%%Go through each sample
         loop = tqdm(file_paths)
@@ -226,16 +248,11 @@ if __name__ == '__main__':
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
             label = float(file_path[-7:-4]) #true RUL
 
-            #Import into trained machine learning models
-            NNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers=num_layers).to(device)
-            with open(model, 'rb') as f: 
-                NNmodel.load_state_dict(load(f)) 
-
             #predict RUL from samples using Monte Carlo Sampling
             X = ToTensor()(sample).to(device)
             n_samples = 10
 
-            mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
+            mc_pred = [BNNmodel(X)[0] for _ in range(n_samples)]
 
 
             predictions = torch.stack(mc_pred)
@@ -248,7 +265,7 @@ if __name__ == '__main__':
             true_lst.append(y)
             var_pred_lst.append(var_pred.item())
 
-        true_lst, mean_pred_lst = (list(t) for t in zip(*sorted(zip(true_lst, mean_pred_lst), reverse=True, key=lambda x: x[0])))
+        
         error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
         B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
 

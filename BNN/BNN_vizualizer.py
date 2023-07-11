@@ -83,12 +83,14 @@ for engine in range(1):
                      y1= mean_pred_lst + np.sqrt(var_pred_lst), 
                      y2=mean_pred_lst - np.sqrt(var_pred_lst),
                      alpha= 0.5,
+                    #  color = 'yellow',
                      label= '1 STD interval'
                      )
     plt.fill_between(x=np.arange(len(mean_pred_lst)), 
                      y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
                      y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
                      alpha= 0.3,
+                    #  color = 'yellow',
                      label= '2 STD interval'
                      )
 #%%
@@ -97,6 +99,7 @@ finish = time.time()
 print(f'elapsed time = {finish - start} seconds')
 plt.xlabel('Cycles')
 plt.ylabel('RUL')
+plt.grid()
 plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
 plt.legend()
 plt.show()

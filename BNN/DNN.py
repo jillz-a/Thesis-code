@@ -24,7 +24,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True
+TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 
