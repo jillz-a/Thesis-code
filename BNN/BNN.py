@@ -225,6 +225,10 @@ if __name__ == '__main__':
     else:
         model = f'BNN/BNN_model_state_{DATASET}_test.pt'
         print(f"Testing model: {model}")
+
+        #Import into trained machine learning models
+        with open(model, 'rb') as f: 
+            BNNmodel.load_state_dict(load(f)) 
        
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
@@ -237,12 +241,9 @@ if __name__ == '__main__':
         true_lst = []
         var_pred_lst = []
 
-        #Import into trained machine learning models
-        with open(model, 'rb') as f: 
-            BNNmodel.load_state_dict(load(f)) 
 
         #%%Go through each sample
-        loop = tqdm(file_paths)
+        loop = tqdm(file_paths[0:163])
         for file_path in loop:
             # Process each selected file
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)

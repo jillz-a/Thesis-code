@@ -85,6 +85,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
         traj_len_lst.append(num_samples)
         for i in range(num_samples):
             sample = t[i : (i + window)]
+            # sample = scaler.fit_transform(sample)
             label = min(len(t) - i - window, maxRUL)
             path = os.path.join(out_path, "train")
             if not os.path.exists(path): os.makedirs(path)
@@ -150,6 +151,7 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
         traj_len_lst.append(num_samples)
         for i in range(num_samples):
             sample = t[i : (i + window)]
+            # sample = scaler.fit_transform(sample)
             label = min(len(t) - i - window, maxRUL)          
             path = os.path.join(out_path, "validation")
             if not os.path.exists(path): os.makedirs(path)
@@ -217,13 +219,14 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
+                t[:,i] = savgol_filter(t[:,i], int(len(traj)/4), 3)   #denoising
 
             t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)
             sample = t[-window :]
+            # sample = scaler.fit_transform(sample)
             label = min(rul[traj_id - 1], maxRUL)
             path = os.path.join(out_path, "test")
             if not os.path.exists(path): os.makedirs(path)
@@ -243,6 +246,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             traj_len_lst.append(num_samples)
             for i in range(num_samples):
                 sample = t[i : (i + window)]
+                # sample = scaler.fit_transform(sample)
                 label = min(len(t) - i - window + rul[traj_id - 1], maxRUL)
                 path = os.path.join(out_path, "test")   
                 if not os.path.exists(path): os.makedirs(path)
