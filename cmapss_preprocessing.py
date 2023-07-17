@@ -73,12 +73,25 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     # sample each trajectory through sliding window segmentation
     sample_id = 0
     traj_len_lst = []
+    flag = False
+    test_train = 0.7 #fraction of engines to be used for training, rest will be used for testing
     for traj_id, traj in grouped:
+
+        while traj_id <= int(test_train*len(grouped)):
+            name = "train"
+            break
+        else:
+            if not flag:
+                sample_id = 0
+                traj_len_lst = []
+                name = "test"
+                flag = True
+
         t = traj.drop(["trajectory_id"], axis=1).values
 
-        # for i in range(t.shape[1]):
-        #     t[:,i] = savgol_filter(t[:,i], window, 3)  #denoising
-           
+        for i in range(t.shape[1]):
+            t[:,i] = savgol_filter(t[:,i], window, 3)  #denoising
+        
         t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
         num_samples = len(t) - window + 1
@@ -87,13 +100,13 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
             sample = t[i : (i + window)]
             # sample = scaler.fit_transform(sample)
             label = min(len(t) - i - window, maxRUL)
-            path = os.path.join(out_path, "train")
+            path = os.path.join(out_path, name)
             if not os.path.exists(path): os.makedirs(path)
-            file_name = os.path.join(path, "train_{0:0=5d}-{1:0=3d}.txt".format(sample_id, label))
+            file_name = os.path.join(path, "{0:0}_{1:0=5d}-{2:0=3d}.txt".format(name, sample_id, label))
             sample_id += 1
             np.savetxt(file_name, sample, fmt="%.10f")
     
-    np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
+        np.savetxt(os.path.join(path, '0-Number_of_samples.csv'), traj_len_lst, delimiter=",", fmt='% s')
     print("Done.")
     return scaler
 
@@ -142,8 +155,8 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
     for traj_id, traj in grouped:
         t = traj.drop(["trajectory_id"], axis=1).values
 
-        # for i in range(t.shape[1]):
-        #     t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
+        for i in range(t.shape[1]):
+            t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
         t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
@@ -218,8 +231,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
         for traj_id, traj in grouped:
             t = traj.drop(["trajectory_id"], axis=1).values
 
-            # for i in range(t.shape[1]):
-            #     t[:,i] = savgol_filter(t[:,i], int(len(traj)/4), 3)   #denoising
+            for i in range(t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], int(len(traj)/4), 3)   #denoising
 
             t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
@@ -228,7 +241,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             sample = t[-window :]
             # sample = scaler.fit_transform(sample)
             label = min(rul[traj_id - 1], maxRUL)
-            path = os.path.join(out_path, "test")
+            path = os.path.join(out_path, "test_set")
             if not os.path.exists(path): os.makedirs(path)
             file_name = os.path.join(path, "test_{0:0=5d}-{1:0=3d}.txt".format(sample_id, label))
             sample_id += 1
@@ -237,8 +250,8 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
         for traj_id, traj in grouped:
             t = traj.drop(["trajectory_id"], axis=1).values
 
-            # for i in range(t.shape[1]):
-            #     t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
+            for i in range(t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], window, 3)   #denoising
 
             t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
@@ -248,7 +261,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
                 sample = t[i : (i + window)]
                 # sample = scaler.fit_transform(sample)
                 label = min(len(t) - i - window + rul[traj_id - 1], maxRUL)
-                path = os.path.join(out_path, "test")   
+                path = os.path.join(out_path, "test_set")   
                 if not os.path.exists(path): os.makedirs(path)
                 file_name = os.path.join(path, "test_{0:0=5d}-{1:0=3d}.txt".format(sample_id, label))
                 sample_id += 1
@@ -389,7 +402,7 @@ if __name__ == "__main__":
 
         # build test data
         print("Preprocessing test data...")
-        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=True, maxRUL=maxRUl)
+        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False, maxRUL=maxRUl)
 
         # save scaler
         print("Saving scaler object to file...")
