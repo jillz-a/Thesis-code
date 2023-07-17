@@ -35,13 +35,20 @@ class BayesianNeuralNetwork(nn.Module):
     """Bayesian Neural Network using LSTM and linear layers. Deterministic to Bayesian using Reparameterization.
 
     Args:
-        nn (_type_): _description_
+        input_size: number of input features
+        hidden_szie: size of hidden node vector (also size of output)
+        num_layers: amountof LSTM layers
+        prior_mean: initial guess for parameter mean
+        prior_variance: initial guess for parameter variance
+        posterior_mu_init: init std for the trainable mu parameter, sampled from N(0, posterior_mu_init)
+        posterior_rho_init: init std for the trainable rho parameter, sampled from N(0, posterior_rho_init)
+
     """
-    def __init__(self, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posteror_mu_init = 0.0, posterior_rho_init = -3.0):
+    def __init__(self, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
         super(BayesianNeuralNetwork, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posteror_mu_init, posterior_rho_init=posterior_rho_init)
+        self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
         self.relu = bl.ReLU()
         self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
         self.l2 = bl.LinearReparameterization(16,1)
@@ -232,8 +239,8 @@ if __name__ == '__main__':
        
 
         file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
-        # file_paths.sort() #sort in chronological order
-        file_paths = sorted(file_paths, key=lambda x: x[-7:-4], reverse=True)
+        file_paths.sort() #sort in chronological order
+        # file_paths = sorted(file_paths, key=lambda x: x[-7:-4], reverse=True)
        
 
         #setup data to plot
@@ -243,7 +250,7 @@ if __name__ == '__main__':
 
 
         #%%Go through each sample
-        loop = tqdm(file_paths[0:163])
+        loop = tqdm(file_paths[2+22+97+77+69:22+97+77+69+76])
         for file_path in loop:
             # Process each selected file
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)

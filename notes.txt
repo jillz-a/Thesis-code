@@ -2,7 +2,7 @@ BNN cross validation loss (before alterations):
 Average training loss: 13.217953286603093
 Average validation loss: 11.04677390827073
 
-BNN cross validation loss (after uncertanty alteration and validation after training):
+BNN cross validation loss (after uncertainty alteration and validation after training):
 Average training loss: 13.22206557611376
 Average validation loss: 9.611149692535399
 
