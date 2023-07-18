@@ -8,7 +8,7 @@ from tqdm import tqdm
 from sklearn.model_selection import KFold
 
 from torch import nn, save, load
-from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
+from torch.utils.data import DataLoader, ConcatDataset, SequentialSampler
 from torch.optim.lr_scheduler import LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
@@ -27,8 +27,8 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = False
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+TRAIN = True
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -111,7 +111,7 @@ def train_epoch(train_data, model, loss_fn, opt):
     return train_loss
 
 #Validation loop per epoch
-def val_epoch(val_data, model, loss_fn):
+def test_epoch(test_data, model, loss_fn):
     """Trains the model over one epoch
 
     Args:
@@ -122,7 +122,7 @@ def val_epoch(val_data, model, loss_fn):
     Returns:
         float : RMSE validation loss
     """
-    loop = tqdm(val_data)
+    loop = tqdm(test_data)
     loss_lst = []
     for batch in loop:
         
@@ -141,11 +141,11 @@ def val_epoch(val_data, model, loss_fn):
         loss_lst.append(ce_loss.item())
 
 
-        val_loss = np.average(loss_lst)
-        loop.set_description(f"Validation: {epoch+1}/{EPOCHS}")
-        loop.set_postfix(loss = val_loss) 
+        test_loss = np.mean(loss_lst)
+        loop.set_description(f"Test: {epoch+1}/{EPOCHS}")
+        loop.set_postfix(loss = test_loss) 
    
-    return val_loss
+    return test_loss
 
 
 # with open(f'BNN/model_state_{DATASET}.pt', 'rb') as f: 
@@ -157,6 +157,7 @@ if __name__ == '__main__':
     from Data_loader import CustomDataset
     train = CustomDataset(TRAINDATASET)
     test = CustomDataset(TESTDATASET)
+    print(train, test)
 
     # Import into trained machine learning models
     input_size = 14
@@ -197,17 +198,21 @@ if __name__ == '__main__':
     #%% Cross validation
     elif TRAIN == True and CV == True: #Perfrom Cross Validation
         splits = KFold(n_splits=k)
-        history = {'train loss': [], 'validation loss': []}
+        history = {'Train loss': [], 'Test loss': []}
+        total_set = ConcatDataset([train, test])
 
-        for fold , (train_idx, val_idx) in enumerate(splits.split(np.arange(len(train)))):
+        for fold , (train_idx, test_idx) in enumerate(splits.split(np.arange(len(total_set)))):
+            print(train_idx)
+            print(test_idx)
             
             print(f'Fold {fold + 1}')
 
             #Train and test data split according to amount of folds
-            train_sampler = SubsetRandomSampler(train_idx)
-            test_sampler = SubsetRandomSampler(val_idx)
-            train_data = DataLoader(train, batch_size=BATCHSIZE, sampler=train_sampler)
-            val_data = DataLoader(train, batch_size= BATCHSIZE, sampler=test_sampler)
+            train_sampler = SequentialSampler(train_idx)
+            test_sampler = SequentialSampler(test_idx)
+            train_data = DataLoader(total_set, batch_size=BATCHSIZE, sampler=train_sampler)
+            test_data = DataLoader(total_set, batch_size= BATCHSIZE, sampler=test_sampler)
+          
 
             BNNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers).to(device)
             opt = Adam(BNNmodel.parameters(), lr=1e-3)
@@ -215,18 +220,20 @@ if __name__ == '__main__':
             # Create the learning rate scheduler
             scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
+            loss_lst = []
             for epoch in range(EPOCHS):
                 train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
-                history['train loss'].append(train_loss)
+                loss_lst.append(train_loss)
                 
                 scheduler.step()
 
-            val_loss = val_epoch(val_data=val_data, model=BNNmodel, loss_fn=loss_fn)
-            history['validation loss'].append(val_loss)
+            test_loss = test_epoch(test_data=test_data, model=BNNmodel, loss_fn=loss_fn)
+            history['Test loss'].append(test_loss)
+            history['Train loss'].append(np.mean(loss_lst))
 
         print(f'Performance of {k} fold cross validation')
-        print(f'Average training loss: {np.mean(history["train loss"])}')
-        print(f'Average validation loss: {np.mean(history["validation loss"])}')
+        print(f'Average training loss: {np.mean(history["Train loss"])}')
+        print(f'Average test loss: {np.mean(history["Test loss"])}')
 
     #%% Test the model
     else:
