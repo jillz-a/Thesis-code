@@ -5,10 +5,10 @@ import sys
 import numpy as np
 import torch
 from tqdm import tqdm
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 
 from torch import nn, save, load
-from torch.utils.data import DataLoader, ConcatDataset, SequentialSampler
+from torch.utils.data import DataLoader, ConcatDataset, SequentialSampler, random_split
 from torch.optim.lr_scheduler import LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 
 from bayesian_torch.models.dnn_to_bnn import dnn_to_bnn, get_kl_loss
 import bayesian_torch.layers as bl
+
+from EarlyStopping import  EarlyStopping
 
 from variables import *
 
@@ -28,7 +30,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = True
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -81,8 +83,8 @@ def train_epoch(train_data, model, loss_fn, opt):
     Returns:
         float : RMSE training loss
     """
+    model.train()
     loop = tqdm(train_data)
-    loss_lst = []
     
     for batch in loop:
         X, y = batch #Input sample, true RUL
@@ -94,8 +96,7 @@ def train_epoch(train_data, model, loss_fn, opt):
         kl = get_kl_loss(model) #Kullback Leibler loss
         ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
         loss = ce_loss + kl / BATCHSIZE #Loss including the KL loss
-        loss_lst.append(ce_loss.item())
-        # print(y_pred, y_pred[:,0],y, loss)
+      
         
     
         #Backprop
@@ -103,10 +104,12 @@ def train_epoch(train_data, model, loss_fn, opt):
         loss.backward()
         opt.step()
     
-        train_loss = np.average(loss_lst)
+        train_loss = ce_loss.item()
 
         loop.set_description(f"Epoch: {epoch+1}/{EPOCHS}")
-        loop.set_postfix(loss = train_loss, lr = opt.param_groups[0]['lr']) 
+        loop.set_postfix(train_loss = train_loss)#, lr = opt.param_groups[0]['lr']) 
+
+    scheduler.step()
     
     return train_loss
 
@@ -143,7 +146,7 @@ def test_epoch(test_data, model, loss_fn):
 
         test_loss = np.mean(loss_lst)
         loop.set_description(f"Test: {epoch+1}/{EPOCHS}")
-        loop.set_postfix(loss = test_loss) 
+        loop.set_postfix(test_loss = test_loss) 
    
     return test_loss
 
@@ -157,7 +160,6 @@ if __name__ == '__main__':
     from Data_loader import CustomDataset
     train = CustomDataset(TRAINDATASET)
     test = CustomDataset(TESTDATASET)
-    print(train, test)
 
     # Import into trained machine learning models
     input_size = 14
@@ -173,43 +175,57 @@ if __name__ == '__main__':
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
+    #early stopping class that stops training to prevent overfitting
+    es = EarlyStopping()
+
     #%% Train the model
-    
     if TRAIN == True and CV == False:
 
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
 
-        train_data = DataLoader(train, batch_size=BATCHSIZE)
-        loss_lst = []
-        for epoch in range(EPOCHS):
+        train_set, val_set = random_split(train, [0.8, 0.2])
+
+        train_data = DataLoader(train_set, batch_size=BATCHSIZE)
+        val_data = DataLoader(val_set, batch_size= len(val_set))
+
+        train_loss_lst = []
+        val_loss_lst = []
+        epoch = 0
+        done = False
+        while epoch < EPOCHS and not done:
+            epoch +=1
 
             train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
+            val_loss = test_epoch(test_data=val_data, model=BNNmodel, loss_fn=loss_fn)
+
+            train_loss_lst.append(train_loss) 
+            val_loss_lst.append(val_loss) 
             
-            scheduler.step() 
-            loss_lst.append(train_loss)  
+
+            if es(model=BNNmodel, val_loss=val_loss): done = True
 
         with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
-        plt.plot(loss_lst)
+        plt.plot(train_loss_lst, label='Train loss')
+        plt.plot(val_loss_lst, label='Validation loss')
+        plt.legend()
         plt.show()
 
     #%% Cross validation
-    elif TRAIN == True and CV == True: #Perfrom Cross Validation
+    elif CV == True: #Perfrom Cross Validation
         splits = KFold(n_splits=k)
         history = {'Train loss': [], 'Test loss': []}
-        total_set = ConcatDataset([train, test])
+        total_set = ConcatDataset([train, test]) #for cross validation we look at the entire data set
 
         for fold , (train_idx, test_idx) in enumerate(splits.split(np.arange(len(total_set)))):
-            print(train_idx)
-            print(test_idx)
             
             print(f'Fold {fold + 1}')
 
             #Train and test data split according to amount of folds
-            train_sampler = SequentialSampler(train_idx)
-            test_sampler = SequentialSampler(test_idx)
+            train_sampler = SequentialSampler(train_idx) #(k-1)/k part of the total set
+            test_sampler = SequentialSampler(test_idx) #1/k part of the total set
             train_data = DataLoader(total_set, batch_size=BATCHSIZE, sampler=train_sampler)
             test_data = DataLoader(total_set, batch_size= BATCHSIZE, sampler=test_sampler)
           
@@ -220,7 +236,7 @@ if __name__ == '__main__':
             # Create the learning rate scheduler
             scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
-            loss_lst = []
+            loss_lst = [] #list of train loss per epoch
             for epoch in range(EPOCHS):
                 train_loss = train_epoch(train_data=train_data, model=BNNmodel, loss_fn=loss_fn, opt=opt)
                 loss_lst.append(train_loss)

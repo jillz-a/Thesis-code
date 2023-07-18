@@ -3,7 +3,7 @@ import copy
 
 class EarlyStopping():
 
-  def __init__(self, patience=5, min_delta=0, restore_best_weights=True):
+  def __init__(self, patience=5, min_delta=0.1, restore_best_weights=True):
     """Stops training sequence of model according to parameters set to prevent overfitting.
     
     Args:
