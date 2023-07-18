@@ -18,7 +18,7 @@ from variables import *
 
 start = time.time()
 
-folder_path = f'data/{DATASET}/min-max/train'  # Specify the path to your folder
+folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
 
 with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory

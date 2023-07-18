@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
 
         #%%Go through each sample
-        loop = tqdm(file_paths[2+22+97+77+69:22+97+77+69+76])
+        loop = tqdm(file_paths[179:179+184])
         for file_path in loop:
             # Process each selected file
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
