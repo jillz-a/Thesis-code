@@ -29,7 +29,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True
+TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
 
         #%%Go through each sample
-        loop = tqdm(file_paths[179:179+184])
+        loop = tqdm(file_paths)
         for file_path in loop:
             # Process each selected file
             sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
@@ -299,24 +299,4 @@ if __name__ == '__main__':
         
         error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
         B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
-
-        plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values, RMSE = {B_RMSE}')
-        plt.plot(true_lst, label='True RUL values')
-        plt.fill_between(x=np.arange(len(mean_pred_lst)), 
-                        y1= mean_pred_lst + np.sqrt(var_pred_lst), 
-                        y2=mean_pred_lst - np.sqrt(var_pred_lst),
-                        alpha= 0.5,
-                        label= '1 STD interval'
-                        )
-        plt.fill_between(x=np.arange(len(mean_pred_lst)), 
-                        y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
-                        y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
-                        alpha= 0.3,
-                        label= '2 STD interval'
-                        )
-
-        plt.xlabel('Cycles')
-        plt.ylabel('RUL')
-        plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
-        plt.legend()
-        plt.show()
+        print(f"RMSE = {B_RMSE} cycles")

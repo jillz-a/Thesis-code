@@ -5,7 +5,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn, load
-import tqdm
+from tqdm import tqdm
 import torch
 from torchvision.transforms import ToTensor
 import time
@@ -26,10 +26,10 @@ with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-index = 0
-for engine in range(1):
+engines = [23]
+for engine in engines:
+    index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-    index += int(sample_len[engine][0])
 
     #setup data to plot
     mean_pred_lst = []
@@ -42,10 +42,9 @@ for engine in range(1):
     num_layers = 1
 
     #%%Go through each sample
-    i = 0
-    for file_path in selected_file_paths:
-        print(f'Processing sample {i}')
-        i +=1
+    loop = tqdm(selected_file_paths)
+    for file_path in loop:
+    
         # Process each selected file
         sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
         label = float(file_path[-7:-4])
@@ -71,13 +70,15 @@ for engine in range(1):
         mean_pred_lst.append(mean_pred.item())
         true_lst.append(y)
         var_pred_lst.append(var_pred.item())
+        
+        loop.set_description(f"Processing engine {engine}")
 
 
     error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
     B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
 
-    plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values, RMSE = {B_RMSE}')
-    plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
+    plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}')
+    # plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
     plt.plot(true_lst, label='True RUL values')
     plt.fill_between(x=np.arange(len(mean_pred_lst)), 
                      y1= mean_pred_lst + np.sqrt(var_pred_lst), 
