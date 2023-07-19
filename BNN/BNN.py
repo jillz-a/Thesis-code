@@ -91,10 +91,17 @@ def train_epoch(train_data, model, loss_fn, opt):
         y = torch.t(y) #Transpose to fit X dimension
        
         X, y = X.to(device), y.to(device) #send to device
-        y_pred = model(X) #Run model
+
+        n_samples = 5
+
+        mc_pred = [model(X)[0] for _ in range(n_samples)]
+
+        predictions = torch.stack(mc_pred)
+        mean_pred = torch.mean(predictions, dim=0)
+
+        ce_loss = torch.sqrt(loss_fn(mean_pred[:,0], y)) #RMSE loss function
 
         kl = get_kl_loss(model) #Kullback Leibler loss
-        ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
         loss = ce_loss + kl / BATCHSIZE #Loss including the KL loss
         
         #Backprop
@@ -237,7 +244,7 @@ if __name__ == '__main__':
             test_sampler = SequentialSampler(test_idx) #1/k part of the total set
             train_data = DataLoader(train_test_set, batch_size=BATCHSIZE, sampler=train_sampler)
             test_data = DataLoader(train_test_set, batch_size= BATCHSIZE, sampler=test_sampler)
-            val_data = DataLoader(val_set, batch_size=len(val_set))
+            val_data = DataLoader(val_set, batch_size=3)
             
 
             BNNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers).to(device)

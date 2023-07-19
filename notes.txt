@@ -2,7 +2,11 @@ BNN cross validation loss:
 Average training loss: 13.067677899178117
 Average test loss: 9.675339591503143
 
-Average testing loss: 13.01
+Average testing loss: RMSE = 13.82 cycles
+
+BNN cross validation loss (checking the error):
+Average training loss: 9.670974588394165
+Average test loss: 9.536999162038166
 
 DNN 10 fold cross validation loss:
 Average training loss: 12.470343754697591

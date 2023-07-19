@@ -26,7 +26,7 @@ with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-engines = [23]
+engines = [1]
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
