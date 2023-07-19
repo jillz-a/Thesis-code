@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import torch
 from tqdm import tqdm
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import KFold
 
 from torch import nn, save, load
 from torch.utils.data import DataLoader, ConcatDataset, SequentialSampler, random_split
@@ -14,7 +14,7 @@ from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 
-from bayesian_torch.models.dnn_to_bnn import dnn_to_bnn, get_kl_loss
+from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
 from EarlyStopping import  EarlyStopping
@@ -81,7 +81,7 @@ def train_epoch(train_data, model, loss_fn, opt):
         opt (_type_): Optimizer
 
     Returns:
-        float : RMSE training loss
+        float : RMSE training loss at the end of an epoch
     """
     model.train()
     loop = tqdm(train_data)
@@ -96,9 +96,7 @@ def train_epoch(train_data, model, loss_fn, opt):
         kl = get_kl_loss(model) #Kullback Leibler loss
         ce_loss = torch.sqrt(loss_fn(y_pred[0][:,0], y)) #RMSE loss function
         loss = ce_loss + kl / BATCHSIZE #Loss including the KL loss
-      
         
-    
         #Backprop
         opt.zero_grad()
         loss.backward()
@@ -123,7 +121,7 @@ def test_epoch(test_data, model, loss_fn):
         loss_fn (_type_): Loss function
 
     Returns:
-        float : RMSE validation loss
+        float : average RMSE test loss over the entire epoch
     """
     loop = tqdm(test_data)
     loss_lst = []
@@ -203,7 +201,7 @@ if __name__ == '__main__':
             val_loss_lst.append(val_loss) 
             
 
-            if es(model=BNNmodel, val_loss=val_loss): done = True
+            if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
         with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
@@ -267,9 +265,9 @@ if __name__ == '__main__':
        
 
         #setup data to plot
-        mean_pred_lst = []
-        true_lst = []
-        var_pred_lst = []
+        mean_pred_lst = [] #contains mean of predictions
+        true_lst = [] #contains true RUL values
+        var_pred_lst = [] #contains variance of predictions
 
 
         #%%Go through each sample
