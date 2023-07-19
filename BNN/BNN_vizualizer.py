@@ -26,7 +26,7 @@ with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-engines = [1]
+engines = [10]
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
@@ -56,7 +56,7 @@ for engine in engines:
 
         #predict RUL from samples using Monte Carlo Sampling
         X = ToTensor()(sample).to(device)
-        n_samples = 10
+        n_samples = 20
 
         mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
 

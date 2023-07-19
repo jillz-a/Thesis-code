@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from sklearn.model_selection import KFold
+import pandas as pd
 
 from torch import nn, save, load
 from torch.utils.data import DataLoader, ConcatDataset, SequentialSampler, random_split
@@ -30,7 +31,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -228,7 +229,7 @@ if __name__ == '__main__':
     #%% Cross validation
     elif CV == True: #Perfrom Cross Validation
         splits = KFold(n_splits=k)
-        history = {'Train loss': [], 'Test loss': []}
+        history = {'Fold': [], 'Train loss': [], 'Test loss': []}
         total_set = ConcatDataset([train, test]) #for cross validation we look at the entire data set
 
         train_test_set, val_set = random_split(total_set, [0.8, 0.2])
@@ -237,14 +238,14 @@ if __name__ == '__main__':
             
             print(f'Fold {fold + 1}')
 
-            train_test_set, val_set = random_split(total_set, [0.8, 0.2])
+            # train_test_set, val_set = random_split(total_set, [0.8, 0.2])
 
             #Train and test data split according to amount of folds
             train_sampler = SequentialSampler(train_idx) #(k-1)/k part of the total set
             test_sampler = SequentialSampler(test_idx) #1/k part of the total set
             train_data = DataLoader(train_test_set, batch_size=BATCHSIZE, sampler=train_sampler)
             test_data = DataLoader(train_test_set, batch_size= BATCHSIZE, sampler=test_sampler)
-            val_data = DataLoader(val_set, batch_size=3)
+            val_data = DataLoader(val_set, batch_size=len(val_set))
             
 
             BNNmodel = BayesianNeuralNetwork(input_size, hidden_size, num_layers).to(device)
@@ -267,6 +268,7 @@ if __name__ == '__main__':
             test_loss = test_epoch(test_data=test_data, model=BNNmodel, loss_fn=loss_fn)
             history['Test loss'].append(test_loss)
             history['Train loss'].append(train_loss)
+            history['Fold'].append(fold)
 
             print(f'Fold {fold}: Training loss = {train_loss}, Test loss = {test_loss}')
 
@@ -275,8 +277,8 @@ if __name__ == '__main__':
         print(f'Average test loss: {np.mean(history["Test loss"])}')
 
         #%% plot training and testing loss per fold
-        plt.bar(np.arange(k), history['Train loss'], label=f'Train loss. Avg: {np.mean(history["Train loss"])}')
-        plt.bar(np.arange(k), history['Test loss'], label= f'Test loss. Avg: {np.mean(history["Test loss"])}')
+        df = pd.DataFrame(history)
+        df.plot(x = 'Fold', y = ['Train loss', 'Test loss'], kind='bar')
         plt.xlabel('Fold')
         plt.ylabel('Loss')
         plt.title(f'{k} fold cross validation')
