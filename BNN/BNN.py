@@ -1,7 +1,14 @@
 #%% import dependencies
-import os
 import glob
 import sys
+import os
+
+# Get the absolute path of the project directory
+project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
+# Add the project directory to sys.path if it's not already present
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
 import numpy as np
 import torch
 from tqdm import tqdm
@@ -18,7 +25,6 @@ import matplotlib.pyplot as plt
 from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
-from EarlyStopping import  EarlyStopping
 
 from variables import *
 
@@ -31,7 +37,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -189,6 +195,7 @@ if __name__ == '__main__':
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
     #early stopping class that stops training to prevent overfitting
+    from EarlyStopping import  EarlyStopping
     es = EarlyStopping()
 
     #%% Train the model
