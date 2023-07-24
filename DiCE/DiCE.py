@@ -17,38 +17,60 @@ import pandas as pd
 from torch import load
 
 import dice_ml
+from dice_ml import Dice
 
-from BNN.BNN import BayesianNeuralNetwork
+from custom_BNN import CustomBayesianNeuralNetwork
 
 #%% import files
-folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
-head = ['Sensor 2', 'Sensor 3', 'Sensor 4', 'Sensor 7', 'Sensor 8', 'Sensor 9', 'Sensor 11', 'Sensor 12', 'Sensor 13', 'Sensor 14', 'Sensor 15', 'Sensor 17', 'Sensor 20', 'Sensor 21']
+TRAINDATASET = os.path.abspath(f'data/{DATASET}/min-max/train')
+TESTDATASET = os.path.abspath(f'data/{DATASET}/min-max/test')
 
-with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
+with open(os.path.join(TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
+file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-# Model input parameters
-input_size = 14 #number of features
-hidden_size = 32
-num_layers = 1
 
 #Import into trained machine learning models
-BNNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
+BNNmodel = CustomBayesianNeuralNetwork().to(device)
 with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
     BNNmodel.load_state_dict(load(f)) 
 
+#set Counterfactual hyperparameters
+cf_amount = 5
+
+#Go over each sample
 for file_path in file_paths[0:1]:
 
+    #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
     label = float(file_path[-7:-4])
 
-    df = pd.DataFrame(sample, columns=head)
+    #Create labels for sensors and RUL
+    sensors = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+    head = [[f'Sensor {i,j}' for j in range(len(sample)) for i in sensors]]
+    head[0].append('RUL')
 
-    data = dice_ml.Data(datframe=df, continueous_features=df)
+    #Flatten sample and combine with RUL
+    sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
+    sample = np.column_stack((sample, label))
 
-    model = dice_ml.Model(model=BNNmodel, backend='PYT')
+    #Convert to dataframe and distinguish continuous features
+    df = pd.DataFrame(sample, columns=head[0])
+    df_continuous_features = df.drop('RUL', axis=1).columns.tolist()
+
+    #Data and model object for DiCE
+    data = dice_ml.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
+    model = dice_ml.Model(model=BNNmodel, backend='PYT', model_type='regressor')
+    exp_random = Dice(data, model, method='random')
+
+    #Generate counterfactual explanations
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[123, 132])
+    cf.visualize_as_dataframe(show_only_changes=True)
+    
+    
+    cf_df = cf.cf_examples_list[0].final_cfs_df
+    
     
 # %%
