@@ -68,6 +68,7 @@ for file_path in file_paths[0:1]:
     #Generate counterfactual explanations
     cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[123, 132])
     cf.visualize_as_dataframe(show_only_changes=True)
+    #master branch
     
     
     cf_df = cf.cf_examples_list[0].final_cfs_df
