@@ -22,25 +22,25 @@ from dice_ml import Dice
 from custom_BNN import CustomBayesianNeuralNetwork
 
 #%% import files
-TRAINDATASET = os.path.abspath(f'data/{DATASET}/min-max/train')
-TESTDATASET = os.path.abspath(f'data/{DATASET}/min-max/test')
+TRAINDATASET = f'data/{DATASET}/min-max/train'
+TESTDATASET = f'data/{DATASET}/min-max/test'
 
-with open(os.path.join(TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
+with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
 
 #Import into trained machine learning models
 BNNmodel = CustomBayesianNeuralNetwork().to(device)
-with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
     BNNmodel.load_state_dict(load(f)) 
 
 #set Counterfactual hyperparameters
-cf_amount = 5
+cf_amount = 1
 
-#Go over each sample
+#%%Go over each sample
 for file_path in file_paths[0:1]:
 
     #load sample with true RUL
@@ -64,9 +64,10 @@ for file_path in file_paths[0:1]:
     data = dice_ml.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
     model = dice_ml.Model(model=BNNmodel, backend='PYT', model_type='regressor')
     exp_random = Dice(data, model, method='random')
+    exp_genetic = Dice(data, model, method='genetic')
 
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[123, 132])
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[130, 180])
     cf.visualize_as_dataframe(show_only_changes=True)
     
 
