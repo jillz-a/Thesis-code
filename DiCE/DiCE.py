@@ -15,11 +15,14 @@ import csv
 import numpy as np
 import pandas as pd
 from torch import load
+import matplotlib.pyplot as plt
+import random
 
 import dice_ml
 from dice_ml import Dice
 
 from custom_BNN import CustomBayesianNeuralNetwork
+
 
 #%% import files
 TRAINDATASET = f'data/{DATASET}/min-max/train'
@@ -66,12 +69,31 @@ for file_path in file_paths[0:1]:
     exp_random = Dice(data, model, method='random')
     exp_genetic = Dice(data, model, method='genetic')
 
+
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[130, 180])
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label-10, label+20], random_seed=2)
     cf.visualize_as_dataframe(show_only_changes=True)
     
 
     cf_df = cf.cf_examples_list[0].final_cfs_df
+    cf_df = cf_df.drop('RUL', axis=1).values.reshape(30,14)
+    cf_df = pd.DataFrame(cf_df)
+    print(cf_df)
     
+
+#%% Plot counterfacutal dataframe
+
+fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+                                        figsize=(25, 8))
+
+i = 0
+m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+for ax in axes.ravel():
+    signal = cf_df[i]
+    ax.plot(range(len(signal)), signal)
+    ax.set_xlabel('Sensor ' + str(m[i]))
+    i += 1
+
+plt.show()
     
 # %%

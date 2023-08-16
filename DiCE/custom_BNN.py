@@ -32,22 +32,23 @@ class CustomBayesianNeuralNetwork(nn.Module):
         posterior_rho_init: init std for the trainable rho parameter, sampled from N(0, posterior_rho_init)
 
     """
-    def __init__(self, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
+    def __init__(self, loop_size = 5, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
         super(CustomBayesianNeuralNetwork, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.loop_size = loop_size
         self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
         self.relu = bl.ReLU()
         self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
         self.l2 = bl.LinearReparameterization(16,1)
         
         
-    def forward(self, x):
+    def loop_forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial hidden state
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial cell state
 
         x = x.reshape(np.shape(x)[0],30,14)
-        
+
         out = self.lstm(x)#, (h0, c0))
         
         out = out[0][:, -1, :]  # Extract the last time step output
@@ -55,5 +56,17 @@ class CustomBayesianNeuralNetwork(nn.Module):
         out = self.l1(out) #pass through dense layers
        
         out = self.l2(out[0])
+        # print(out[0])
     
         return out[0]
+    
+    def forward(self, x):
+        
+        mc_pred = [self.loop_forward(x) for _ in range(self.loop_size)]
+
+
+        predictions = torch.stack(mc_pred)
+        mean_pred = torch.mean(predictions, dim=0)
+        
+
+        return mean_pred
