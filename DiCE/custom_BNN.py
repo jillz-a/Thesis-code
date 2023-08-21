@@ -63,10 +63,16 @@ class CustomBayesianNeuralNetwork(nn.Module):
     def forward(self, x):
         
         mc_pred = [self.loop_forward(x) for _ in range(self.loop_size)]
-
-
+        # print(mc_pred)
         predictions = torch.stack(mc_pred)
+        # print(predictions.tolist())
         mean_pred = torch.mean(predictions, dim=0)
+        # print(mean_pred)
+     
+
+        
+        
+        
         
 
         return mean_pred

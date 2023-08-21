@@ -45,6 +45,7 @@ cf_amount = 1
 
 #%%Go over each sample
 for file_path in file_paths[0:1]:
+    print(file_path)
 
     #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
@@ -71,17 +72,17 @@ for file_path in file_paths[0:1]:
 
 
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label-10, label+20], random_seed=2)
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label+5, label+20], proximity_weight=0.02, random_seed=2)
     cf.visualize_as_dataframe(show_only_changes=True)
     
 
     cf_df = cf.cf_examples_list[0].final_cfs_df
     cf_df = cf_df.drop('RUL', axis=1).values.reshape(30,14)
     cf_df = pd.DataFrame(cf_df)
-    print(cf_df)
     
 
 #%% Plot counterfacutal dataframe
+df_orig = pd.read_csv('data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
 
 fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))
@@ -89,11 +90,14 @@ fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
 i = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
 for ax in axes.ravel():
-    signal = cf_df[i]
-    ax.plot(range(len(signal)), signal)
+    counter = cf_df[i]
+    org = df_orig[i]
+    ax.plot(range(len(org)), org)
+    ax.plot(range(len(counter)), counter)
     ax.set_xlabel('Sensor ' + str(m[i]))
     i += 1
 
 plt.show()
     
 # %%
+np.random.choice()
