@@ -18,8 +18,8 @@ from torch import load
 import matplotlib.pyplot as plt
 import random
 
-import dice_ml
-from dice_ml import Dice
+import dice_ml_custom as dice_ml
+from dice_ml_custom import Dice
 
 from custom_BNN import CustomBayesianNeuralNetwork
 
@@ -82,7 +82,7 @@ for file_path in file_paths[0:1]:
     
 
 #%% Plot counterfacutal dataframe
-df_orig = pd.read_csv('data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
+df_orig = pd.read_csv(f'{project_path}/data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
 
 fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))
@@ -92,12 +92,12 @@ m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
 for ax in axes.ravel():
     counter = cf_df[i]
     org = df_orig[i]
-    ax.plot(range(len(org)), org)
-    ax.plot(range(len(counter)), counter)
+    ax.plot(range(len(org)), org, label = 'Original')
+    ax.plot(range(len(counter)), counter, label='Counterfactual', linestyle='--')
     ax.set_xlabel('Sensor ' + str(m[i]))
     i += 1
 
+plt.legend()
 plt.show()
     
 # %%
-np.random.choice()
