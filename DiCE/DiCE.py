@@ -45,7 +45,6 @@ cf_amount = 1
 
 #%%Go over each sample
 for file_path in file_paths[0:1]:
-    print(file_path)
 
     #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
@@ -72,7 +71,7 @@ for file_path in file_paths[0:1]:
 
 
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label+5, label+20], proximity_weight=0.02, random_seed=2)
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label+5, label+20], proximity_weight= 0.02, random_seed = 2)
     cf.visualize_as_dataframe(show_only_changes=True)
     
 

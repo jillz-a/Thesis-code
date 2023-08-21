@@ -56,7 +56,6 @@ class CounterfactualExamples:
         self.posthoc_sparsity_param = posthoc_sparsity_param  # might be useful for future additions
 
         self.test_pred = self.test_instance_df[self.data_interface.outcome_name].iat[0]
-        print(self.test_pred)
        
         if model_type == ModelTypes.Classifier:
             if desired_class == "opposite":
