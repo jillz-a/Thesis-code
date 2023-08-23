@@ -3,8 +3,8 @@ import json
 
 import pandas as pd
 
-from dice_ml.constants import ModelTypes, _SchemaVersions
-from dice_ml.utils.serialize import DummyDataInterface
+from dice_ml_custom.constants import ModelTypes, _SchemaVersions
+from dice_ml_custom.utils.serialize import DummyDataInterface
 
 
 class _DiverseCFV1SchemaConstants:
@@ -131,6 +131,9 @@ class CounterfactualExamples:
         self._visualize_internal(display_sparse_df=display_sparse_df,
                                  show_only_changes=show_only_changes,
                                  is_notebook_console=True)
+        
+    def original_outcome(self):
+        return self.test_pred
 
     def display_df(self, df, show_only_changes):
         from IPython.display import display

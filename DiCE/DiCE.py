@@ -41,7 +41,7 @@ with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f:
     BNNmodel.load_state_dict(load(f)) 
 
 #set Counterfactual hyperparameters
-cf_amount = 1
+cf_amount = 5
 
 #%%Go over each sample
 for file_path in file_paths[0:1]:
@@ -67,34 +67,44 @@ for file_path in file_paths[0:1]:
     data = dice_ml.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
     model = dice_ml.Model(model=BNNmodel, backend='PYT', model_type='regressor')
     exp_random = Dice(data, model, method='random')
-    exp_genetic = Dice(data, model, method='genetic')
+
 
 
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), total_CFs= cf_amount, desired_range=[label+5, label+20], proximity_weight= 0.02, random_seed = 2)
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), verbose=True, total_CFs= cf_amount, desired_range=[label+5, label+6], proximity_weight= 0.02, random_seed = 2)
     cf.visualize_as_dataframe(show_only_changes=True)
     
-
-    cf_df = cf.cf_examples_list[0].final_cfs_df
-    cf_df = cf_df.drop('RUL', axis=1).values.reshape(30,14)
-    cf_df = pd.DataFrame(cf_df)
+    cf_total = cf.cf_examples_list[0].final_cfs_df
+    
+   
+    
     
 
 #%% Plot counterfacutal dataframe
+cf_RUL = cf_total['RUL']
+cf_total = cf_total.drop('RUL', axis=1)
 df_orig = pd.read_csv(f'{project_path}/data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
 
 fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))
 
-i = 0
+sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
 for ax in axes.ravel():
-    counter = cf_df[i]
-    org = df_orig[i]
+
+    for i in range(cf_amount):
+        cf_df = cf_total.iloc[[i]]
+        cf_df = cf_df.values.reshape(30,14)
+        cf_df = pd.DataFrame(cf_df)
+
+        counter = cf_df[sensor]
+        ax.plot(range(len(counter)), counter, label=f'CF {i + 1}: RUL = {cf_RUL.iloc[i]}', linestyle='--')
+
+    org = df_orig[sensor]
     ax.plot(range(len(org)), org, label = 'Original')
-    ax.plot(range(len(counter)), counter, label='Counterfactual', linestyle='--')
-    ax.set_xlabel('Sensor ' + str(m[i]))
-    i += 1
+    
+    ax.set_xlabel('Sensor ' + str(m[sensor]))
+    sensor += 1
 
 plt.legend()
 plt.show()

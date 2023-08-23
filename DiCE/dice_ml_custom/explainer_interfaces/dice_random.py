@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import ast
 
-from dice_ml import diverse_counterfactuals as exp
-from dice_ml.constants import ModelTypes
-from dice_ml.explainer_interfaces.explainer_base import ExplainerBase
+from dice_ml_custom import diverse_counterfactuals as exp
+from dice_ml_custom.constants import ModelTypes
+from dice_ml_custom.explainer_interfaces.explainer_base import ExplainerBase
 
 
 class DiceRandom(ExplainerBase):
@@ -77,6 +77,7 @@ class DiceRandom(ExplainerBase):
         # Do predictions once on the query_instance and reuse across to reduce the number
         # inferences.
         model_predictions = self.predict_fn(query_instance)
+        
         # number of output nodes of ML model
         self.num_output_nodes = None
         if self.model.model_type == ModelTypes.Classifier:
@@ -117,7 +118,7 @@ class DiceRandom(ExplainerBase):
                 change = random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]]
                 candidate_cfs.at[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
 
-                #ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
+                #CUSTOM: ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
                 sensor = ast.literal_eval(selected_features[k][0][7:])
                 t_index = sensor[1]
                 sensor_id = sensor[0]

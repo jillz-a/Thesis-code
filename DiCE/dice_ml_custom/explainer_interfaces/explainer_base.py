@@ -1,6 +1,6 @@
 """Module containing a template class to generate counterfactual explanations.
    Subclasses implement interfaces for different ML frameworks such as TensorFlow or PyTorch.
-   All methods are in dice_ml.explainer_interfaces"""
+   All methods are in dice_ml_custom.explainer_interfaces"""
 
 import pickle
 from abc import ABC, abstractmethod
@@ -12,8 +12,8 @@ from raiutils.exceptions import UserConfigValidationException
 from sklearn.neighbors import KDTree
 from tqdm import tqdm
 
-from dice_ml.constants import ModelTypes, _PostHocSparsityTypes
-from dice_ml.counterfactual_explanations import CounterfactualExplanations
+from dice_ml_custom.constants import ModelTypes, _PostHocSparsityTypes
+from dice_ml_custom.counterfactual_explanations import CounterfactualExplanations
 
 
 class ExplainerBase(ABC):
