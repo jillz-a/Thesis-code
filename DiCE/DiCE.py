@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from torch import load
 import matplotlib.pyplot as plt
+import plotly.express as px
 import random
 
 import dice_ml_custom as dice_ml
@@ -44,7 +45,7 @@ with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f:
 cf_amount = 5
 
 #%%Go over each sample
-for file_path in file_paths[0:1]:
+for file_path in file_paths[178:179]:
 
     #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
@@ -71,7 +72,7 @@ for file_path in file_paths[0:1]:
 
 
     #Generate counterfactual explanations
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), verbose=True, total_CFs= cf_amount, desired_range=[label+5, label+6], proximity_weight= 0.02, random_seed = 2)
+    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), verbose=True, total_CFs= cf_amount, desired_range=[1, 10], proximity_weight= 0.02, random_seed = 2)
     cf.visualize_as_dataframe(show_only_changes=True)
     
     cf_total = cf.cf_examples_list[0].final_cfs_df
@@ -83,7 +84,7 @@ for file_path in file_paths[0:1]:
 #%% Plot counterfacutal dataframe
 cf_RUL = cf_total['RUL']
 cf_total = cf_total.drop('RUL', axis=1)
-df_orig = pd.read_csv(f'{project_path}/data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
+df_orig = pd.read_csv(f'{project_path}/data/FD001/min-max/test/test_00178-000.txt', sep=' ', header=None)
 
 fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                         figsize=(25, 8))
@@ -92,7 +93,7 @@ sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
 for ax in axes.ravel():
 
-    for i in range(cf_amount):
+    for i in range(len(cf_total)):
         cf_df = cf_total.iloc[[i]]
         cf_df = cf_df.values.reshape(30,14)
         cf_df = pd.DataFrame(cf_df)

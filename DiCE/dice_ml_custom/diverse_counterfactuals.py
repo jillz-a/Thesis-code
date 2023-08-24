@@ -65,7 +65,7 @@ class CounterfactualExamples:
         elif model_type == ModelTypes.Regressor:
             if self.relative_range == True:
                 self.desired_range = [self.test_pred + desired_range[0], self.test_pred + desired_range[1]]
-                self.new_outcome = self.desired_range
+                # self.new_outcome = self.desired_range
                 print(self.new_outcome)
             if self.relative_range == False:
                 self.new_outcome = desired_range

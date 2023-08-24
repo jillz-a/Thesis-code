@@ -89,7 +89,9 @@ class DiceRandom(ExplainerBase):
         if self.model.model_type == ModelTypes.Classifier:
             self.target_cf_class = self.infer_target_cfs_class(desired_class, test_pred, self.num_output_nodes)
         elif self.model.model_type == ModelTypes.Regressor:
-            self.target_cf_range = self.infer_target_cfs_range(desired_range)
+            # self.target_cf_range = self.infer_target_cfs_range(desired_range)
+            self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
+            print(self.target_cf_range)
         # fixing features that are to be fixed
         self.total_CFs = total_CFs
 
