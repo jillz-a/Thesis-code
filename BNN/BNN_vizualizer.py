@@ -9,6 +9,13 @@ from tqdm import tqdm
 import torch
 from torchvision.transforms import ToTensor
 import time
+import sys
+
+# Get the absolute path of the project directory
+project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
+# Add the project directory to sys.path if it's not already present
+if project_path not in sys.path:
+    sys.path.append(project_path)
 
 from DNN import NeuralNetwork
 from BNN import BayesianNeuralNetwork
@@ -26,7 +33,7 @@ with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-engines = [10]
+engines = [9,10]
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
