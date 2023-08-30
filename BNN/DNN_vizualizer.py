@@ -4,28 +4,34 @@ import glob
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 from torch import nn, load
 from torchvision.transforms import ToTensor
 
 from DNN import NeuralNetwork
 
+# Get the absolute path of the project directory
+project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
+# Add the project directory to sys.path if it's not already present
+if project_path not in sys.path:
+    sys.path.append(project_path)
 
 device = 'cpu'
 
 #import data
 DATASET = 'FD001'
-folder_path = f'data/{DATASET}/min-max/train'  # Specify the path to your folder
+folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
 
-with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
+with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
+file_paths = glob.glob(os.path.join(project_path, folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-index = 0
-for engine in range(1):
+engines = [10]
+for engine in engines:
+    index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-    index += int(sample_len[engine][0])
 
     #setup data to plot
     y_pred_lst = []
@@ -44,7 +50,7 @@ for engine in range(1):
 
         #Import into trained machine learning models
         NNmodel = NeuralNetwork(input_size, hidden_size).to(device)
-        with open(f'BNN/model_state_{DATASET}_test.pt', 'rb') as f: 
+        with open(f'{project_path}/BNN/model_state_{DATASET}_test.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples

@@ -27,13 +27,14 @@ start = time.time()
 
 folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
 
-with open(os.path.join(folder_path, '0-Number_of_samples.csv')) as csvfile:
+with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-engines = [9,10]
+#%%
+engines = [10]
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
@@ -48,7 +49,7 @@ for engine in engines:
     hidden_size = 32
     num_layers = 1
 
-    #%%Go through each sample
+    #Go through each sample
     loop = tqdm(selected_file_paths)
     for file_path in loop:
     
@@ -58,7 +59,7 @@ for engine in engines:
 
         #Import into trained machine learning models
         NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-        with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+        with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
             NNmodel.load_state_dict(load(f)) 
 
         #predict RUL from samples using Monte Carlo Sampling
@@ -80,13 +81,28 @@ for engine in engines:
         
         loop.set_description(f"Processing engine {engine}")
 
-
+    
+    #%% Plot data
     error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
     B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
 
+    #mean RUL predictions from Bayesian model
     plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}')
-    # plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
+    #deterministic RUL predictions
+    plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
+    #true RUL values
     plt.plot(true_lst, label='True RUL values')
+    #alpha-lambda accuracy
+    alpha = 0.2
+    Lambda = 0.75
+    plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+                     y1=[i*(1.0+alpha) for i in true_lst], 
+                     y2=[i*(1.0-alpha) for i in true_lst], 
+                     alpha= 0.3,
+                     label=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
+                     )
+    plt.vlines(x= np.round(len(mean_pred_lst)*Lambda), ymin=0, ymax=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], linestyles='dashed')
+    #1 standard deviation interval
     plt.fill_between(x=np.arange(len(mean_pred_lst)), 
                      y1= mean_pred_lst + np.sqrt(var_pred_lst), 
                      y2=mean_pred_lst - np.sqrt(var_pred_lst),
@@ -94,6 +110,7 @@ for engine in engines:
                     #  color = 'yellow',
                      label= '1 STD interval'
                      )
+    #2 standard deviation interval
     plt.fill_between(x=np.arange(len(mean_pred_lst)), 
                      y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
                      y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
