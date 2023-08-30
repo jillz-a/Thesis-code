@@ -4,6 +4,8 @@ import glob
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 from torch import nn, load
 from tqdm import tqdm
 import torch
@@ -34,7 +36,7 @@ file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all 
 file_paths.sort() 
 
 #%%
-engines = [10]
+engines = [8]
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
@@ -82,49 +84,101 @@ for engine in engines:
         loop.set_description(f"Processing engine {engine}")
 
     
-    #%% Plot data
-    error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
-    B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
+#%% Plot data
+error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
+B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
 
-    #mean RUL predictions from Bayesian model
-    plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}')
-    #deterministic RUL predictions
-    plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
-    #true RUL values
-    plt.plot(true_lst, label='True RUL values')
-    #alpha-lambda accuracy
-    alpha = 0.2
-    Lambda = 0.75
-    plt.fill_between(x=np.arange(len(mean_pred_lst)), 
-                     y1=[i*(1.0+alpha) for i in true_lst], 
-                     y2=[i*(1.0-alpha) for i in true_lst], 
-                     alpha= 0.3,
-                     label=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
-                     )
-    plt.vlines(x= np.round(len(mean_pred_lst)*Lambda), ymin=0, ymax=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], linestyles='dashed')
-    #1 standard deviation interval
-    plt.fill_between(x=np.arange(len(mean_pred_lst)), 
-                     y1= mean_pred_lst + np.sqrt(var_pred_lst), 
-                     y2=mean_pred_lst - np.sqrt(var_pred_lst),
-                     alpha= 0.5,
-                    #  color = 'yellow',
-                     label= '1 STD interval'
-                     )
-    #2 standard deviation interval
-    plt.fill_between(x=np.arange(len(mean_pred_lst)), 
-                     y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
-                     y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
-                     alpha= 0.3,
-                    #  color = 'yellow',
-                     label= '2 STD interval'
-                     )
+fig = go.Figure()
+#mean RUL predictions from Bayesian model
+fig.add_trace(go.Scatter(x=np.arange(len(mean_pred_lst)), 
+                            y=mean_pred_lst, 
+                            name=f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}',
+                            mode= 'lines'))
+# plt.plot(mean_pred_lst, label= f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}')
+#deterministic RUL predictions
+fig.add_trace(go.Scatter(x=np.arange(len(y_pred_lst)),
+                            y=y_pred_lst,
+                            name= f'Deterministic Predicted RUL values, RMSE = {D_RMSE}',
+                            mode='lines'))
+# plt.plot(y_pred_lst, label=f'Deterministic Predicted RUL values, RMSE = {D_RMSE}')
+#true RUL values
+fig.add_trace(go.Scatter(x=np.arange(len(true_lst)),
+                            y=true_lst,
+                            name='True RUL values',
+                            mode='lines'))
+# plt.plot(true_lst, label='True RUL values')
+
+#1 standard deviation interval
+fig.add_trace(go.Scatter(
+    x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+    y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
+    fill='toself',  # Fill to next y values
+    fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
+    line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+    name='1 Standard Deviation'
+))
+
+# plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+#                  y1= mean_pred_lst + np.sqrt(var_pred_lst), 
+#                  y2=mean_pred_lst - np.sqrt(var_pred_lst),
+#                  alpha= 0.5,
+#                 #  color = 'yellow',
+#                  label= '1 STD interval'
+#                  )
+#2 standard deviation interval
+fig.add_trace(go.Scatter(
+x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+y=np.concatenate((np.array(mean_pred_lst) + 2*np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - 2*np.sqrt(var_pred_lst)[::-1])),
+fill='toself',  # Fill to next y values
+fillcolor='rgba(0, 90, 80, 0.2)',  # Color of the filled area
+line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+name='2 Standard Deviation'
+))
+
+# plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+#                  y1= mean_pred_lst + 2*np.sqrt(var_pred_lst), 
+#                  y2=mean_pred_lst - 2*np.sqrt(var_pred_lst),
+#                  alpha= 0.3,
+#                 #  color = 'yellow',
+#                  label= '2 STD interval'
+#                  )
+
+#alpha-lambda accuracy
+alpha = 0.2
+Lambda = 0.75
+fig.add_trace(go.Scatter(
+x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
+fill='toself',  # Fill to next y values
+fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
+line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+name=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
+))
+
+# plt.fill_between(x=np.arange(len(mean_pred_lst)), 
+#                  y1=[i*(1.0+alpha) for i in true_lst], 
+#                  y2=[i*(1.0-alpha) for i in true_lst], 
+#                  alpha= 0.3,
+#                  label=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
+#                  )
+
+fig.add_shape(type='line', x0=np.round(len(mean_pred_lst)*Lambda), x1=np.round(len(mean_pred_lst)*Lambda), y0=0, y1=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], line_dash='dash')
+# plt.vlines(x= np.round(len(mean_pred_lst)*Lambda), ymin=0, ymax=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], linestyles='dashed')
 #%%
 
 finish = time.time()
 print(f'elapsed time = {finish - start} seconds')
-plt.xlabel('Cycles')
-plt.ylabel('RUL')
-plt.grid()
-plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
-plt.legend()
-plt.show()
+
+fig.update_layout(
+    title=f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}',
+    xaxis_title="Cycles",
+    yaxis_title="RUL",
+)
+fig.show()
+
+# plt.xlabel('Cycles')
+# plt.ylabel('RUL')
+# plt.grid()
+# plt.title(f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}')
+# plt.legend()
+# plt.show()
