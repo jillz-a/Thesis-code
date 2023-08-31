@@ -1,7 +1,8 @@
 import dash
-from dash import dcc, html
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 import numpy as np
 from scipy.stats import norm  # Import scipy's norm function for normal distribution
 
@@ -24,14 +25,21 @@ app.layout = html.Div([
             'layout': {'title': 'Mean of Normal Distribution Over Time'}
         }
     ),
-    dcc.Graph(id='sub-plot')
+    html.Div(
+        style={'display': 'flex', 'flexDirection': 'row'},
+        children=[
+            dcc.Graph(id='sub-plot'),
+            html.Div(id='table-container')
+        ]
+    )
 ])
 
 @app.callback(
     Output('sub-plot', 'figure'),
+    Output('table-container', 'children'),
     Input('main-plot', 'hoverData')
 )
-def display_sub_plot(hover_data):
+def display_sub_plot_and_table(hover_data):
     if hover_data:
         x_selected = hover_data['points'][0]['x']
         closest_index = np.argmin(np.abs(time - x_selected))
@@ -49,9 +57,18 @@ def display_sub_plot(hover_data):
         sub_layout.yaxis = go.layout.YAxis(title='X Axis')
         
         sub_fig = {'data': [sub_trace], 'layout': sub_layout}
-        return sub_fig
+        
+        # Create a table with some example values
+        table_data = [{'Metric': 'Mean', 'Value': hover_mean_2},
+                      {'Metric': 'Standard Deviation', 'Value': std_dev}]
+        table = dash_table.DataTable(
+            columns=[{'name': col, 'id': col} for col in table_data[0].keys()],
+            data=table_data
+        )
+        
+        return sub_fig, table
     
-    return {'data': [], 'layout': {}}
+    return {'data': [], 'layout': {}}, None
 
 if __name__ == '__main__':
     app.run_server(debug=True)

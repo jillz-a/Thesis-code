@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 
 import plotly.express as px
 import dash
-from dash import dcc, html
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy.stats import norm
 
 from torch import nn, load
 from tqdm import tqdm
@@ -93,97 +94,197 @@ for engine in engines:
 #%% Plot data
 error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
 B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
-
-fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
-#mean RUL predictions from Bayesian model
-fig.add_trace(go.Scatter(x=np.arange(len(mean_pred_lst)), 
-                            y=mean_pred_lst, 
-                            name=f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}',
-                            mode= 'lines'), row=1, col=1)
-
-#deterministic RUL predictions
-fig.add_trace(go.Scatter(x=np.arange(len(y_pred_lst)),
-                            y=y_pred_lst,
-                            name= f'Deterministic Predicted RUL values, RMSE = {D_RMSE}',
-                            mode='lines'), row=1, col=1)
-
-#true RUL values
-fig.add_trace(go.Scatter(x=np.arange(len(true_lst)),
-                            y=true_lst,
-                            name='True RUL values',
-                            mode='lines'), row=1, col=1)
-
-
-#1 standard deviation interval
-fig.add_trace(go.Scatter(
-    x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
-    y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
-    fill='toself',  # Fill to next y values
-    fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
-    line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
-    name='1 Standard Deviation'
-), row=1, col=1)
-
-#2 standard deviation interval
-fig.add_trace(go.Scatter(
-x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
-y=np.concatenate((np.array(mean_pred_lst) + 2*np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - 2*np.sqrt(var_pred_lst)[::-1])),
-fill='toself',  # Fill to next y values
-fillcolor='rgba(0, 90, 80, 0.2)',  # Color of the filled area
-line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
-name='2 Standard Deviation'
-), row=1, col=1)
-
-
-#alpha-lambda accuracy
+x_plot = np.arange(len(mean_pred_lst))
 alpha = 0.2
 Lambda = 0.75
-fig.add_trace(go.Scatter(
-x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
-y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
-fill='toself',  # Fill to next y values
-fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
-line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
-name=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
-), row=1, col=1)
+
+app = dash.Dash(__name__)
+
+app.layout = html.Div([
+    dcc.Graph(
+        id='main-plot',
+        figure={
+            'data': [
+                go.Scatter(x=x_plot, 
+                           y=mean_pred_lst, 
+                           mode='lines', 
+                           name=f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}'),
+                go.Scatter(x=x_plot,
+                            y=y_pred_lst,
+                            name= f'Deterministic Predicted RUL values, RMSE = {D_RMSE}',
+                            mode='lines'),
+                go.Scatter(x=x_plot,
+                            y=true_lst,
+                            name='True RUL values',
+                            mode='lines'),
+                go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])),  # Concatenate x values in both directions
+                            y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
+                            fill='toself',  # Fill to next y values
+                            fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
+                            line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+                            name='1 Standard Deviation',
+                            hoverinfo='skip'),
+                go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])),  # Concatenate x values in both directions
+                            y=np.concatenate((np.array(mean_pred_lst) + 2*np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - 2*np.sqrt(var_pred_lst)[::-1])),
+                            fill='toself',  # Fill to next y values
+                            fillcolor='rgba(0, 90, 80, 0.2)',  # Color of the filled area
+                            line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+                            name='1 Standard Deviation',
+                            hoverinfo='skip'),
+                go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])),  # Concatenate x values in both directions
+                            y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
+                            fill='toself',  # Fill to next y values
+                            fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
+                            line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+                            name=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}',
+                            hoverinfo='skip'),
+            ],
+            'layout': {'title': 'Mean of Normal Distribution Over Time'}
+        }
+    ),
+    html.Div(
+        style={'display': 'flex', 'flexDirection': 'row'},
+        children=[
+            dcc.Graph(id='sub-plot'),
+            html.Div(id='table-container')
+        ]
+    )
+])
+
+@app.callback(
+    Output('sub-plot', 'figure'),
+    Output('table-container', 'children'),
+    Input('main-plot', 'hoverData')
+)
+def display_sub_plot_and_table(hover_data):
+    if hover_data:
+        x_selected = hover_data['points'][0]['x']
+        hover_mean = mean_pred_lst[x_selected]
+        std_dev = np.sqrt(var_pred_lst[x_selected])
+        
+        y_sub = np.linspace(hover_mean - 3 * std_dev, hover_mean + 3 * std_dev, 100)
+        x_sub = norm.pdf(y_sub, hover_mean, std_dev)
+        
+        sub_trace = go.Scatter(x=x_sub, 
+                               y=y_sub, 
+                               mode='lines', 
+                               fill= 'tozeroy',
+                               name='RUL prediction distribution')
+        sub_layout = go.Layout(title='Normal Distribution at cycle {}'.format(x_selected))
+        
+        # Rotate the sub-plot by swapping x and y axes and updating labels
+        sub_layout.xaxis = go.layout.XAxis(title='Density')
+        sub_layout.yaxis = go.layout.YAxis(title='Cycles')
+        
+        sub_fig = {'data': [sub_trace], 'layout': sub_layout}
+        
+        # Create a table with some example values
+        table_data = [{'Metric': 'Mean', 'Value': hover_mean},
+                      {'Metric': 'Standard Deviation', 'Value': std_dev},
+                      {'Metric': 'Bayesian RMSE', 'Value': B_RMSE},
+                      {'Metric': 'Deterministic RMSE', 'Value': D_RMSE}]
+        table = dash_table.DataTable(
+            columns=[{'name': col, 'id': col} for col in table_data[0].keys()],
+            data=table_data
+        )
+        
+        return sub_fig, table
+    
+    return {'data': [], 'layout': {}}, None
 
 
-fig.add_shape(type='line', x0=np.round(len(mean_pred_lst)*Lambda), x1=np.round(len(mean_pred_lst)*Lambda), y0=0, y1=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], line_dash='dash', row=1, col=1)
+app.run_server(debug=True)
+
+# fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
+#mean RUL predictions from Bayesian model
+# fig.add_trace(go.Scatter(x=np.arange(len(mean_pred_lst)), 
+#                             y=mean_pred_lst, 
+#                             name=f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}',
+#                             mode= 'lines'), row=1, col=1)
+
+# #deterministic RUL predictions
+# fig.add_trace(go.Scatter(x=np.arange(len(y_pred_lst)),
+#                             y=y_pred_lst,
+#                             name= f'Deterministic Predicted RUL values, RMSE = {D_RMSE}',
+#                             mode='lines'), row=1, col=1)
+
+# #true RUL values
+# fig.add_trace(go.Scatter(x=np.arange(len(true_lst)),
+#                             y=true_lst,
+#                             name='True RUL values',
+#                             mode='lines'), row=1, col=1)
+
+
+# #1 standard deviation interval
+# fig.add_trace(go.Scatter(
+#     x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+#     y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
+#     fill='toself',  # Fill to next y values
+#     fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
+#     line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+#     name='1 Standard Deviation'
+# ), row=1, col=1)
+
+# #2 standard deviation interval
+# fig.add_trace(go.Scatter(
+# x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+# y=np.concatenate((np.array(mean_pred_lst) + 2*np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - 2*np.sqrt(var_pred_lst)[::-1])),
+# fill='toself',  # Fill to next y values
+# fillcolor='rgba(0, 90, 80, 0.2)',  # Color of the filled area
+# line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+# name='2 Standard Deviation'
+# ), row=1, col=1)
+
+
+# #alpha-lambda accuracy
+# alpha = 0.2
+# Lambda = 0.75
+# fig.add_trace(go.Scatter(
+# x=np.concatenate((np.arange(len(mean_pred_lst)), np.arange(len(mean_pred_lst))[::-1])),  # Concatenate x values in both directions
+# y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
+# fill='toself',  # Fill to next y values
+# fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
+# line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+# name=f'\u03B1 +-{alpha*100}%, \u03BB {Lambda}'
+# ), row=1, col=1)
+
+
+# fig.add_shape(type='line', x0=np.round(len(mean_pred_lst)*Lambda), x1=np.round(len(mean_pred_lst)*Lambda), y0=0, y1=true_lst[int(np.round(len(mean_pred_lst)*Lambda))], line_dash='dash', row=1, col=1)
 
 #sub plot of the propability distribution of the RUL prediction
-def create_sub_plot(mean, std_dev):
-    x_sub = np.linspace(mean - 3 * std_dev, mean + 3 * std_dev, 100)
-    y_sub = (1 / (std_dev * np.sqrt(2 * np.pi))) * np.exp(-(x_sub - mean)**2 / (2 * std_dev**2))
+# def create_sub_plot(mean, std_dev):
+#     x_sub = np.linspace(mean - 3 * std_dev, mean + 3 * std_dev, 100)
+#     y_sub = (1 / (std_dev * np.sqrt(2 * np.pi))) * np.exp(-(x_sub - mean)**2 / (2 * std_dev**2))
     
-    sub_trace = go.Scatter(
-        x=x_sub,
-        y=y_sub,
-        mode='lines',
-        name='Normal Distribution',
-        line=dict(color='blue')
-    )
+#     sub_trace = go.Scatter(
+#         x=x_sub,
+#         y=y_sub,
+#         mode='lines',
+#         name='Normal Distribution',
+#         line=dict(color='blue')
+#     )
     
-    return sub_trace
+#     return sub_trace
 
-fig.add_trace(go.Scatter(), row=2, col=1)
+# fig.add_trace(go.Scatter(), row=2, col=1)
 
-# Update subplot on hover
-def update_subplot(trace, points, selector):
-    if len(points.point_inds) > 0:
-        ind = points.point_inds[0]
-        sub_trace = create_sub_plot(mean_pred_lst[ind], np.sqrt(var_pred[ind]))
-        fig.update_traces(sub_trace, selector=dict(name='Normal Distribution'))
+# # Update subplot on hover
+# def update_subplot(trace, points, selector):
+#     if len(points.point_inds) > 0:
+#         ind = points.point_inds[0]
+#         sub_trace = create_sub_plot(mean_pred_lst[ind], np.sqrt(var_pred[ind]))
+#         fig.update_traces(sub_trace, selector=dict(name='Normal Distribution'))
 
-fig.data[0].on_hover(update_subplot)
+# fig.data[0].on_hover(update_subplot)
 
 
-finish = time.time()
-print(f'elapsed time = {finish - start} seconds')
+# finish = time.time()
+# print(f'elapsed time = {finish - start} seconds')
 
-fig.update_layout(
-    title=f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}',
-    xaxis_title="Cycles",
-    yaxis_title="RUL",
-    hovermode='closest'
-)
-fig.show()
+# fig.update_layout(
+#     title=f'Dataset {DATASET}, {n_samples} samples per data point, average variance = {np.round(np.mean(var_pred_lst),2)}',
+#     xaxis_title="Cycles",
+#     yaxis_title="RUL",
+#     hovermode='closest'
+# )
+# fig.show()
