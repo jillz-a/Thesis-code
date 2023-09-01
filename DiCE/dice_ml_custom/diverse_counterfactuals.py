@@ -41,7 +41,7 @@ class CounterfactualExamples:
     def __init__(self, data_interface=None, final_cfs_df=None, test_instance_df=None,
                  final_cfs_df_sparse=None, posthoc_sparsity_param=0,
                  desired_range=None, desired_class="opposite",
-                 model_type=ModelTypes.Classifier, relative_range = False):
+                 model_type=ModelTypes.Classifier, relative_range = True):
 
         self.data_interface = data_interface
         self.final_cfs_df = final_cfs_df
@@ -64,8 +64,9 @@ class CounterfactualExamples:
                 self.new_outcome = desired_class
         elif model_type == ModelTypes.Regressor:
             if self.relative_range == True:
+                #CUSTOM: make desired range based on initial outcome
                 self.desired_range = [self.test_pred + desired_range[0], self.test_pred + desired_range[1]]
-                # self.new_outcome = self.desired_range
+                self.new_outcome = self.desired_range
                 print(self.new_outcome)
             if self.relative_range == False:
                 self.new_outcome = desired_range

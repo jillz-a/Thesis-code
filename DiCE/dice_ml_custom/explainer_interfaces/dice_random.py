@@ -40,7 +40,7 @@ class DiceRandom(ExplainerBase):
                                   desired_class="opposite", permitted_range=None,
                                   features_to_vary="all", stopping_threshold=0.5, posthoc_sparsity_param=0.1,
                                   posthoc_sparsity_algorithm="linear", sample_size=1000, random_seed=None, verbose=False,
-                                  limit_steps_ls=10000):
+                                  limit_steps_ls=10000, time_series=False):
         """Generate counterfactuals by randomly sampling features.
 
         :param query_instance: Test point of interest. A dictionary of feature names and values or a single row dataframe.
@@ -89,6 +89,7 @@ class DiceRandom(ExplainerBase):
         if self.model.model_type == ModelTypes.Classifier:
             self.target_cf_class = self.infer_target_cfs_class(desired_class, test_pred, self.num_output_nodes)
         elif self.model.model_type == ModelTypes.Regressor:
+            #CUSTOM: desired range based on initial outcome
             # self.target_cf_range = self.infer_target_cfs_range(desired_range)
             self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
             print(self.target_cf_range)
@@ -120,13 +121,14 @@ class DiceRandom(ExplainerBase):
                 change = random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]]
                 candidate_cfs.at[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
 
-                #CUSTOM: ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
-                sensor = ast.literal_eval(selected_features[k][0][7:])
-                t_index = sensor[1]
-                sensor_id = sensor[0]
-                for t in range(t_index + 1, 30):
-                    t_feature = f'Sensor ({sensor_id}, {t})'
-                    candidate_cfs.at[k, t_feature] += change
+                if time_series:
+                    #CUSTOM: ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
+                    sensor = ast.literal_eval(selected_features[k][0][7:])
+                    t_index = sensor[1]
+                    sensor_id = sensor[0]
+                    for t in range(t_index + 1, 30):
+                        t_feature = f'Sensor ({sensor_id}, {t})'
+                        candidate_cfs.at[k, t_feature] += change
 
             scores = self.predict_fn(candidate_cfs)
             validity = self.decide_cf_validity(scores)
