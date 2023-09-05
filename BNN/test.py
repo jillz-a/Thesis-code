@@ -1,74 +1,91 @@
-import dash
-from dash import dcc, html, dash_table
-from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import numpy as np
-from scipy.stats import norm  # Import scipy's norm function for normal distribution
-
-app = dash.Dash(__name__)
+import plotly.offline as pyo
+from scipy.stats import norm
+import plotly.express as px
 
 # Sample data
 time = np.linspace(0, 10, 100)
-mean_data_1 = np.sin(time) + 5
-mean_data_2 = np.cos(time) + 7
-std_dev = 0.5  # Example standard deviation
+mean_pred_lst = np.sin(time) + 5
+var_pred_lst = np.cos(time) + 7
+true_lst = np.sin(time) + 5  # Replace with your actual data
+alpha = 0.1  # Replace with your desired alpha value
+x_plot = np.linspace(0, 1, 100)  # Replace with your desired x values
+B_RMSE = 0.0  # Replace with your Bayesian RMSE value
+D_RMSE = 0.0  # Replace with your Deterministic RMSE value
+engine = 1  # Replace with your engine number
 
-app.layout = html.Div([
-    dcc.Graph(
-        id='main-plot',
-        figure={
-            'data': [
-                go.Scatter(x=time, y=mean_data_1, mode='lines', name='Line 1'),
-                go.Scatter(x=time, y=mean_data_2, mode='lines', name='Line 2')
-            ],
-            'layout': {'title': 'Mean of Normal Distribution Over Time'}
-        }
-    ),
-    html.Div(
-        style={'display': 'flex', 'flexDirection': 'row'},
-        children=[
-            dcc.Graph(id='sub-plot'),
-            html.Div(id='table-container')
-        ]
-    )
-])
+# Create a subplot with 2 rows and 1 column for the sub-plot and table
+fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
+                    subplot_titles=[f'RUL prediction of engine {engine}', 'Table'])
 
-@app.callback(
-    Output('sub-plot', 'figure'),
-    Output('table-container', 'children'),
-    Input('main-plot', 'hoverData')
-)
-def display_sub_plot_and_table(hover_data):
-    if hover_data:
-        x_selected = hover_data['points'][0]['x']
-        closest_index = np.argmin(np.abs(time - x_selected))
-        hover_time = time[closest_index]
-        hover_mean_2 = mean_data_2[closest_index]
-        
-        y_sub = np.linspace(hover_mean_2 - 3 * std_dev, hover_mean_2 + 3 * std_dev, 100)
-        x_sub = norm.pdf(y_sub, hover_mean_2, std_dev)
-        
-        sub_trace = go.Scatter(x=x_sub, y=y_sub, mode='lines', name='Sub Plot')
-        sub_layout = go.Layout(title='Normal Distribution at Time {}'.format(hover_time))
-        
-        # Rotate the sub-plot by swapping x and y axes and updating labels
-        sub_layout.xaxis = go.layout.XAxis(title='Density')
-        sub_layout.yaxis = go.layout.YAxis(title='X Axis')
-        
-        sub_fig = {'data': [sub_trace], 'layout': sub_layout}
-        
-        # Create a table with some example values
-        table_data = [{'Metric': 'Mean', 'Value': hover_mean_2},
-                      {'Metric': 'Standard Deviation', 'Value': std_dev}]
-        table = dash_table.DataTable(
-            columns=[{'name': col, 'id': col} for col in table_data[0].keys()],
-            data=table_data
-        )
-        
-        return sub_fig, table
+std_dev = np.sqrt(var_pred_lst)
+
+for i in range(len(mean_pred_lst)):
     
-    return {'data': [], 'layout': {}}, None
+    y_sub = np.linspace(mean_pred_lst[i] - 3 * std_dev[i], mean_pred_lst[i] + 3 * std_dev[i], 100)
+    x_sub = norm.pdf(y_sub, mean_pred_lst[i], std_dev[i])
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+    fig.add_trace(go.Scatter(x=x_sub, 
+                            y=y_sub, 
+                            visible=False,
+                            mode='lines', 
+                            line=dict(color='blue'),
+                            fill='tozeroy',
+                            name='RUL prediction distribution'),
+                            row=2,
+                            col=1)
+    
+    fig.add_trace(go.Scatter(x=np.array([0, max(x_sub)]),
+                            y=np.array([true_lst[0], true_lst[0]]),
+                            mode='lines',
+                            line=dict(dash='dash', color='red'),
+                            name='True RUL'),
+                            row=2,
+                            col=1)
+    
+    fig.add_trace(go.Scatter(x=x_plot, 
+                            y=mean_pred_lst, 
+                            mode='lines', 
+                            line = dict(color='blue'),
+                            name=f'Bayesian Mean Predicted RUL values for engine {engine}, RMSE = {B_RMSE}'),
+                            row=1,
+                            col=1)
+
+for i in range(3):
+    fig.data[i].visible = True
+
+# Update layout
+# Create and add slider
+steps = []
+for i in range(len(x_plot)):
+    step = dict(
+        method="update",
+        args=[{"visible": [False] * len(x_plot)},
+              {"title": "Slider switched to step: " + str(i)}],  # layout attribute
+    )
+    step["args"][0]["visible"][i] = True  # Toggle i'th trace to "visible"
+    steps.append(step)
+
+sliders = [dict(
+    active=0,
+    currentvalue={"prefix": "Cycle: "},
+    pad={"t": 0},
+    steps=steps
+)]
+
+fig.update_layout(
+    sliders=sliders,
+    title=f'RUL prediction of engine {engine}', 
+    showlegend=False
+)
+
+
+fig.update_layout(title=f'RUL prediction of engine {engine}', showlegend=False)
+fig.show()
+
+# Export the figure to an HTML file
+pyo.plot(fig, filename='plotly_layout.html', auto_open=False)
+
+#%%
