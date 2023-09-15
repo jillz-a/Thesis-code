@@ -194,9 +194,20 @@ for i in range(len(x_plot)):
                             visible=False,
                             mode='lines',
                             line=dict(dash='dash', color='black'),
-                            showlegend=False),
+                            showlegend=False,
+                            name='Cycle indicator'),
                             row=1,
                             col=1)
+    
+    fig.add_trace(go.Scatter(x=np.array([i, i]),
+                        y=np.array([0, 1]),
+                        visible=False,
+                        mode='lines',
+                        line=dict(dash='dash', color='black'),
+                        showlegend=False,
+                        name='Cycle indicator'),
+                        row=1,
+                        col=2)
     
     fig.add_trace(go.Scatter(x=np.array([0, 0]),
                             y=np.array([0, 140]),
@@ -206,6 +217,7 @@ for i in range(len(x_plot)):
                             showlegend=False),
                             row=2,
                             col=1)
+    
     fig.add_trace(go.Scatter(x=np.array([0, 0.55]),
                             y=np.array([0, 0]),
                             visible=False,
@@ -248,22 +260,22 @@ sliders = [dict(
     steps=steps
 )]
 
-# xaxis_main = go.layout.XAxis()
-# xaxis_sub = go.layout.XAxis()
-# yaxis_sub = go.layout.YAxis()
-
-# xaxis_sub.update(range=[0, 0.6], ticklabelposition='outside bottom')
-# yaxis_sub.update(range=[0, 140])
-
 
 fig.update_layout(
     sliders=sliders,
     title=f'RUL prediction of engine {engine}', 
     showlegend=True,
-    # xaxis1=xaxis_main,
-    # xaxis2=xaxis_sub,
-    # yaxis2 = yaxis_sub
+
 )
+
+fig.update_xaxes(title_text='Cycles', row=1, col=1)
+fig.update_yaxes(title_text='RUL', row=1, col=1)
+
+fig.update_xaxes(title_text='Probability density', row=2, col=1)
+fig.update_yaxes(title_text='RUL', row=2, col=1)
+
+fig.update_xaxes(title_text='Cycles', row=1, col=2)
+fig.update_yaxes(title_text='Fraction of predictions within \u03B1 bounds', row=1, col=2)
 
 fig.show()
 
