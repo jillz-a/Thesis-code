@@ -24,7 +24,6 @@ if project_path not in sys.path:
     sys.path.append(project_path)
 
 from DNN import NeuralNetwork
-from BNN import BayesianNeuralNetwork
 from DNN_vizualizer import y_pred_lst, D_RMSE
 
 from variables import *
@@ -41,10 +40,12 @@ def alpha_dist(lower_bound, upper_bound, mean, stdev):
 start = time.time()
 
 #%%
+#import BNN results
 result_path = os.path.join(project_path, 'BNN/results', DATASET)
 engines= glob.glob(os.path.join(result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
+#import DNN results
 DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
@@ -66,11 +67,14 @@ for engine in engines[0:1]:
         
     #%% Plot data
     error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
+    DNN_error = [(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
     B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
-    x_plot = np.arange(len(mean_pred_lst))
-    alpha = 0.2
+    D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2)
 
-    # Create a subplot with 2 rows and 1 column for the sub-plot and table
+    x_plot = np.arange(len(mean_pred_lst))
+    alpha = 0.2 #set the alpha bounds
+
+    # Create a subplot with 2 rows and 2 column for the sub-plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=False, vertical_spacing=0.1,
                         subplot_titles=[f'RUL prediction of engine {engine_id}', f'Distribution within \u03B1 +-{alpha*100}%', 'Prediction distribution'])
 
@@ -125,7 +129,7 @@ for engine in engines[0:1]:
         for j in range(len(plot_figure)):
             fig.add_trace(plot_figure[j], row=1, col=1)
 
-        
+        #x,y data for probability distribution at selected cycle
         y_sub = np.linspace(mean_pred_lst[i] - 3 * std_dev[i], mean_pred_lst[i] + 3 * std_dev[i], 100)
         x_sub = norm.pdf(y_sub, mean_pred_lst[i], std_dev[i])
 
@@ -210,12 +214,13 @@ for engine in engines[0:1]:
     for i in range(n_traces):
         fig.data[i].visible = True
 
+    #Logic for slider: slider will select cycle to display
     steps = []
     for i in range(len(x_plot)):
         step = dict(
             method="update",
             args=[{"visible": [False] * len(fig.data)},
-                {"title": "Slider switched to step: " + str(i)}],  # layout attribute
+                {"title": "Evaluated cycle: " + str(i)}],  # layout attribute
         )
         for j in range(i*n_traces, (i+1)*n_traces):
             step["args"][0]["visible"][j] = True  # Toggle i'th trace to "visible"
