@@ -7,6 +7,12 @@ import torch
 from tqdm import tqdm
 from sklearn.model_selection import KFold
 
+# Get the absolute path of the project directory
+project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
+# Add the project directory to sys.path if it's not already present
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
 from torch import nn, save, load
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from torch.optim.lr_scheduler import LambdaLR

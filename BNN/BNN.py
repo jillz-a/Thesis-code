@@ -2,6 +2,8 @@
 import glob
 import sys
 import os
+import csv
+import json
 
 # Get the absolute path of the project directory
 project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
@@ -36,8 +38,8 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -292,52 +294,74 @@ if __name__ == '__main__':
         plt.legend()
 
         plt.show()
-    #%% Test the model
+    #%% Test the model and save results
     else:
-        model = f'BNN/BNN_model_state_{DATASET}_test.pt'
-        print(f"Testing model: {model}")
+        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
 
-        #Import into trained machine learning models
-        with open(model, 'rb') as f: 
-            BNNmodel.load_state_dict(load(f)) 
-       
+        with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
+            sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-        file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
-        file_paths.sort() #sort in chronological order
-        # file_paths = sorted(file_paths, key=lambda x: x[-7:-4], reverse=True)
-       
+        file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
+        file_paths.sort() 
 
-        #setup data to plot
-        mean_pred_lst = [] #contains mean of predictions
-        true_lst = [] #contains true RUL values
-        var_pred_lst = [] #contains variance of predictions
+        #%%
+        engines = np.arange(len(sample_len))
+        for engine in engines:
+            index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
+            selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
+
+            #setup data to plot
+            mean_pred_lst = []
+            true_lst = []
+            var_pred_lst = []
+
+            # Model input parameters
+            input_size = 14 #number of features
+            hidden_size = 32
+            num_layers = 1
+
+            #Go through each sample
+            loop = tqdm(selected_file_paths)
+            for file_path in loop:
+            
+                # Process each selected file
+                sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+                label = float(file_path[-7:-4])
+
+                #Import into trained machine learning models
+                NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
+                with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                    NNmodel.load_state_dict(load(f)) 
+
+                #predict RUL from samples using Monte Carlo Sampling
+                X = ToTensor()(sample).to(device)
+                n_samples = 20
+
+                mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
 
 
-        #%%Go through each sample
-        loop = tqdm(file_paths)
-        for file_path in loop:
-            # Process each selected file
-            sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-            label = float(file_path[-7:-4]) #true RUL
+                predictions = torch.stack(mc_pred)
+                mean_pred = torch.mean(predictions, dim=0)
+                var_pred = torch.var(predictions, dim=0)
+                y = label #True RUL
 
-            #predict RUL from samples using Monte Carlo Sampling
-            X = ToTensor()(sample).to(device)
-            n_samples = 10
+                #add predictions and true labels to lists
+                mean_pred_lst.append(mean_pred.item())
+                true_lst.append(y)
+                var_pred_lst.append(var_pred.item())
+                
+                loop.set_description(f"Processing engine {engine}")
 
-            mc_pred = [BNNmodel(X)[0] for _ in range(n_samples)]
+            #save engine results to file
+            results = {
+                'mean': mean_pred_lst,
+                'var': var_pred_lst,
+                'true': true_lst
+            }
 
-
-            predictions = torch.stack(mc_pred)
-            mean_pred = torch.mean(predictions, dim=0)
-            var_pred = torch.var(predictions, dim=0)
-            y = label #True RUL
-
-            #add predictions and true labels to lists
-            mean_pred_lst.append(mean_pred.item())
-            true_lst.append(y)
-            var_pred_lst.append(var_pred.item())
-
-        
-        error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
-        B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
-        print(f"RMSE = {B_RMSE} cycles")
+            save_to = os.path.join(project_path, 'BNN/results', DATASET)
+            if not os.path.exists(save_to): os.makedirs(save_to)
+            file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
+            
+            with open(file_name, 'w') as jsonfile:
+                json.dump(results, jsonfile)

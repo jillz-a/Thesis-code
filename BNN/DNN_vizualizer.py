@@ -2,6 +2,7 @@
 import os
 import glob
 import csv
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -28,7 +29,7 @@ with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as
 file_paths = glob.glob(os.path.join(project_path, folder_path, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-engines = [8]
+engines = np.arange(len(sample_len))
 for engine in engines:
     index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
     selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
@@ -69,6 +70,18 @@ for engine in engines:
 
     error = [(y_pred_lst[i] - y_lst[i])**2 for i in range(len(y_lst))]
     D_RMSE = np.round(np.sqrt(np.mean(error)), 2)
+
+    #save engine results to file
+    results = {
+        'pred': y_pred_lst
+    }
+
+    save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET)
+    if not os.path.exists(save_to): os.makedirs(save_to)
+    file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
+    
+    with open(file_name, 'w') as jsonfile:
+        json.dump(results, jsonfile)
 
 #     plt.plot(y_pred_lst, label= 'Predicted RUL values')
 #     plt.plot(y_lst, label='True RUL values')
