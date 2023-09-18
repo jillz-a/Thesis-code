@@ -15,9 +15,9 @@ import csv
 import numpy as np
 import pandas as pd
 from torch import load
-import matplotlib.pyplot as plt
-import plotly.express as px
-import random
+import multiprocessing as mp
+import time
+import tqdm
 
 import dice_ml_custom as dice_ml
 from dice_ml_custom import Dice
@@ -35,9 +35,6 @@ TESTDATASET = f'data/{DATASET}/min-max/test'
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
-file_paths.sort() 
-
 
 #Import into trained machine learning models
 BNNmodel = CustomBayesianNeuralNetwork().to(device)
@@ -47,7 +44,7 @@ with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f:
 #set Counterfactual hyperparameters
 cf_amount = 1
 #%%Go over each sample
-for file_path in file_paths[0:1]:
+def CMAPSS_counterfactuals(file_path):
     
     #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
@@ -95,3 +92,19 @@ for file_path in file_paths[0:1]:
     cf_total.to_csv(file_name, index=False)
 
 
+if __name__ == '__main__':
+
+    start = time.time()
+    print('Starting multiprocessing')
+    file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+    file_paths.sort()
+
+    num_cores = mp.cpu_count()
+
+    with mp.Pool(processes=num_cores) as pool:
+
+        pool.map(CMAPSS_counterfactuals, file_paths)
+
+    end = time.time()
+    print('Processing ended')
+    print('Time elapsed:', end-start, 'seconds')
