@@ -9,8 +9,8 @@ class UserConfigValidationException(Exception):
     :type exception_message: str
     """
     _error_code = "Invalid Configuration"
-    warnings.warn("UserConfigValidationException will be deprecated from dice_ml.utils. "
-                  "Please import UserConfigValidationException from raiutils.exceptions.")
+    # warnings.warn("UserConfigValidationException will be deprecated from dice_ml.utils. "
+    #               "Please import UserConfigValidationException from raiutils.exceptions.")
 
 
 class SystemException(Exception):
@@ -19,4 +19,4 @@ class SystemException(Exception):
     :param exception_message: A message describing the error.
     :type exception_message: str
     """
-    _error_code = "System Error"
+    # _error_code = "System Error"

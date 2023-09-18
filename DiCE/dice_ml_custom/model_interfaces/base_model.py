@@ -1,14 +1,14 @@
 """Module containing a template class as an interface to ML model.
    Subclasses implement model interfaces for different ML frameworks such as TensorFlow, PyTorch OR Sklearn.
-   All model interface methods are in dice_ml.model_interfaces"""
+   All model interface methods are in dice_ml_custom.model_interfaces"""
 
 import pickle
 
 import numpy as np
 
-from dice_ml.constants import ModelTypes
-from dice_ml.utils.exception import SystemException
-from dice_ml.utils.helpers import DataTransfomer
+from dice_ml_custom.constants import ModelTypes
+from dice_ml_custom.utils.exception import SystemException
+from dice_ml_custom.utils.helpers import DataTransfomer
 
 
 class BaseModel:
@@ -23,7 +23,7 @@ class BaseModel:
                         (https://arxiv.org/pdf/1905.07697.pdf),
                         provide both the module and class names as module_name.class_name.
                         For instance, if there is a model interface class "SklearnModel"
-                        in module "sklearn_model.py" inside the subpackage dice_ml.model_interfaces,
+                        in module "sklearn_model.py" inside the subpackage dice_ml_custom.model_interfaces,
                         then backend parameter should be "sklearn_model.SklearnModel".
         :param func: function transformation required for ML model. If func is None, then func will be the identity function.
         :param kw_args: Dictionary of additional keyword arguments to pass to func. DiCE's data_interface is appended to the

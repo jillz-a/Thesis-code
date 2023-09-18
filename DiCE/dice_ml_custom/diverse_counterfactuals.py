@@ -67,7 +67,7 @@ class CounterfactualExamples:
                 #CUSTOM: make desired range based on initial outcome
                 self.desired_range = [self.test_pred + desired_range[0], self.test_pred + desired_range[1]]
                 self.new_outcome = self.desired_range
-                print(self.new_outcome)
+                # print(self.new_outcome)
             if self.relative_range == False:
                 self.new_outcome = desired_range
 

@@ -5,6 +5,7 @@ A simple implementation.
 """
 import random
 import timeit
+import gc
 
 import numpy as np
 import pandas as pd
@@ -92,7 +93,7 @@ class DiceRandom(ExplainerBase):
             #CUSTOM: desired range based on initial outcome
             # self.target_cf_range = self.infer_target_cfs_range(desired_range)
             self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
-            print(self.target_cf_range)
+            # print(self.target_cf_range)
         # fixing features that are to be fixed
         self.total_CFs = total_CFs
 
@@ -119,7 +120,7 @@ class DiceRandom(ExplainerBase):
             selected_features = np.random.choice(self.features_to_vary, (sample_size, 1), replace=True)
             for k in range(sample_size):
                 change = random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]]
-                candidate_cfs.at[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
+                candidate_cfs.loc[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
 
                 if time_series:
                     #CUSTOM: ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
@@ -128,7 +129,7 @@ class DiceRandom(ExplainerBase):
                     sensor_id = sensor[0]
                     for t in range(t_index + 1, 30):
                         t_feature = f'Sensor ({sensor_id}, {t})'
-                        candidate_cfs.at[k, t_feature] += change
+                        candidate_cfs.loc[k, t_feature] += change
 
             scores = self.predict_fn(candidate_cfs)
             validity = self.decide_cf_validity(scores)
@@ -178,8 +179,9 @@ class DiceRandom(ExplainerBase):
             self.cfs_pred_scores = None
             self.final_cfs = None
         test_instance_df = self.data_interface.prepare_query_instance(query_instance)
-        test_instance_df[self.data_interface.outcome_name] = \
-            np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
+        # test_instance_df[self.data_interface.outcome_name] = np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
+        test_instance_df[self.data_interface.outcome_name] = np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision)
+
         # post-hoc operation on continuous features to enhance sparsity - only for public data
         if posthoc_sparsity_param is not None and posthoc_sparsity_param > 0 and \
                 self.final_cfs is not None and 'data_df' in self.data_interface.__dict__:
