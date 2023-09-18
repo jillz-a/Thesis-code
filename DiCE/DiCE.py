@@ -46,13 +46,13 @@ with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f:
 
 #set Counterfactual hyperparameters
 cf_amount = 1
-sample_id = 0
 #%%Go over each sample
 for file_path in file_paths[0:1]:
     
     #load sample with true RUL
     sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-    label = float(file_path[-7:-4])
+    sample_id = int(file_path[-13:-8])
+    label = int(file_path[-7:-4])
 
     #Create labels for sensors and RUL
     sensors = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
@@ -94,5 +94,4 @@ for file_path in file_paths[0:1]:
     file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(label)))
     cf_total.to_csv(file_name, index=False)
 
-    sample_id +=1
 
