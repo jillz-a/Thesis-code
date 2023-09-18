@@ -78,7 +78,8 @@ for file_path in file_paths[0:1]:
                                              desired_range=[3, 6], 
                                              proximity_weight= 0.0002, 
                                              random_seed = 2, 
-                                             time_series=False)
+                                             time_series=True)
+    
     cf.visualize_as_dataframe(show_only_changes=True)
     
     cf_total = cf.cf_examples_list[0].final_cfs_df
@@ -115,7 +116,7 @@ for ax in axes.ravel():
     sensor += 1
 
 plt.legend()
-plt.title(f'Counterfactual input for original input: {label}')
+plt.title(f'Counterfactual input for original input: +-{label}')
 plt.show()
     
 # %%
