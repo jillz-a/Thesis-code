@@ -68,15 +68,15 @@ for i, sample in enumerate(samples[0:1]):
     #go over every sensor
     for ax in axes.ravel():
 
-        for i in range(len(cf_total)):
-            cf_df = cf_total.iloc[[i]]
-            cf_df = cf_df.values.reshape(30,14)
-            cf_df = pd.DataFrame(cf_df)
+       
+        cf_df = cf_total
+        cf_df = cf_df.values.reshape(30,14)
+        cf_df = pd.DataFrame(cf_df)
 
-            counter = cf_df[sensor]
-            ax.plot(range(len(counter)), counter, label=f'CF {i + 1}: RUL = {cf_RUL.iloc[i]}', linestyle='--')
-            
-            plot_segments(counter, n=29)
+        counter = cf_df[sensor]
+        ax.plot(range(len(counter)), counter, label=f'CF {i + 1}: RUL = {cf_RUL.iloc[i]}', linestyle='--')
+        
+        plot_segments(counter, n=29)
 
         #Original inputs
         df_orig = pd.read_csv(file_paths[i], sep=' ', header=None)
