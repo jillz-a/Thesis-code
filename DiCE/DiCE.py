@@ -17,7 +17,7 @@ import pandas as pd
 from torch import load
 import multiprocessing as mp
 import time
-import tqdm
+from p_tqdm import p_map
 
 import dice_ml_custom as dice_ml
 from dice_ml_custom import Dice
@@ -95,18 +95,22 @@ def CMAPSS_counterfactuals(file_path):
 if __name__ == '__main__':
 
     start = time.time()
-    print('Starting multiprocessing')
-    file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
-    file_paths.sort()
-
-    file_paths = file_paths[0:10]
 
     num_cores = mp.cpu_count()
 
-    with mp.Pool(processes=num_cores) as pool:
+    file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+    file_paths.sort()
+    file_paths = file_paths[0:int(sample_len[0][0])]
+    print('Starting multiprocessing')
+    print(f'Number of available cores: {num_cores}')
+    print(f'Number of samples: {len(file_paths)}')
 
-        pool.map(CMAPSS_counterfactuals, file_paths)
+
+    # with mp.Pool(processes=num_cores) as pool:
+    #     pool.map(CMAPSS_counterfactuals, file_paths)
+
+    p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
 
     end = time.time()
     print('Processing ended')
-    print('Time elapsed:', end-start, 'seconds')
+    print('Time elapsed:', np.round((end-start)/60, 2), 'minutes')

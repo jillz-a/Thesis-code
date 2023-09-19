@@ -178,6 +178,7 @@ class DiceRandom(ExplainerBase):
             self.cfs_preds = None
             self.cfs_pred_scores = None
             self.final_cfs = None
+            #CUSTOM
         test_instance_df = self.data_interface.prepare_query_instance(query_instance)
         # test_instance_df[self.data_interface.outcome_name] = np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
         test_instance_df[self.data_interface.outcome_name] = np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision)
@@ -206,6 +207,8 @@ class DiceRandom(ExplainerBase):
             if self.total_cfs_found == 0:
                 print('No Counterfactuals found for the given configuration, perhaps try with different parameters...',
                       '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
+                #CUSTOM: Ensure that entire process is not stopped by a single counterfactual not being found
+                return None
             else:
                 print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
                       'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',
