@@ -18,6 +18,7 @@ from torch import load
 import multiprocessing as mp
 import time
 from p_tqdm import p_map
+import tqdm
 
 import dice_ml_custom as dice_ml
 from dice_ml_custom import Dice
@@ -84,12 +85,12 @@ def CMAPSS_counterfactuals(file_path):
     
     cf_total = cf.cf_examples_list[0].final_cfs_df
     
-   
-    #Save cf_result to file
-    save_to = os.path.join(project_path, 'DiCE/results', DATASET)
-    if not os.path.exists(save_to): os.makedirs(save_to)
-    file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(label)))
-    cf_total.to_csv(file_name, index=False)
+    if cf_total is not None:
+        #Save cf_result to file
+        save_to = os.path.join(project_path, 'DiCE/results', DATASET)
+        if not os.path.exists(save_to): os.makedirs(save_to)
+        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(label)))
+        cf_total.to_csv(file_name, index=False)
 
 
 if __name__ == '__main__':
@@ -100,16 +101,16 @@ if __name__ == '__main__':
 
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
-    file_paths = file_paths[0:int(sample_len[0][0])]
+    file_paths = file_paths[11:int(sample_len[0][0])] #only looking at the first engine
     print('Starting multiprocessing')
     print(f'Number of available cores: {num_cores}')
     print(f'Number of samples: {len(file_paths)}')
 
 
-    # with mp.Pool(processes=num_cores) as pool:
-    #     pool.map(CMAPSS_counterfactuals, file_paths)
+    with mp.Pool(processes=num_cores) as pool:
+        list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, file_paths), total=len(file_paths)))
 
-    p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
+    # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
 
     end = time.time()
     print('Processing ended')

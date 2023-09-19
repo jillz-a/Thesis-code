@@ -207,8 +207,8 @@ class DiceRandom(ExplainerBase):
             if self.total_cfs_found == 0:
                 print('No Counterfactuals found for the given configuration, perhaps try with different parameters...',
                       '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
-                #CUSTOM: Ensure that entire process is not stopped by a single counterfactual not being found
-                return None
+                # #CUSTOM: Ensure that entire process is not stopped by a single counterfactual not being found
+                # return None
             else:
                 print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
                       'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',

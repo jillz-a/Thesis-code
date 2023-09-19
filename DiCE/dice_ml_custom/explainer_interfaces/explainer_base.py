@@ -840,8 +840,10 @@ class ExplainerBase(ABC):
                 no_cf_generated = False
                 break
         if no_cf_generated:
-            raise UserConfigValidationException(
-                "No counterfactuals found for any of the query points! Kindly check your configuration.")
+            #CUSTOM Stopping exception to not prevent multiprocessing
+            print("No counterfactuals found for any of the query points! Will skip and continue")
+            # raise UserConfigValidationException(
+            #     "No counterfactuals found for any of the query points! Kindly check your configuration.")
 
     def serialize_explainer(self, path):
         """Serialize the explainer to the file specified by path."""
