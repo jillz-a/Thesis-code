@@ -22,7 +22,7 @@ def plot_segments(data, n):
 
     Args:
         segments (Segment): Segment object containing information for linear trends
-        n (int): Number of samples in a window
+        n (int): Number of cf_samples in a window
     """
     trend = Segmenter(list(np.arange(len(data))), data.to_list(), n=n)
     trend.calculate_segments()
@@ -42,54 +42,78 @@ def plot_segments(data, n):
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-#counterfactual input samples
+
+with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_samples.csv')) as csvfile:
+    cf_sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
+
+#counterfactual input cf_samples
 result_path = os.path.join(project_path, 'DiCE/results', DATASET)
-samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
-samples.sort()
+cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
+cf_samples.sort()
 
 #Original inputs
 file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-#%% Plot counterfacutal dataframe
-for i, sample in enumerate(samples[0:1]):
-
-    #Counterfactuals
-    cf_total = pd.read_csv(sample)
-    cf_RUL = cf_total['RUL']
-    cf_total = cf_total.drop('RUL', axis=1)
-
-
-    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
+fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
                                             figsize=(25, 8))
 
-    sensor = 0
-    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-    #go over every sensor
-    for ax in axes.ravel():
+#%% Plot counterfacutal dataframe
+sensor = 0
+m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
+engine_len = 50 #TODO: change later to account for engine length
+#go over every sensor
+for ax in axes.ravel():
+    cf_total = []
+    orig_total = []
+    for i, cf_sample in enumerate(cf_samples[0:engine_len]):
 
-       
-        cf_df = cf_total
+        #Counterfactuals
+        cf_df = pd.read_csv(cf_sample)
+        cf_RUL = cf_df['RUL']
+        cf_df = cf_df.drop('RUL', axis=1)
         cf_df = cf_df.values.reshape(30,14)
         cf_df = pd.DataFrame(cf_df)
 
         counter = cf_df[sensor]
-        ax.plot(range(len(counter)), counter, label=f'CF {i + 1}: RUL = {cf_RUL.iloc[i]}', linestyle='--')
-        
-        plot_segments(counter, n=29)
 
         #Original inputs
         df_orig = pd.read_csv(file_paths[i], sep=' ', header=None)
         label = float(file_paths[i][-7:-4])
-        org = df_orig[sensor]
-        ax.plot(range(len(org)), org, label = 'Original')
+        orig = df_orig[sensor]
         
-        ax.set_xlabel('Sensor ' + str(m[sensor]))
-        sensor += 1
 
-    plt.legend()
-    plt.title(f'Counterfactual input for original input: +-{label}')
-    plt.show()
+        #Add counterfactuals and original inputs to an overall total list
+        relative_list = [np.NaN for _ in range(engine_len + len(counter)-1)]
+        counter_relative = relative_list.copy()
+        orig_relative = relative_list.copy()
+        for j in range(len(counter)):
+            counter_relative[j+i] = counter[j]
+            orig_relative[j+i] = orig[j]
+        
+        cf_total.append(counter_relative)
+        orig_total.append(orig_relative)
+
+    cf_average = np.nanmean(np.array(cf_total), axis=0)
+    orig_average = np.nanmean(np.array(orig_total), axis=0)
+
+    difference = cf_average - orig_average
+
+    ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input')
+    ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color='green', alpha=0.5)
+    ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color='red', alpha=0.5)
+
+    ax.set_title('Sensor ' + str(m[sensor]))
+    ax.set_xlabel('Cycles')
+    ax.set_ylim(-1,1)
+        
+    sensor += 1
+
+axes[0,0].set_ylabel('Sensor input difference')
+axes[1,0].set_ylabel('Sensor input difference')
+
+fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 3-6 extra cycles')
+plt.show()
 
     
     
