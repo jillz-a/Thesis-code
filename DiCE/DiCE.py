@@ -87,16 +87,16 @@ def CMAPSS_counterfactuals(file_path):
     
     if cf_total is not None:
         #Save cf_result to file
-        save_to = os.path.join(project_path, 'DiCE/results', DATASET)
+        save_to = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
         if not os.path.exists(save_to): os.makedirs(save_to)
-        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(label)))
+        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
         cf_total.to_csv(file_name, index=False)
 
     else:
         #If no cf found, save a file containing NaN
-        save_to = os.path.join(project_path, 'DiCE/results', DATASET)
+        save_to = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
         if not os.path.exists(save_to): os.makedirs(save_to)
-        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(label)))
+        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
         no_cf = pd.DataFrame([np.NAN for _ in len(sample[0])], columns=head[0])
         no_cf.to_csv(file_name, index=False)
 

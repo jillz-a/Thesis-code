@@ -101,7 +101,7 @@ def train_epoch(train_data, model, loss_fn, opt):
        
         X, y = X.to(device), y.to(device) #send to device
 
-        n_samples = 5
+        n_samples = 10
 
         mc_pred = [model(X)[0] for _ in range(n_samples)]
 
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     train = CustomDataset(TRAINDATASET)
     test = CustomDataset(TESTDATASET)
 
-    # Import into trained machine learning models
+    # Model input parameters
     input_size = 14
     hidden_size = 32
     num_layers = 1
@@ -359,7 +359,7 @@ if __name__ == '__main__':
                 'true': true_lst
             }
 
-            save_to = os.path.join(project_path, 'BNN/results', DATASET)
+            save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET)
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
             
