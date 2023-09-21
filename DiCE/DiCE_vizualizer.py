@@ -61,7 +61,7 @@ fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
 #%% Plot counterfacutal dataframe
 sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-engine_len = 50 #TODO: change later to account for engine length
+engine_len = 130 #TODO: change later to account for engine length
 #go over every sensor
 for ax in axes.ravel():
     cf_total = []
