@@ -203,16 +203,16 @@ class DiceRandom(ExplainerBase):
             if verbose:
                 print('Diverse Counterfactuals found! total time taken: %02d' %
                       m, 'min %02d' % s, 'sec')
-        else:
-            if self.total_cfs_found == 0:
-                print('No Counterfactuals found for the given configuration, perhaps try with different parameters...',
-                      '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
-                # #CUSTOM: Ensure that entire process is not stopped by a single counterfactual not being found
-                # return None
-            else:
-                print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
-                      'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',
-                      '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
+        # else:
+            # if self.total_cfs_found == 0:
+            #     # #CUSTOM: Ensure that entire process is not stopped by a single counterfactual not being found
+            #     # print('No Counterfactuals found for the given configuration, perhaps try with different parameters...',
+            #     #       '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
+                
+            # else:
+            #     print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
+            #           'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',
+            #           '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
 
         return exp.CounterfactualExamples(data_interface=self.data_interface,
                                           final_cfs_df=final_cfs_df,

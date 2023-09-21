@@ -47,7 +47,7 @@ with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_sa
     cf_sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
 #counterfactual input cf_samples
-result_path = os.path.join(project_path, 'DiCE/results', DATASET)
+result_path = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
 cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
 cf_samples.sort()
 
@@ -55,8 +55,10 @@ cf_samples.sort()
 file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
 file_paths.sort() 
 
-fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-                                            figsize=(25, 8))
+fig, axes = plt.subplots(nrows=2, 
+                         ncols=7, 
+                         sharex=True, 
+                         figsize=(25, 8))
 
 #%% Plot counterfacutal dataframe
 sensor = 0

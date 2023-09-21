@@ -839,9 +839,9 @@ class ExplainerBase(ABC):
             if cf_examples.final_cfs_df is not None and len(cf_examples.final_cfs_df) > 0:
                 no_cf_generated = False
                 break
-        if no_cf_generated:
-            #CUSTOM Stopping exception to not prevent multiprocessing
-            print("No counterfactuals found for any of the query points! Will skip and continue")
+        # if no_cf_generated:
+        #     #CUSTOM Stopping exception to not prevent multiprocessing
+        #     print("No counterfactuals found for any of the query points! Will skip and continue")
             # raise UserConfigValidationException(
             #     "No counterfactuals found for any of the query points! Kindly check your configuration.")
 

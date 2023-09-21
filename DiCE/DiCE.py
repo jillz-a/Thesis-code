@@ -24,6 +24,7 @@ import dice_ml_custom as dice_ml
 from dice_ml_custom import Dice
 
 from custom_BNN import CustomBayesianNeuralNetwork
+from custom_DNN import CustomNeuralNetwork
 
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -33,14 +34,20 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
+BayDet = 'DNN'
+
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 
 #Import into trained machine learning models
-BNNmodel = CustomBayesianNeuralNetwork().to(device)
-with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
-    BNNmodel.load_state_dict(load(f)) 
+if BayDet == 'BNN':
+    model = CustomBayesianNeuralNetwork().to(device)
+elif BayDet == 'DNN':
+    model = CustomNeuralNetwork().to(device)
+    
+with open(f'{project_path}/BNN/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+    model.load_state_dict(load(f)) 
 
 #set Counterfactual hyperparameters
 cf_amount = 1
@@ -67,8 +74,8 @@ def CMAPSS_counterfactuals(file_path):
 
     #Data and model object for DiCE
     data = dice_ml.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
-    model = dice_ml.Model(model=BNNmodel, backend='PYT', model_type='regressor')
-    exp_random = Dice(data, model, method='random')
+    dice_model = dice_ml.Model(model=model, backend='PYT', model_type='regressor')
+    exp_random = Dice(data, dice_model, method='random')
 
 
 
@@ -87,17 +94,17 @@ def CMAPSS_counterfactuals(file_path):
     
     if cf_total is not None:
         #Save cf_result to file
-        save_to = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
+        save_to = os.path.join(project_path, f'DiCE/{BayDet}_results/inputs', DATASET)
         if not os.path.exists(save_to): os.makedirs(save_to)
         file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
         cf_total.to_csv(file_name, index=False)
 
     else:
         #If no cf found, save a file containing NaN
-        save_to = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
+        save_to = os.path.join(project_path, f'DiCE/{BayDet}_results/inputs', DATASET)
         if not os.path.exists(save_to): os.makedirs(save_to)
         file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
-        no_cf = pd.DataFrame([np.NAN for _ in len(sample[0])], columns=head[0])
+        no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
         no_cf.to_csv(file_name, index=False)
 
 
@@ -109,7 +116,7 @@ if __name__ == '__main__':
 
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
-    file_paths = file_paths[11:int(sample_len[0][0])] #only looking at the first engine
+    file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
     print('Starting multiprocessing')
     print(f'Number of available cores: {num_cores}')
     print(f'Number of samples: {len(file_paths)}')
@@ -123,3 +130,5 @@ if __name__ == '__main__':
     end = time.time()
     print('Processing ended')
     print('Time elapsed:', np.round((end-start)/60, 2), 'minutes')
+
+    #%%
