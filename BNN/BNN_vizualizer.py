@@ -1,4 +1,4 @@
-#%%Vizualizing script for the ML models
+#%%Vizualizing script for the BNN model including DNN and uncertainty predictions
 import os
 import glob
 import csv
@@ -30,22 +30,33 @@ from variables import *
 
 #definitions
 def alpha_dist(lower_bound, upper_bound, mean, stdev):
-            prob_lower = norm.cdf(lower_bound, loc=mean, scale=stdev)
-            prob_upper = norm.cdf(upper_bound, loc=mean, scale=stdev)
+    """Calculates the percentage of of the distribution that lies within a given range
 
-            percentage_in_range = (prob_upper - prob_lower)
+    Args:
+        lower_bound (float): lower bound of range
+        upper_bound (float): upper bound of range
+        mean (float): mean of distribution
+        stdev (float): standard deviation of distribution
 
-            return percentage_in_range
+    Returns:
+        float: Percentage of distribution within specified range
+    """
+    prob_lower = norm.cdf(lower_bound, loc=mean, scale=stdev)
+    prob_upper = norm.cdf(upper_bound, loc=mean, scale=stdev)
+
+    percentage_in_range = (prob_upper - prob_lower)
+
+    return percentage_in_range
 
 start = time.time()
 
 #%%
-#import BNN results
-result_path = os.path.join(project_path, 'BNN/results', DATASET)
-engines= glob.glob(os.path.join(result_path, '*.json'))  # Get a list of all file paths in the folder
+#import BNN results: every file represents 1 engine
+BNN_result_path = os.path.join(project_path, 'BNN/results', DATASET)
+engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
-#import DNN results
+#import DNN results: every file represents 1 engine
 DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
@@ -55,21 +66,21 @@ for engine in engines[0:1]:
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
 
-    mean_pred_lst = results['mean']
-    var_pred_lst = results['var']
-    true_lst = results['true']
+    mean_pred_lst = results['mean'] #Mean of the RUL predictions over engine life
+    var_pred_lst = results['var'] #Variance of the RUL predictions over engine life
+    true_lst = results['true'] #Ground truth RUL over engine life
 
     with open(DNN_engines[engine_id], 'r') as jsonfile:
         DNN_results = json.load(jsonfile)
 
-    y_pred_lst = DNN_results['pred']
+    y_pred_lst = DNN_results['pred'] #RUl predictions over engine life
 
         
     #%% Plot data
     error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
     DNN_error = [(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
-    B_RMSE = np.round(np.sqrt(np.mean(error)), 2)
-    D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2)
+    B_RMSE = np.round(np.sqrt(np.mean(error)), 2) #Root Mean Squared error of Bayesian prediciton
+    D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2) #Root Mean Squared error of Deterministic prediciton
 
     x_plot = np.arange(len(mean_pred_lst))
     alpha = 0.2 #set the alpha bounds
@@ -78,13 +89,14 @@ for engine in engines[0:1]:
     fig = make_subplots(rows=2, cols=2, shared_xaxes=False, vertical_spacing=0.1,
                         subplot_titles=[f'RUL prediction of engine {engine_id}', f'Distribution within \u03B1 +-{alpha*100}%', 'Prediction distribution'])
 
-    plot_figure = [
+    #main figure containing data independent of selector position
+    main_figure = [
                     go.Scatter(x=x_plot, 
-                            y=mean_pred_lst, 
-                            mode='lines', 
-                            line=dict(color='blue'),
-                            visible=False,
-                            name=f'Bayesian Mean Predicted RUL values for engine {engine_id}, RMSE = {B_RMSE}'),
+                                y=mean_pred_lst, 
+                                mode='lines', 
+                                line=dict(color='blue'),
+                                visible=False,
+                                name=f'Bayesian Mean Predicted RUL values for engine {engine_id}, RMSE = {B_RMSE}'),
                     go.Scatter(x=x_plot,
                                 y=y_pred_lst,
                                 name= f'Deterministic Predicted RUL values, RMSE = {D_RMSE}',
@@ -126,10 +138,12 @@ for engine in engines[0:1]:
 
     std_dev = np.sqrt(var_pred_lst)
     for i in range(len(x_plot)):
-        for j in range(len(plot_figure)):
-            fig.add_trace(plot_figure[j], row=1, col=1)
+        for j in range(len(main_figure)):
+            fig.add_trace(main_figure[j], row=1, col=1)
+        
+        #Plot data dependent on selector position
 
-        #x,y data for probability distribution at selected cycle
+        #x,y data for Bayesian probability distribution at selected cycle
         y_sub = np.linspace(mean_pred_lst[i] - 3 * std_dev[i], mean_pred_lst[i] + 3 * std_dev[i], 100)
         x_sub = norm.pdf(y_sub, mean_pred_lst[i], std_dev[i])
 
@@ -172,15 +186,26 @@ for engine in engines[0:1]:
                                 col=1)
         
         fig.add_trace(go.Scatter(x=np.array([i, i]),
-                            y=np.array([0, 1]),
-                            visible=False,
-                            mode='lines',
-                            line=dict(dash='dash', color='black'),
-                            showlegend=False,
-                            name='Cycle indicator'),
-                            row=1,
-                            col=2)
+                                y=np.array([0, 1]),
+                                visible=False,
+                                mode='lines',
+                                line=dict(dash='dash', color='black'),
+                                showlegend=False,
+                                name='Cycle indicator'),
+                                row=1,
+                                col=2)
+         
+        fig.add_trace(go.Scatter(x=x_plot,
+                                y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
+                                visible=False,
+                                mode='lines',
+                                fill='tozerox',
+                                line=dict(color='rgba(0, 80, 200, 0.5)'),
+                                name=f'Distribution within \u03B1 +-{alpha*100}%'),
+                                row=1,
+                                col=2)
         
+        #Invisible y axis line to keep axis consistent
         fig.add_trace(go.Scatter(x=np.array([0, 0]),
                                 y=np.array([0, 140]),
                                 visible=False,
@@ -189,7 +214,7 @@ for engine in engines[0:1]:
                                 showlegend=False),
                                 row=2,
                                 col=1)
-        
+        #Invisible x axis line to keep axis consistent
         fig.add_trace(go.Scatter(x=np.array([0, 0.55]),
                                 y=np.array([0, 0]),
                                 visible=False,
@@ -198,16 +223,6 @@ for engine in engines[0:1]:
                                 showlegend=False),
                                 row=2,
                                 col=1)
-        
-        fig.add_trace(go.Scatter(x=x_plot,
-                                    y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
-                                    visible=False,
-                                    mode='lines',
-                                    fill='tozerox',
-                                    line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                    name=f'Distribution within \u03B1 +-{alpha*100}%'),
-                                    row=1,
-                                    col=2)
 
 
     n_traces = int(len(fig.data)/(max(x_plot)+1))
