@@ -5,6 +5,8 @@ import sys
 import numpy as np
 import torch
 from tqdm import tqdm
+import json
+import csv
 from sklearn.model_selection import KFold
 
 # Get the absolute path of the project directory
@@ -30,8 +32,9 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True
+TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire data-set
+SAVE = True
 
 
 #Frequentist neural network class
@@ -186,49 +189,77 @@ if __name__ == "__main__":
 
                 
 
-    #%% Test the model
+    #%% Test the model and save files
     else:
-        model = f'BNN/model_state/DNN_model_state_{DATASET}_test.pt'
-        print(f"Testing model: {model}")
-        #load pre trained model
-        with open(model, 'rb') as f: 
-            NNmodel.load_state_dict(load(f)) 
+        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
+        with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
+            sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-        file_paths = glob.glob(os.path.join(TESTDATASET, '*.txt')) #all samples to test
-        file_paths.sort() #sort in chronological order
+        file_paths = glob.glob(os.path.join(project_path, folder_path, '*.txt'))  # Get a list of all file paths in the folder
+        file_paths.sort() 
 
-        error_lst = [] #difference between true and predicted RUL
-        y_lst = [] #True RUL values
-        y_pred_lst = [] #Predicted RUL values
-        loop = tqdm(file_paths)
-        for file_path in loop:
-        # Process each selected file
-            input = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-            input_tensor = ToTensor()(input).to(device)
+        RMSE_lst = []
 
-            y_pred = NNmodel(input_tensor) #Run model
-            y = float(file_path[-7:-4]) #True value in file name
+        engines = np.arange(len(sample_len))
+        for engine in engines:
+            index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
+            selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
 
-            if y > 0: #avoid division by 0
-                error = (y_pred.item() - y)/y * 100
+            #setup data to plot
+            y_pred_lst = []
+            y_lst = []
 
-            error_lst.append(error)
-            y_lst.append(y)
-            y_pred_lst.append(y_pred.item())
+            # Model input parameters
+            input_size = 14 #number of features
+            hidden_size = 32
+            num_layers = 1
 
-        RMSE = np.sqrt(np.average([i**2 for i in error_lst])) #Root Mean Squared Error
-        print(f'RMSE = {RMSE}')
+            #%%Go through each sample
+            #Go through each sample
+            loop = tqdm(selected_file_paths)
+            for file_path in loop:
+                # Process each selected file
+                sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+                label = float(file_path[-7:-4])
 
-        y_lst, y_pred_lst = (list(t) for t in zip(*sorted(zip(y_lst, y_pred_lst), reverse=True, key=lambda x: x[0])))
-        
-        plt.plot(y_lst, label='True RUL')
-        plt.scatter([i for i in range(len(y_pred_lst))], y_pred_lst, label='Predicted RUL', c='red')
-        plt.xlabel('Engine (test)')
-        plt.ylabel('RUL')
-        plt.title(f'RUL prediction for {DATASET}. RMSE = {np.round(RMSE, 2)}')
-        plt.legend()
-        plt.show()
-        
-    
+                #Import into trained machine learning models
+                NNmodel = NeuralNetwork(input_size, hidden_size).to(device)
+                with open(f'{project_path}/BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                    NNmodel.load_state_dict(load(f)) 
+
+                #predict RUL from samples
+                X = ToTensor()(sample).to(device)
+                y_pred = NNmodel(X)
+            
+                y_pred = y_pred[0].to('cpu')
+                y_pred = y_pred.detach().numpy()
+
+                y = label #True RUL
+
+                #add predictions and true labels to lists
+                y_pred_lst.append(y_pred.item())
+                y_lst.append(y)
+            
+
+            error = [(y_pred_lst[i] - y_lst[i])**2 for i in range(len(y_lst))]
+            D_RMSE = np.round(np.sqrt(np.mean(error)), 2)
+            RMSE_lst.append(D_RMSE)
+
+            #save engine results to file
+            if SAVE:
+                results = {
+                    'pred': y_pred_lst,
+                    'RMSE': D_RMSE
+                }
+
+                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET)
+                if not os.path.exists(save_to): os.makedirs(save_to)
+                file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
+                
+                with open(file_name, 'w') as jsonfile:
+                    json.dump(results, jsonfile)
+
+        print(f'Evaluation completed for dataset {DATASET}')
+        print(f'Deterministic Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
 # %%
 

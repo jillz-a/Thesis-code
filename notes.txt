@@ -11,3 +11,7 @@ Average test loss: 9.536999162038166
 DNN 10 fold cross validation loss:
 Average training loss: 12.470343754697591
 Average validation loss: 8.929887452390458
+
+
+Bayesian Neural Network RMSE for 30 engines = 12.32 cycles
+Deterministic Neural Network RMSE for 30 engines = 11.531 cycles

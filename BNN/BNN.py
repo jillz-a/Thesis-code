@@ -40,6 +40,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+SAVE = True #If True, will save BNN output to .json files
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -304,7 +305,8 @@ if __name__ == '__main__':
         file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
         file_paths.sort() 
 
-        #%%
+        RMSE_lst = []
+       
         engines = np.arange(len(sample_len))
         for engine in engines:
             index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
@@ -330,7 +332,7 @@ if __name__ == '__main__':
 
                 #Import into trained machine learning models
                 NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_state/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples using Monte Carlo Sampling
@@ -352,16 +354,25 @@ if __name__ == '__main__':
                 
                 loop.set_description(f"Processing engine {engine}")
 
-            #save engine results to file
-            results = {
-                'mean': mean_pred_lst,
-                'var': var_pred_lst,
-                'true': true_lst
-            }
+            error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] #squared BNN error
+            B_RMSE = np.round(np.sqrt(np.mean(error)), 2) #Root Mean Squared error of Bayesian prediciton
+            RMSE_lst.append(B_RMSE)
 
-            save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET)
-            if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
-            
-            with open(file_name, 'w') as jsonfile:
-                json.dump(results, jsonfile)
+            #save engine results to file
+            if SAVE:
+                results = {
+                    'mean': mean_pred_lst,
+                    'var': var_pred_lst,
+                    'true': true_lst,
+                    'RMSE': B_RMSE
+                }
+
+                save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET)
+                if not os.path.exists(save_to): os.makedirs(save_to)
+                file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
+                
+                with open(file_name, 'w') as jsonfile:
+                    json.dump(results, jsonfile)
+
+        print(f'Evaluation completed for dataset {DATASET}')
+        print(f'Bayesian Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
