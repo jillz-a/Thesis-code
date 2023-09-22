@@ -48,11 +48,31 @@ def alpha_dist(lower_bound, upper_bound, mean, stdev):
 
     return percentage_in_range
 
+def alpha_det(lower_bound, upper_bound, pred):
+    """Alpha lambda performance over time
+
+    Args:
+        lower_bound (float): lower bound of range
+        upper_bound (float): upper bound of range
+        pred (float): Deterministic prediction of RUL
+
+    Returns:
+        int: 1 if prediction within bounds, 0 otherwise
+    """
+
+    if pred <= upper_bound and pred >= lower_bound:
+        return 1
+    else:
+        return 0
+
 start = time.time()
 
+show_cf = True
+alpha = 0.1 #set the alpha bounds
+engine_eval = 1
 #%%
 #import BNN results: every file represents 1 engine
-BNN_result_path = os.path.join(project_path, 'BNN/results', DATASET)
+BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
 engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
@@ -61,7 +81,7 @@ DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
 
-for engine in engines[0:1]:
+for engine in engines[engine_eval: engine_eval+1]:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
@@ -83,7 +103,6 @@ for engine in engines[0:1]:
     D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2) #Root Mean Squared error of Deterministic prediciton
 
     x_plot = np.arange(len(mean_pred_lst))
-    alpha = 0.2 #set the alpha bounds
 
     # Create a subplot with 2 rows and 2 column for the sub-plots
     fig = make_subplots(rows=2, cols=2, shared_xaxes=False, vertical_spacing=0.1,
@@ -201,19 +220,28 @@ for engine in engines[0:1]:
                                 mode='lines',
                                 fill='tozerox',
                                 line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                name=f'Distribution within \u03B1 +-{alpha*100}%'),
+                                name=f'Prediction distribution within \u03B1 +-{alpha*100}%'),
+                                row=1,
+                                col=2)
+        
+        fig.add_trace(go.Scatter(x=x_plot,
+                                y = np.array([alpha_det(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), y_pred_lst[i]) for i in range(len(x_plot))]),
+                                visible=False,
+                                mode='lines',
+                                line=dict(color='orange'),
+                                name=f'Prediction within \u03B1 +-{alpha*100}%'),
                                 row=1,
                                 col=2)
         
         #Invisible y axis line to keep axis consistent
-        fig.add_trace(go.Scatter(x=np.array([0, 0]),
-                                y=np.array([0, 140]),
-                                visible=False,
-                                mode='lines',
-                                line=dict(color='rgba(255, 255, 255, 0)'),
-                                showlegend=False),
-                                row=2,
-                                col=1)
+        # fig.add_trace(go.Scatter(x=np.array([0, 0]),
+        #                         y=np.array([0, 140]),
+        #                         visible=False,
+        #                         mode='lines',
+        #                         line=dict(color='rgba(255, 255, 255, 0)'),
+        #                         showlegend=False),
+        #                         row=2,
+        #                         col=1)
         #Invisible x axis line to keep axis consistent
         fig.add_trace(go.Scatter(x=np.array([0, 0.55]),
                                 y=np.array([0, 0]),

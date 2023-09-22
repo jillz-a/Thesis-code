@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_state/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         plt.plot(train_loss_lst, label='Train loss')
@@ -330,7 +330,7 @@ if __name__ == '__main__':
 
                 #Import into trained machine learning models
                 NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_state/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples using Monte Carlo Sampling

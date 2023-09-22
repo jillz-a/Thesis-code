@@ -46,7 +46,7 @@ if BayDet == 'BNN':
 elif BayDet == 'DNN':
     model = CustomNeuralNetwork().to(device)
     
-with open(f'{project_path}/BNN/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+with open(f'{project_path}/BNN/model_state/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
     model.load_state_dict(load(f)) 
 
 #set Counterfactual hyperparameters

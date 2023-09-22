@@ -64,10 +64,13 @@ fig, axes = plt.subplots(nrows=2,
 sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
 engine_len = 130 #TODO: change later to account for engine length
-#go over every sensor
+
+#Go over every sensor
 for ax in axes.ravel():
-    cf_total = []
-    orig_total = []
+    cf_total = [] #2D list containing counterfactual inputs in sliding window form
+    orig_total = [] #2D list containing original inputs in sliding window form
+
+    #Go over engine lifetime
     for i, cf_sample in enumerate(cf_samples[0:engine_len]):
 
         #Counterfactuals
@@ -77,28 +80,31 @@ for ax in axes.ravel():
         cf_df = cf_df.values.reshape(30,14)
         cf_df = pd.DataFrame(cf_df)
 
-        counter = cf_df[sensor]
+        counter = cf_df[sensor] #Counterfactual input sample for sensor m[sensor] and timestep i
 
         #Original inputs
         df_orig = pd.read_csv(file_paths[i], sep=' ', header=None)
-        label = float(file_paths[i][-7:-4])
-        orig = df_orig[sensor]
-        
+        true_RUL = float(file_paths[i][-7:-4])
 
-        #Add counterfactuals and original inputs to an overall total list
+        orig = df_orig[sensor] #Origninal input sample for sensor m[sensor] and timestep i
+        
+        #Add counterfactuals and original inputs to an overall total list spanning engine lifetime
         relative_list = [np.NaN for _ in range(engine_len + len(counter)-1)]
         counter_relative = relative_list.copy()
         orig_relative = relative_list.copy()
         for j in range(len(counter)):
+            #replace NaN values with cf and original values in sliding window format
             counter_relative[j+i] = counter[j]
             orig_relative[j+i] = orig[j]
         
         cf_total.append(counter_relative)
         orig_total.append(orig_relative)
 
+    #Take the average value of inputs at every time point
     cf_average = np.nanmean(np.array(cf_total), axis=0)
     orig_average = np.nanmean(np.array(orig_total), axis=0)
 
+    #Calculate difference between origninal and counterfactual inputs
     difference = cf_average - orig_average
 
     ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input')
