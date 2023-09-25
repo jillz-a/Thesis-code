@@ -97,9 +97,9 @@ for engine in engines[engine_eval: engine_eval+1]:
 
         
     #%% Plot data
-    error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
-    DNN_error = [(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))]
-    B_RMSE = np.round(np.sqrt(np.mean(error)), 2) #Root Mean Squared error of Bayesian prediciton
+    BNN_error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] #squared BNN error
+    DNN_error = [(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] #squared DNN error
+    B_RMSE = np.round(np.sqrt(np.mean(BNN_error)), 2) #Root Mean Squared error of Bayesian prediciton
     D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2) #Root Mean Squared error of Deterministic prediciton
 
     x_plot = np.arange(len(mean_pred_lst))
