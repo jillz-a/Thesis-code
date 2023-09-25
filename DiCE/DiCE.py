@@ -19,22 +19,36 @@ import multiprocessing as mp
 import time
 from p_tqdm import p_map
 import tqdm
+import joblib
 
 import dice_ml_custom as dice_ml
 from dice_ml_custom import Dice
 
-from custom_BNN import CustomBayesianNeuralNetwork
-from custom_DNN import CustomNeuralNetwork
-
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
+from custom_BNN import CustomBayesianNeuralNetwork
+from custom_DNN import CustomNeuralNetwork
+
+
+
+def load_required_packages():
+    import dice_ml_custom as dice_ml
+    from dice_ml_custom import Dice
+
+    import numpy as np
+    import pandas as pd
+
+    import warnings
+    warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+
+load_required_packages()
 
 #%% import files
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-BayDet = 'DNN'
+BayDet = 'BNN'
 
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -46,7 +60,7 @@ if BayDet == 'BNN':
 elif BayDet == 'DNN':
     model = CustomNeuralNetwork().to(device)
     
-with open(f'{project_path}/BNN/model_state/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
     model.load_state_dict(load(f)) 
 
 #set Counterfactual hyperparameters
@@ -98,6 +112,7 @@ def CMAPSS_counterfactuals(file_path):
         if not os.path.exists(save_to): os.makedirs(save_to)
         file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
         cf_total.to_csv(file_name, index=False)
+        # print(f'Saved to: {file_name}')
 
     else:
         #If no cf found, save a file containing NaN
@@ -106,6 +121,7 @@ def CMAPSS_counterfactuals(file_path):
         file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
         no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
         no_cf.to_csv(file_name, index=False)
+        # print(f'Saved to: {file_name}')
 
 
 if __name__ == '__main__':
@@ -122,7 +138,7 @@ if __name__ == '__main__':
     print(f'Number of samples: {len(file_paths)}')
 
 
-    with mp.Pool(processes=num_cores) as pool:
+    with mp.Pool(processes=128, initializer=load_required_packages) as pool:
         list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, file_paths), total=len(file_paths)))
 
     # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
