@@ -138,7 +138,7 @@ if __name__ == '__main__':
     print(f'Number of samples: {len(file_paths)}')
 
 
-    with mp.Pool(processes=128, initializer=load_required_packages) as pool:
+    with mp.Pool(processes=num_cores, initializer=load_required_packages) as pool:
         list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, file_paths), total=len(file_paths)))
 
     # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')

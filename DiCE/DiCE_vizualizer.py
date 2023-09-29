@@ -47,7 +47,7 @@ with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_sa
     cf_sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
 #counterfactual input cf_samples
-result_path = os.path.join(project_path, 'DiCE/BNN_results/inputs', DATASET)
+result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET)
 cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
 cf_samples.sort()
 
@@ -63,7 +63,7 @@ fig, axes = plt.subplots(nrows=2,
 #%% Plot counterfacutal dataframe
 sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-engine_len = 130 #TODO: change later to account for engine length
+engine_len = 90 #TODO: change later to account for engine length
 
 #Go over every sensor
 for ax in axes.ravel():
@@ -100,9 +100,10 @@ for ax in axes.ravel():
         cf_total.append(counter_relative)
         orig_total.append(orig_relative)
 
+
     #Take the average value of inputs at every time point
-    cf_average = np.nanmean(np.array(cf_total), axis=0)
-    orig_average = np.nanmean(np.array(orig_total), axis=0)
+    cf_average = np.nanmedian(np.array(cf_total), axis=0)
+    orig_average = np.nanmedian(np.array(orig_total), axis=0)
 
     #Calculate difference between origninal and counterfactual inputs
     difference = cf_average - orig_average
