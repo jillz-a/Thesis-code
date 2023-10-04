@@ -2,6 +2,7 @@
 import glob
 import sys
 import os
+import multiprocessing as mp
 
 # Get the absolute path of the project directory
 project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
@@ -56,7 +57,7 @@ class CustomBayesianNeuralNetwork(nn.Module):
         out = self.l1(out) #pass through dense layers
        
         out = self.l2(out[0])
-        # print(out[0])
+        print(out[0], int(mp.current_process().name[15:]))
     
         return out[0]
     
