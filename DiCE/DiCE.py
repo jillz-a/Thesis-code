@@ -10,14 +10,14 @@ project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardi
 # Add the project directory to sys.path if it's not already present
 if project_path not in sys.path:
     sys.path.append(project_path)
+if os.path.join(project_path, "DiCE/BNN_copies") not in sys.path:
+    sys.path.append(os.path.join(project_path, "DiCE/BNN_copies"))
 
-from variables import *
 import glob
 import csv
 import numpy as np
 import pandas as pd
 from torch import load
-from torch.nn.parallel import DistributedDataParallel
 import multiprocessing as mp
 import time
 from p_tqdm import p_map
@@ -29,7 +29,13 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 # import dice_ml_custom as dice_ml_custom
 
 
+device = 'cpu' #device where models whill be run
+DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004]
 
+BATCHSIZE = 100
+EPOCHS = 100
+
+k = 10 #amount of folds for cross validation
 
 
 
@@ -61,21 +67,23 @@ cf_amount = 1
 
 #%%Go over each sample
 def CMAPSS_counterfactuals(file_path):
-    from custom_BNN import CustomBayesianNeuralNetwork
-    from custom_DNN import CustomNeuralNetwork
+    current_process = int(mp.current_process().name[15:])
+
+    custom_BNN = importlib.import_module(f'BNN_copy_{current_process}')
+    
+    CustomBayesianNeuralNetwork = custom_BNN.CustomBayesianNeuralNetwork
+
     #Import into trained machine learning models
     if BayDet == 'BNN':
-        model = CustomBayesianNeuralNetwork().to(device)
-    elif BayDet == 'DNN':
-        model = CustomNeuralNetwork().to(device)
-
+        model = CustomBayesianNeuralNetwork()
+    
     
     with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
         model.load_state_dict(load(f)) 
 
     model.eval()
 
-    current_process = int(mp.current_process().name[15:])
+    
     dice_ml_custom = importlib.import_module('dice_ml_custom', os.path.join(project_path, f'dice_copies/dice_copy_{current_process}/dice_ml_custom'))
     
 
@@ -155,14 +163,14 @@ if __name__ == '__main__':
             shutil.copytree(source_folder, copy_name)
 
     #make copies of models to prevent GIL
-    source_folder = os.path.join(project_path, 'dice_ml_custom')
+    source_folder = os.path.join(project_path, 'DiCE/custom_BNN.py')
     num_copies = num_cores
-    copy_folder = os.path.join(project_path, 'dice_copies')
+    copy_folder = os.path.join(project_path, 'DiCE/BNN_copies')
     if not os.path.exists(copy_folder): 
         os.makedirs(copy_folder)
         for i in range(num_copies):
-            copy_name = os.path.join(copy_folder, f'dice_copy_{i+1}/dice_ml_custom')
-            shutil.copytree(source_folder, copy_name)
+            copy_name = os.path.join(copy_folder, f'BNN_copy_{i+1}.py')
+            shutil.copy(source_folder, copy_name)
 
 
 
