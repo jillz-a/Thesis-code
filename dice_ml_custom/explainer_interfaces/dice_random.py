@@ -65,7 +65,7 @@ class DiceRandom(ExplainerBase):
 
         :returns: A CounterfactualExamples object that contains the dataframe of generated counterfactuals as an attribute.
         """
-        print('in the dice_random package')
+        
         self.features_to_vary = self.setup(features_to_vary, permitted_range, query_instance, feature_weights=None)
         
         if features_to_vary == "all":
@@ -75,11 +75,9 @@ class DiceRandom(ExplainerBase):
             for feature in self.data_interface.feature_names:
                 if feature not in features_to_vary:
                     self.fixed_features_values[feature] = query_instance[feature].iat[0]
-        print('test4')
         # Do predictions once on the query_instance and reuse across to reduce the number
         # inferences.
         model_predictions = self.predict_fn(query_instance)
-        print('test3')
         # number of output nodes of ML model
         self.num_output_nodes = None
         if self.model.model_type == ModelTypes.Classifier:
@@ -106,7 +104,7 @@ class DiceRandom(ExplainerBase):
             elif self.target_cf_class == 1 and self.stopping_threshold < 0.5:
                 self.stopping_threshold = 0.75
 
-        print('test2')
+      
         # get random samples for each feature independently
         start_time = timeit.default_timer()
         random_instances = self.get_samples(
@@ -114,12 +112,12 @@ class DiceRandom(ExplainerBase):
             self.feature_range, sampling_random_seed=random_seed, sampling_size=sample_size)
         # Generate copies of the query instance that will be changed one feature
         # at a time to encourage sparsity.
-        print('test1')
+      
         cfs_df = None
         candidate_cfs = pd.DataFrame(
             np.repeat(query_instance.values, sample_size, axis=0), columns=query_instance.columns)
         # Loop to change one feature at a time, then two features, and so on.
-        print('goig through the features')
+      
         for num_features_to_vary in range(1, len(self.features_to_vary)+1):
             selected_features = np.random.choice(self.features_to_vary, (sample_size, 1), replace=True)
             for k in range(sample_size):

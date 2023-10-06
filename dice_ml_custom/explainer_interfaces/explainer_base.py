@@ -481,9 +481,7 @@ class ExplainerBase(ABC):
 
     def predict_fn(self, input_instance):
         """prediction function"""
-        print('getting prediction')
         preds = self.model.get_output(input_instance)
-        print('got prediction')
         if self.model.model_type == ModelTypes.Classifier and \
            len(preds.shape) == 1:  # from deep learning predictors
             preds = np.column_stack([1 - preds, preds])

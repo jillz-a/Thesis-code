@@ -63,7 +63,6 @@ class CustomBayesianNeuralNetwork(nn.Module):
         out = self.l1(out) #pass through dense layers
        
         out = self.l2(out[0])
-        print(out[0], int(mp.current_process().name[15:]))
     
         return out[0]
     
