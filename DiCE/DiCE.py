@@ -65,13 +65,30 @@ with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as
 #set Counterfactual hyperparameters
 cf_amount = 1
 
+
+# Function to split a list into chunks
+def chunk_list(input_list, num_chunks):
+    avg_chunk_size = len(input_list) // num_chunks
+    remainder = len(input_list) % num_chunks
+
+    chunks = []
+    start = 0
+
+    for i in range(num_chunks):
+        chunk_size = avg_chunk_size + (1 if i < remainder else 0)
+        end = start + chunk_size
+        chunks.append(input_list[start:end])
+        start = end
+
+    return chunks
 #%%Go over each sample
-def CMAPSS_counterfactuals(file_path):
+def CMAPSS_counterfactuals(chunk):
     current_process = int(mp.current_process().name[15:])
 
     custom_BNN = importlib.import_module(f'BNN_copy_{current_process}')
     
     CustomBayesianNeuralNetwork = custom_BNN.CustomBayesianNeuralNetwork
+
 
     #Import into trained machine learning models
     if BayDet == 'BNN':
@@ -86,64 +103,64 @@ def CMAPSS_counterfactuals(file_path):
     
     dice_ml_custom = importlib.import_module('dice_ml_custom', os.path.join(project_path, f'dice_copies/dice_copy_{current_process}/dice_ml_custom'))
     
+    for file_path in chunk:
+        #load sample with true RUL
+        sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+        sample_id = int(file_path[-13:-8])
+        label = int(file_path[-7:-4])
 
-    #load sample with true RUL
-    sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-    sample_id = int(file_path[-13:-8])
-    label = int(file_path[-7:-4])
+        #Create labels for sensors and RUL
+        sensors = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
+        head = [[f'Sensor {i,j}' for j in range(len(sample)) for i in sensors]]
+        head[0].append('RUL')
 
-    #Create labels for sensors and RUL
-    sensors = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-    head = [[f'Sensor {i,j}' for j in range(len(sample)) for i in sensors]]
-    head[0].append('RUL')
+        #Flatten sample and combine with RUL
+        sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
+        sample = np.column_stack((sample, label))
 
-    #Flatten sample and combine with RUL
-    sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
-    sample = np.column_stack((sample, label))
+        #Convert to dataframe and distinguish continuous features
+        df = pd.DataFrame(sample, columns=head[0])
+        df_continuous_features = df.drop('RUL', axis=1).columns.tolist()
 
-    #Convert to dataframe and distinguish continuous features
-    df = pd.DataFrame(sample, columns=head[0])
-    df_continuous_features = df.drop('RUL', axis=1).columns.tolist()
-
-    #Data and model object for DiCE
-    data = dice_ml_custom.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
-    dice_model = dice_ml_custom.Model(model=model, backend='PYT', model_type='regressor')
-    exp_random = dice_ml_custom.Dice(data, dice_model, method='random')
+        #Data and model object for DiCE
+        data = dice_ml_custom.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
+        dice_model = dice_ml_custom.Model(model=model, backend='PYT', model_type='regressor')
+        exp_random = dice_ml_custom.Dice(data, dice_model, method='random')
 
 
 
-    #Generate counterfactual explanations
-    cf_amount = 1
-    print(f'generating counterfactual {current_process}')
-    cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
-                                             verbose=False, 
-                                             total_CFs= cf_amount, 
-                                             desired_range=[3, 6], 
-                                             proximity_weight= 0.0002, 
-                                             random_seed = 2, 
-                                             time_series=True)
-    
-    # cf.visualize_as_dataframe(show_only_changes=True)
-    
-    cf_total = cf.cf_examples_list[0].final_cfs_df
-    print(f'Counterfactual {current_process} processed')
-    
-    if cf_total is not None:
-        #Save cf_result to file
-        save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET)
-        if not os.path.exists(save_to): os.makedirs(save_to)
-        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
-        cf_total.to_csv(file_name, index=False)
-        # print(f'Saved to: {file_name}')
+        #Generate counterfactual explanations
+        cf_amount = 1
+        print(f'generating counterfactual {current_process}')
+        cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
+                                                verbose=False, 
+                                                total_CFs= cf_amount, 
+                                                desired_range=[3, 6], 
+                                                proximity_weight= 0.0002, 
+                                                random_seed = 2, 
+                                                time_series=True)
+        
+        # cf.visualize_as_dataframe(show_only_changes=True)
+        
+        cf_total = cf.cf_examples_list[0].final_cfs_df
+        print(f'Counterfactual {current_process} processed')
+        
+        if cf_total is not None:
+            #Save cf_result to file
+            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET)
+            if not os.path.exists(save_to): os.makedirs(save_to)
+            file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
+            cf_total.to_csv(file_name, index=False)
+            # print(f'Saved to: {file_name}')
 
-    else:
-        #If no cf found, save a file containing NaN
-        save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET)
-        if not os.path.exists(save_to): os.makedirs(save_to)
-        file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
-        no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
-        no_cf.to_csv(file_name, index=False)
-        # print(f'Saved to: {file_name}')
+        else:
+            #If no cf found, save a file containing NaN
+            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET)
+            if not os.path.exists(save_to): os.makedirs(save_to)
+            file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
+            no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
+            no_cf.to_csv(file_name, index=False)
+            # print(f'Saved to: {file_name}')
 
 
 if __name__ == '__main__':
@@ -177,13 +194,15 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+
+    chunks = chunk_list(file_paths, 179)
     print('Starting multiprocessing')
     print(f'Number of available cores: {num_cores}')
     print(f'Number of samples: {len(file_paths)}')
 
 
-    with mp.Pool(processes=num_cores) as pool:
-        list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, file_paths), total=len(file_paths)))
+    with mp.Pool(processes=179) as pool:
+        list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, chunks), total=len(chunks)))
 
     # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
 
