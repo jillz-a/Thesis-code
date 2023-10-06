@@ -20,7 +20,6 @@ import pandas as pd
 from torch import load
 import multiprocessing as mp
 import time
-from p_tqdm import p_map
 import tqdm
 
 import warnings
@@ -30,9 +29,12 @@ import dice_ml_custom as dice_ml_custom
 
 from custom_BNN import CustomBayesianNeuralNetwork
 from custom_DNN import CustomNeuralNetwork
-from variables import *
 
+device = 'cpu' #device where models whill be run
+DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004]
 
+BATCHSIZE = 100
+EPOCHS = 100
 
 #%% import files
 TRAINDATASET = f'data/{DATASET}/min-max/train'
@@ -43,21 +45,6 @@ BayDet = 'BNN'
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
-
-#Import into trained machine learning models
-if BayDet == 'BNN':
-    model = CustomBayesianNeuralNetwork()
-if BayDet == 'DNN':
-    model = CustomNeuralNetwork()
-
-
-with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
-    model.load_state_dict(load(f)) 
-
-model.eval()
-
-#set Counterfactual hyperparameters
-cf_amount = 1
 
 
 # Function to split a list into chunks
@@ -77,6 +64,18 @@ def chunk_list(input_list, num_chunks):
     return chunks
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
+
+    #Import into trained machine learning models
+    if BayDet == 'BNN':
+        model = CustomBayesianNeuralNetwork().to(device)
+    if BayDet == 'DNN':
+        model = CustomNeuralNetwork().to(device)
+
+
+    with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+        model.load_state_dict(load(f)) 
+
+    model.eval()
     
     for file_path in chunk:
         #load sample with true RUL
@@ -105,10 +104,9 @@ def CMAPSS_counterfactuals(chunk):
 
 
         #Generate counterfactual explanations
-        cf_amount = 1
         cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
                                                 verbose=False, 
-                                                total_CFs= cf_amount, 
+                                                total_CFs= 1, 
                                                 desired_range=[3, 6], 
                                                 proximity_weight= 0.0002, 
                                                 random_seed = 2, 
@@ -123,7 +121,7 @@ def CMAPSS_counterfactuals(chunk):
             #Save cf_result to file
             save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET)
             if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, int(cf_total['RUL'])))
+            file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             cf_total.to_csv(file_name, index=False)
             # print(f'Saved to: {file_name}')
 
@@ -145,15 +143,16 @@ if __name__ == '__main__':
 
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
-    file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+    # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+    file_paths = file_paths[:179]
 
-    chunks = chunk_list(file_paths, 179)
+    chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
     print(f'Number of available cores: {num_cores}')
     print(f'Number of samples: {len(file_paths)}')
 
 
-    with mp.Pool(processes=179) as pool:
+    with mp.Pool(processes=min(len(file_paths), num_cores)) as pool:
         list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, chunks), total=len(chunks)))
 
     # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
