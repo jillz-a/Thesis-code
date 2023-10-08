@@ -40,7 +40,7 @@ EPOCHS = 100
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-BayDet = 'BNN'
+BayDet = 'DNN'
 
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -144,7 +144,6 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[:179]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
