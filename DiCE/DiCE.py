@@ -67,11 +67,12 @@ def CMAPSS_counterfactuals(chunk):
 
     #Import into trained machine learning models
     if BayDet == 'BNN':
-        model = CustomBayesianNeuralNetwork().to(device)
-    if BayDet == 'DNN':
-        model = CustomNeuralNetwork().to(device)
+        model = CustomBayesianNeuralNetwork()
+    elif BayDet == 'DNN':
+        model = CustomNeuralNetwork()
 
-
+    model.to(device)
+    
     with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
         model.load_state_dict(load(f)) 
 
