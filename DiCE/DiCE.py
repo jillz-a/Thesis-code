@@ -40,7 +40,7 @@ EPOCHS = 100
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-BayDet = 'DNN'
+BayDet = 'BNN'
 
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -108,8 +108,8 @@ def CMAPSS_counterfactuals(chunk):
                                                 verbose=False, 
                                                 total_CFs= 1, 
                                                 desired_range=[3, 6], 
-                                                proximity_weight= 0.0002, 
-                                                random_seed = 2, 
+                                                random_seed = 2,
+                                                proximity_weight=0.0002, 
                                                 time_series=True)
         
         # cf.visualize_as_dataframe(show_only_changes=True)
@@ -144,6 +144,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+    file_paths = file_paths[160:170]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
