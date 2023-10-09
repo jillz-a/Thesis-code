@@ -107,7 +107,7 @@ def CMAPSS_counterfactuals(chunk):
         cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
                                                 verbose=False, 
                                                 total_CFs= 1, 
-                                                desired_range=[3, 6], 
+                                                desired_range=[5, 10], 
                                                 random_seed = 2,
                                                 proximity_weight=0.0002, 
                                                 time_series=True)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[160:170]
+    file_paths = file_paths[0:100]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
