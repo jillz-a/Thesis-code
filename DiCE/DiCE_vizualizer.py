@@ -65,7 +65,7 @@ sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
 engine = 0
 engine_len = int(cf_sample_len[engine][0]) #TODO: change later to account for engine length
-engine_len = 100
+engine_len = 170
 
 #Go over every sensor
 for ax in axes.ravel():
