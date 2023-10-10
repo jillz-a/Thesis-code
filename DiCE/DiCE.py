@@ -45,7 +45,18 @@ BayDet = 'BNN'
 with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as csvfile:
     sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
+#Import into trained machine learning models
+if BayDet == 'BNN':
+    model = CustomBayesianNeuralNetwork()
+elif BayDet == 'DNN':
+    model = CustomNeuralNetwork()
 
+model.to(device)
+
+with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+    model.load_state_dict(load(f)) 
+
+model.eval()
 
 # Function to split a list into chunks
 def chunk_list(input_list, num_chunks):
@@ -65,18 +76,6 @@ def chunk_list(input_list, num_chunks):
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
 
-    #Import into trained machine learning models
-    if BayDet == 'BNN':
-        model = CustomBayesianNeuralNetwork()
-    elif BayDet == 'DNN':
-        model = CustomNeuralNetwork()
-
-    model.to(device)
-    
-    with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
-        model.load_state_dict(load(f)) 
-
-    model.eval()
     
     for file_path in chunk:
         #load sample with true RUL
@@ -145,7 +144,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[0:100]
+    file_paths = file_paths[0:170]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
