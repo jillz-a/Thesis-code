@@ -76,7 +76,7 @@ def CMAPSS_counterfactuals(chunk):
     with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
         model.load_state_dict(load(f)) 
 
-    model.eval()
+    # model.eval()
     
     for file_path in chunk:
         #load sample with true RUL
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[0:100]
+    file_paths = file_paths[0:30]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
