@@ -47,9 +47,9 @@ with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as
 
 #Import into trained machine learning models
 if BayDet == 'BNN':
-    model = CustomBayesianNeuralNetwork()
-elif BayDet == 'DNN':
-    model = CustomNeuralNetwork()
+    model = CustomBayesianNeuralNetwork().to(device)
+# elif BayDet == 'DNN':
+#     model = CustomNeuralNetwork().to(device)
 
 
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
