@@ -55,7 +55,6 @@ elif BayDet == 'DNN':
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
     model.load_state_dict(load(f)) 
 
-model.eval()
 
 # Function to split a list into chunks
 def chunk_list(input_list, num_chunks):

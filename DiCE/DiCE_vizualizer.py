@@ -124,7 +124,7 @@ axes[0,0].set_ylabel('Sensor input difference')
 axes[1,0].set_ylabel('Sensor input difference')
 
 fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 3-6 extra cycles')
-plt.show()
+plt.savefig('DiCE/cf_inputs.png')
 
     
     
