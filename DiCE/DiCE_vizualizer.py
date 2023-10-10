@@ -47,7 +47,7 @@ with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_sa
     cf_sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
 #counterfactual input cf_samples
-result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET)
+result_path = os.path.join(project_path, 'DiCE/DNN_cf_results/inputs', DATASET)
 cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
 cf_samples.sort()
 
