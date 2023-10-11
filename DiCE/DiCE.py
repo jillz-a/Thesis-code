@@ -47,13 +47,13 @@ with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as
 
 #Import into trained machine learning models
 if BayDet == 'BNN':
-    model = CustomBayesianNeuralNetwork().to(device)
+    NNmodel = CustomBayesianNeuralNetwork().to(device)
 # elif BayDet == 'DNN':
 #     model = CustomNeuralNetwork().to(device)
 
 
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
-    model.load_state_dict(load(f)) 
+    NNmodel.load_state_dict(load(f)) 
 
 
 # Function to split a list into chunks
@@ -96,7 +96,7 @@ def CMAPSS_counterfactuals(chunk):
 
         #Data and model object for DiCE
         data = dice_ml_custom.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
-        dice_model = dice_ml_custom.Model(model=model, backend='PYT', model_type='regressor')
+        dice_model = dice_ml_custom.Model(model=NNmodel, backend='PYT', model_type='regressor')
         exp_random = dice_ml_custom.Dice(data, dice_model, method='random')
 
 
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[0:170]
+    file_paths = file_paths[25:27]
 
     chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
     print('Starting multiprocessing')
