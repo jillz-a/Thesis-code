@@ -24,7 +24,7 @@ if project_path not in sys.path:
     sys.path.append(project_path)
 
 from DNN import NeuralNetwork
-from DNN_vizualizer import y_pred_lst, D_RMSE
+# from DNN_vizualizer import y_pred_lst, D_RMSE
 
 from variables import *
 

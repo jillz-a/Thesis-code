@@ -180,7 +180,7 @@ class DiceRandom(ExplainerBase):
             self.cfs_preds = None
             self.cfs_pred_scores = None
             self.final_cfs = None
-            #CUSTOM
+        #CUSTOM
         test_instance_df = self.data_interface.prepare_query_instance(query_instance)
         # test_instance_df[self.data_interface.outcome_name] = np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
         test_instance_df[self.data_interface.outcome_name] = np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision)
