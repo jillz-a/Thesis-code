@@ -2,10 +2,10 @@
 #%% import dependencies
 import sys
 import os
-os.environ["MKL_NUM_THREADS"] = "1" 
-os.environ["NUMEXPR_NUM_THREADS"] = "1" 
-os.environ["OMP_NUM_THREADS"] = "1" 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+# os.environ["MKL_NUM_THREADS"] = "4" 
+# os.environ["NUMEXPR_NUM_THREADS"] = "4" 
+# os.environ["OMP_NUM_THREADS"] = "4" 
+# os.environ['OPENBLAS_NUM_THREADS'] = '4'
 
 # Get the absolute path of the project directory
 project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
@@ -48,8 +48,8 @@ with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as
 #Import into trained machine learning models
 if BayDet == 'BNN':
     NNmodel = CustomBayesianNeuralNetwork().to(device)
-# elif BayDet == 'DNN':
-#     model = CustomNeuralNetwork().to(device)
+elif BayDet == 'DNN':
+    model = CustomNeuralNetwork().to(device)
 
 
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
@@ -74,8 +74,8 @@ def chunk_list(input_list, num_chunks):
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
 
-    
-    for file_path in chunk:
+    loop = tqdm.tqdm(chunk)
+    for file_path in loop:
         #load sample with true RUL
         sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
         sample_id = int(file_path[-13:-8])
@@ -108,7 +108,7 @@ def CMAPSS_counterfactuals(chunk):
                                                 desired_range=[3, 6], 
                                                 random_seed = 2,
                                                 proximity_weight=0.0002, 
-                                                time_series=True)
+                                                time_series=False)
         
         # cf.visualize_as_dataframe(show_only_changes=True)
         
@@ -142,16 +142,18 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[10:100]
+    file_paths = file_paths[50:100]
 
-    chunks = chunk_list(file_paths, min(len(file_paths), num_cores))
+    chunks = chunk_list(file_paths, 1)
     print('Starting multiprocessing')
     print(f'Number of available cores: {num_cores}')
     print(f'Number of samples: {len(file_paths)}')
 
 
-    with mp.Pool(processes=min(len(file_paths), num_cores)) as pool:
-        list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, chunks), total=len(chunks)))
+    # with mp.Pool(processes=1) as pool:
+    #     list(tqdm.tqdm(pool.imap_unordered(CMAPSS_counterfactuals, chunks), total=len(chunks)))
+
+    CMAPSS_counterfactuals(chunks[0])
 
     # p_map(CMAPSS_counterfactuals, file_paths, num_cpus=num_cores, total=len(file_paths), desc= 'Processing')
 
