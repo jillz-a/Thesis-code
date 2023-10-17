@@ -65,7 +65,7 @@ sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
 engine = 0
 engine_len = int(cf_sample_len[engine][0]) #TODO: change later to account for engine length
-engine_len = 130
+engine_len = 3
 
 #Go over every sensor
 for ax in axes.ravel():
@@ -103,7 +103,8 @@ for ax in axes.ravel():
         orig_total.append(orig_relative)
         # diff = [counter_relative[i] - orig_relative[i] for i in range(len(counter_relative))]
 
-        # ax.plot(np.arange(len(counter_relative)), diff)
+        # ax.plot(np.arange(len(counter_relative)), counter_relative)
+        # ax.plot(np.arange(len(counter_relative)), orig_relative)
 
 
     #Take the average value of inputs at every time point

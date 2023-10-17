@@ -26,6 +26,7 @@ import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
 import dice_ml_custom as dice_ml_custom
+# import dice_ml as dice_ml_custom
 
 from custom_BNN import CustomBayesianNeuralNetwork
 from custom_DNN import CustomNeuralNetwork
@@ -107,8 +108,8 @@ def CMAPSS_counterfactuals(chunk):
                                                 total_CFs= 1, 
                                                 desired_range=[3, 6], 
                                                 random_seed = 2,
-                                                proximity_weight=0.0002, 
-                                                time_series=False)
+                                                proximity_weight=0.0002,
+                                                time_series=True)
         
         # cf.visualize_as_dataframe(show_only_changes=True)
         
@@ -142,7 +143,7 @@ if __name__ == '__main__':
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
     # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
-    file_paths = file_paths[50:100]
+    file_paths = file_paths[170:176]
 
     chunks = chunk_list(file_paths, 1)
     print('Starting multiprocessing')
