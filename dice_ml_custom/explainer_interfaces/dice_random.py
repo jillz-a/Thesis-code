@@ -132,7 +132,7 @@ class DiceRandom(ExplainerBase):
                     sensor_id = sensor[0]
                     for t in range(t_index + 1, 30):
                         t_feature = f'Sensor ({sensor_id}, {t})'
-                        candidate_cfs.loc[k, t_feature] += change
+                        candidate_cfs.at[k, t_feature] += change
 
             scores = self.predict_fn(candidate_cfs)
             print(f"score = {scores}")
