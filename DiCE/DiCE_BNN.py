@@ -74,13 +74,14 @@ def open_cf(file_path):
                 cf_data = [np.float32(value) for value in row]
 
     # Step 2: Remove the final entry
+    cf_RUL = cf_data[-1]
     cf_data = cf_data[:-1]
 
     # Step 3: Convert the modified second row into a 2D NumPy array
     shape = (30, 14)  # Desired shape
     array = np.array(cf_data).reshape(shape)
 
-    return array
+    return array, cf_RUL
 
 
 if __name__ == "__main__":
@@ -102,7 +103,7 @@ if __name__ == "__main__":
     for engine in engines:
         index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
         selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-        selected_file_paths = file_paths[0:1]
+        selected_file_paths = file_paths[0:20]
 
         #setup data to plot
         mean_pred_lst = []
@@ -119,8 +120,7 @@ if __name__ == "__main__":
         for file_path in loop:
         
             # Process each selected file
-            sample = open_cf(file_path)
-            print(sample)
+            sample, cf_RUL = open_cf(file_path)
             label = float(file_path[-7:-4])
 
             #Import into trained machine learning models
@@ -137,6 +137,7 @@ if __name__ == "__main__":
 
             predictions = torch.stack(mc_pred)
             mean_pred = torch.mean(predictions, dim=0)
+            print(mean_pred, cf_RUL)
             var_pred = torch.var(predictions, dim=0)
             y = label #True RUL
 

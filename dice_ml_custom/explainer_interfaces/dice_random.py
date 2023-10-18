@@ -135,7 +135,9 @@ class DiceRandom(ExplainerBase):
                         candidate_cfs.loc[k, t_feature] += change
 
             scores = self.predict_fn(candidate_cfs)
+            print(f"score = {scores}")
             validity = self.decide_cf_validity(scores)
+            print(f'validity= {sum(validity)}')
             if sum(validity) > 0:
                 rows_to_add = candidate_cfs[validity == 1]
 
@@ -170,6 +172,7 @@ class DiceRandom(ExplainerBase):
                 final_cfs_df[self.data_interface.outcome_name] = \
                     final_cfs_df[self.data_interface.outcome_name].round(self.outcome_precision)
                 self.cfs_preds = final_cfs_df[[self.data_interface.outcome_name]].values
+                print("cfs_preds = ", self.cfs_preds)
                 self.final_cfs = final_cfs_df[self.data_interface.feature_names].values
             else:
                 final_cfs_df = None

@@ -308,9 +308,11 @@ if __name__ == '__main__':
         RMSE_lst = []
        
         engines = np.arange(len(sample_len))
+        engines = [0]
         for engine in engines:
             index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
             selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
+            selected_file_paths = file_paths[0:1]
 
             #setup data to plot
             mean_pred_lst = []
@@ -344,6 +346,7 @@ if __name__ == '__main__':
 
                 predictions = torch.stack(mc_pred)
                 mean_pred = torch.mean(predictions, dim=0)
+                print(mean_pred)
                 var_pred = torch.var(predictions, dim=0)
                 y = label #True RUL
 

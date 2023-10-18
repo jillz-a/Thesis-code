@@ -16,6 +16,7 @@ from torch import nn
 import bayesian_torch.layers as bl
 
 # from variables import *
+torch.manual_seed(42)
 
 device = 'cpu' #device where models whill be run
 DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004]
