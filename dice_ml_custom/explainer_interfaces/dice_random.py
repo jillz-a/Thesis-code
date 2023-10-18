@@ -92,7 +92,8 @@ class DiceRandom(ExplainerBase):
             #CUSTOM: desired range based on initial outcome
             # self.target_cf_range = self.infer_target_cfs_range(desired_range)
             self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
-            # print(self.target_cf_range)
+            print(test_pred)
+            print(self.target_cf_range)
         # fixing features that are to be fixed
         self.total_CFs = total_CFs
 
@@ -122,7 +123,7 @@ class DiceRandom(ExplainerBase):
             selected_features = np.random.choice(self.features_to_vary, (sample_size, 1), replace=True)
             for k in range(sample_size):
                 change = random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]]
-                candidate_cfs.loc[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
+                candidate_cfs.at[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
 
                 if time_series:
                     #CUSTOM: ensure all features after selected_features[k][0] also process the change as it is a time series, so Sensor (x, t), Sensor (x,t+1), ..., Sensor (x, 29).
@@ -182,8 +183,8 @@ class DiceRandom(ExplainerBase):
             self.final_cfs = None
         #CUSTOM
         test_instance_df = self.data_interface.prepare_query_instance(query_instance)
-        # test_instance_df[self.data_interface.outcome_name] = np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
-        test_instance_df[self.data_interface.outcome_name] = np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision)
+        test_instance_df[self.data_interface.outcome_name] = np.array(np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision))
+        # test_instance_df[self.data_interface.outcome_name] = np.round(self.get_model_output_from_scores((test_pred,)), self.outcome_precision)
 
         # post-hoc operation on continuous features to enhance sparsity - only for public data
         if posthoc_sparsity_param is not None and posthoc_sparsity_param > 0 and \
@@ -215,7 +216,7 @@ class DiceRandom(ExplainerBase):
             #     print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
             #           'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',
             #           '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
-
+        print(final_cfs_df)
         return exp.CounterfactualExamples(data_interface=self.data_interface,
                                           final_cfs_df=final_cfs_df,
                                           test_instance_df=test_instance_df,
