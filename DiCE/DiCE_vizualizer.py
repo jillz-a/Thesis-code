@@ -120,7 +120,7 @@ for ax in axes.ravel():
 
     ax.set_title('Sensor ' + str(m[sensor]))
     ax.set_xlabel('Cycles')
-    ax.set_ylim(-1,1)
+    # ax.set_ylim(-1,1)
         
     sensor += 1
 

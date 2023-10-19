@@ -108,6 +108,7 @@ class DiceRandom(ExplainerBase):
       
         # get random samples for each feature independently
         start_time = timeit.default_timer()
+        # print(self.feature_range)
         random_instances = self.get_samples(
             self.fixed_features_values,
             self.feature_range, sampling_random_seed=random_seed, sampling_size=sample_size)
@@ -122,7 +123,7 @@ class DiceRandom(ExplainerBase):
         for num_features_to_vary in range(1, len(self.features_to_vary)+1):
             selected_features = np.random.choice(self.features_to_vary, (sample_size, 1), replace=True)
             for k in range(sample_size):
-                change = random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]]
+                change = np.round(random_instances.at[k, selected_features[k][0]] - candidate_cfs.at[k, selected_features[k][0]], 4)
                 candidate_cfs.at[k, selected_features[k][0]] = random_instances.at[k, selected_features[k][0]]
 
                 if time_series:
