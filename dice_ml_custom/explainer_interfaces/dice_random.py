@@ -92,8 +92,8 @@ class DiceRandom(ExplainerBase):
             #CUSTOM: desired range based on initial outcome
             # self.target_cf_range = self.infer_target_cfs_range(desired_range)
             self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
-            print(test_pred)
-            print(self.target_cf_range)
+            # print(test_pred)
+            # print(self.target_cf_range)
         # fixing features that are to be fixed
         self.total_CFs = total_CFs
 
@@ -135,9 +135,9 @@ class DiceRandom(ExplainerBase):
                         candidate_cfs.at[k, t_feature] += change
 
             scores = self.predict_fn(candidate_cfs)
-            print(f"score = {scores}")
+            # print(f"score = {scores}")
             validity = self.decide_cf_validity(scores)
-            print(f'validity= {sum(validity)}')
+            # print(f'validity= {sum(validity)}')
             if sum(validity) > 0:
                 rows_to_add = candidate_cfs[validity == 1]
 
@@ -172,7 +172,7 @@ class DiceRandom(ExplainerBase):
                 final_cfs_df[self.data_interface.outcome_name] = \
                     final_cfs_df[self.data_interface.outcome_name].round(self.outcome_precision)
                 self.cfs_preds = final_cfs_df[[self.data_interface.outcome_name]].values
-                print("cfs_preds = ", self.cfs_preds)
+                # print("cfs_preds = ", self.cfs_preds)
                 self.final_cfs = final_cfs_df[self.data_interface.feature_names].values
             else:
                 final_cfs_df = None
@@ -219,7 +219,7 @@ class DiceRandom(ExplainerBase):
             #     print('Only %d (required %d) ' % (self.total_cfs_found, self.total_CFs),
             #           'Diverse Counterfactuals found for the given configuration, perhaps try with different parameters...',
             #           '; total time taken: %02d' % m, 'min %02d' % s, 'sec')
-        print(final_cfs_df)
+        # print(final_cfs_df)
         return exp.CounterfactualExamples(data_interface=self.data_interface,
                                           final_cfs_df=final_cfs_df,
                                           test_instance_df=test_instance_df,
