@@ -85,7 +85,7 @@ def open_cf(file_path):
 
 
 if __name__ == "__main__":
-    SAVE = False
+    SAVE = True
     CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE/BNN_cf_results/inputs/{DATASET}'))
 
     folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     for engine in engines:
         index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
         selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-        selected_file_paths = file_paths[0:20]
+        selected_file_paths = file_paths[0:170]
 
         #setup data to plot
         mean_pred_lst = []
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
             predictions = torch.stack(mc_pred)
             mean_pred = torch.mean(predictions, dim=0)
-            print(mean_pred, cf_RUL)
+            # print(mean_pred, cf_RUL)
             var_pred = torch.var(predictions, dim=0)
             y = label #True RUL
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
             save_to = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET)
             if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
+            file_name = os.path.join(save_to, "cf_result_{0:0=3d}.json".format(engine))
             
             with open(file_name, 'w') as jsonfile:
                 json.dump(results, jsonfile)
