@@ -76,6 +76,11 @@ BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
 engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
+#import CF results: every file represents 1 engine
+CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET)
+CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
+CF_engines.sort() 
+
 #import DNN results: every file represents 1 engine
 DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
@@ -85,14 +90,24 @@ for engine in engines[engine_eval: engine_eval+1]:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
-
+    
+    #BNN results
     mean_pred_lst = results['mean'] #Mean of the RUL predictions over engine life
     var_pred_lst = results['var'] #Variance of the RUL predictions over engine life
     true_lst = results['true'] #Ground truth RUL over engine life
 
+    with open(CF_engines[engine_id], 'r') as jsonfile:
+        CF_results = json.load(jsonfile)
+    
+    #Counterfactual results
+    CF_mean_pred_lst = CF_results['mean'] #Mean of the RUL predictions over engine life
+    CF_var_pred_lst = CF_results['var'] #Variance of the RUL predictions over engine life
+    CF_true_lst = CF_results['true'] #Ground truth RUL over engine life
+
     with open(DNN_engines[engine_id], 'r') as jsonfile:
         DNN_results = json.load(jsonfile)
-
+    
+    #Deterministic results
     y_pred_lst = DNN_results['pred'] #RUl predictions over engine life
 
         
