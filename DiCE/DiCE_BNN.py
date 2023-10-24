@@ -32,6 +32,12 @@ import bayesian_torch.layers as bl
 from variables import *
 torch.manual_seed(42)
 
+CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE/BNN_cf_results/inputs/{DATASET}'))
+folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your input folder
+with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
+        sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
+
+SAVE = True #if true, result will be saved to json files
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -124,7 +130,7 @@ def CF_results(chunk):
     for engine in engines:
         index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
         selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-        selected_file_paths = file_paths[0:170]
+        # selected_file_paths = file_paths[0:170]
 
         #setup data to plot
         mean_pred_lst = []
@@ -180,16 +186,9 @@ def CF_results(chunk):
 
 
 if __name__ == "__main__":
-    SAVE = True
-    CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE/BNN_cf_results/inputs/{DATASET}'))
-
-    folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
-
+    
+    
     num_cores = mp.cpu_count()
-
-    with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
-        sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
-
 
     engines = np.arange(len(sample_len))
 

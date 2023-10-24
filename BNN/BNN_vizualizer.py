@@ -159,6 +159,12 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 visible=False,
                                 name='2 Standard Deviation',
                                 hoverinfo='skip'),
+                     go.Scatter(x=x_plot, 
+                                y=CF_mean_pred_lst, 
+                                mode='lines', 
+                                line=dict(color='green'),
+                                visible=False,
+                                name=f'Counterfactual Mean Predicted RUL values for engine {engine_id}'),            
                     go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
                                 y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
                                 fill='toself',  # Fill to next y values
@@ -171,6 +177,7 @@ for engine in engines[engine_eval: engine_eval+1]:
                 
 
     std_dev = np.sqrt(var_pred_lst)
+    CF_std_dev = np.sqrt(CF_var_pred_lst)
     for i in range(len(x_plot)):
         for j in range(len(main_figure)):
             fig.add_trace(main_figure[j], row=1, col=1)
@@ -181,11 +188,15 @@ for engine in engines[engine_eval: engine_eval+1]:
         y_sub = np.linspace(mean_pred_lst[i] - 3 * std_dev[i], mean_pred_lst[i] + 3 * std_dev[i], 100)
         x_sub = norm.pdf(y_sub, mean_pred_lst[i], std_dev[i])
 
+        #x,y data for Counterfactual Bayesian probability distribution at selected cycle
+        CF_y_sub = np.linspace(CF_mean_pred_lst[i] - 3 * CF_std_dev[i], CF_mean_pred_lst[i] + 3 * CF_std_dev[i], 100)
+        CF_x_sub = norm.pdf(CF_y_sub, CF_mean_pred_lst[i], CF_std_dev[i])
+
         fig.add_trace(go.Scatter(x=x_sub, 
                                 y=y_sub, 
                                 visible=False,
                                 mode='lines', 
-                                line=dict(color='rgba(0, 100, 80, 0.2)'),
+                                line=dict(color='rgba(0, 20, 100, 0.2)'),
                                 fill='tozeroy',
                                 name='RUL prediction distribution'),
                                 row=2,
@@ -206,6 +217,16 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 mode='lines',
                                 line=dict(dash='dash', color='orange'),
                                 name='Deterministic Predicted RUL'),
+                                row=2,
+                                col=1)
+        
+        fig.add_trace(go.Scatter(x=CF_x_sub, 
+                                y=CF_y_sub, 
+                                visible=False,
+                                mode='lines', 
+                                line=dict(color='rgba(0, 100, 20, 0.2)'),
+                                fill='tozeroy',
+                                name=' Counterfactual RUL prediction distribution'),
                                 row=2,
                                 col=1)
         
