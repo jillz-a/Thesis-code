@@ -147,7 +147,7 @@ if __name__ == "__main__":
             scheduler.step() 
             loss_lst.append(train_loss)  
 
-        with open(f'BNN/model_state/DNN_model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)

@@ -69,7 +69,7 @@ start = time.time()
 
 show_cf = True
 alpha = 0.1 #set the alpha bounds
-engine_eval = 1
+engine_eval = 0
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
@@ -202,6 +202,16 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 row=2,
                                 col=1)
         
+        fig.add_trace(go.Scatter(x=CF_x_sub, 
+                                y=CF_y_sub, 
+                                visible=False,
+                                mode='lines', 
+                                line=dict(color='rgba(0, 100, 20, 0.2)'),
+                                fill='tozeroy',
+                                name=' Counterfactual RUL prediction distribution'),
+                                row=2,
+                                col=1)
+        
         fig.add_trace(go.Scatter(x=np.array([0, max(x_sub)]),
                                 y=np.array([true_lst[i], true_lst[i]]),
                                 visible=False,
@@ -217,16 +227,6 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 mode='lines',
                                 line=dict(dash='dash', color='orange'),
                                 name='Deterministic Predicted RUL'),
-                                row=2,
-                                col=1)
-        
-        fig.add_trace(go.Scatter(x=CF_x_sub, 
-                                y=CF_y_sub, 
-                                visible=False,
-                                mode='lines', 
-                                line=dict(color='rgba(0, 100, 20, 0.2)'),
-                                fill='tozeroy',
-                                name=' Counterfactual RUL prediction distribution'),
                                 row=2,
                                 col=1)
         

@@ -39,7 +39,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = False #If True, will save BNN output to .json files
 
 #Bayesian neural network class
@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_state/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         plt.plot(train_loss_lst, label='Train loss')
@@ -308,11 +308,10 @@ if __name__ == '__main__':
         RMSE_lst = []
        
         engines = np.arange(len(sample_len))
-        engines = [0]
         for engine in engines:
             index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
             selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
-            selected_file_paths = file_paths[0:1]
+            # selected_file_paths = file_paths[0:1]
 
             #setup data to plot
             mean_pred_lst = []
@@ -346,7 +345,7 @@ if __name__ == '__main__':
 
                 predictions = torch.stack(mc_pred)
                 mean_pred = torch.mean(predictions, dim=0)
-                print(mean_pred)
+                # print(mean_pred)
                 var_pred = torch.var(predictions, dim=0)
                 y = label #True RUL
 
