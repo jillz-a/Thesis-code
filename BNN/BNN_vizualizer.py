@@ -84,7 +84,7 @@ start = time.time()
 
 show_cf = True
 alpha = 0.1 #set the alpha bounds
-engine_eval = 0
+engine_eval = 1
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
@@ -289,7 +289,16 @@ for engine in engines[engine_eval: engine_eval+1]:
                                  visible=False,
                                  mode='lines',
                                  line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                 name='Scoring function (prefers early predictions than late predictions)'),
+                                 name='BNN Scoring function (prefers early predictions than late predictions)'),
+                                 row=2,
+                                 col=2
+                                 )
+        fig.add_trace(go.Scatter(x=x_plot,
+                                 y=np.array([s_score(i) for i in DNN_error]),
+                                 visible=False,
+                                 mode='lines',
+                                 line=dict(color='orange'),
+                                 name='DNN Scoring function (prefers early predictions than late predictions)'),
                                  row=2,
                                  col=2
                                  )
@@ -344,6 +353,9 @@ for engine in engines[engine_eval: engine_eval+1]:
 
     fig.update_xaxes(title_text='Cycles', row=1, col=2)
     fig.update_yaxes(title_text='Fraction of predictions within \u03B1 bounds', row=1, col=2)
+
+    fig.update_xaxes(title_text='Cycles', row=2, col=2)
+    fig.update_yaxes(title_text='Score', row=2, col=2)
 
     fig.show()
 
