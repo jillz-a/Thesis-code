@@ -64,6 +64,21 @@ def alpha_det(lower_bound, upper_bound, pred):
         return 1
     else:
         return 0
+    
+def s_score(error):
+    """S score specifically for RUL prediction. The characteristic of this scoring funciton is that it favours early predictions
+    more than late predicitons.
+
+    Args:
+        error (float): Predicted RUL - True RUL
+
+    Returns:
+        float: scoring function result
+    """
+    if error < 0:
+        return np.exp(-error/13) - 1
+    else:
+        return np.exp(error/10) - 1
 
 start = time.time()
 
@@ -112,10 +127,10 @@ for engine in engines[engine_eval: engine_eval+1]:
 
         
     #%% Plot data
-    BNN_error = [(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] #squared BNN error
-    DNN_error = [(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] #squared DNN error
-    B_RMSE = np.round(np.sqrt(np.mean(BNN_error)), 2) #Root Mean Squared error of Bayesian prediciton
-    D_RMSE = np.round(np.sqrt(np.mean(DNN_error)), 2) #Root Mean Squared error of Deterministic prediciton
+    BNN_error = mean_pred_lst - true_lst #BNN error
+    DNN_error = y_pred_lst - true_lst #DNN error
+    B_RMSE = np.round(np.sqrt(np.mean([(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))])), 2) #Root Mean Squared error of Bayesian prediciton
+    D_RMSE = np.round(np.sqrt(np.mean([(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] )), 2) #Root Mean Squared error of Deterministic prediciton
 
     x_plot = np.arange(len(mean_pred_lst))
 
@@ -269,15 +284,16 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 row=1,
                                 col=2)
         
-        #Invisible y axis line to keep axis consistent
-        # fig.add_trace(go.Scatter(x=np.array([0, 0]),
-        #                         y=np.array([0, 140]),
-        #                         visible=False,
-        #                         mode='lines',
-        #                         line=dict(color='rgba(255, 255, 255, 0)'),
-        #                         showlegend=False),
-        #                         row=2,
-        #                         col=1)
+        fig.add_trace(go.Scatter(x=x_plot,
+                                 y=np.array([s_score(i) for i in range(BNN_error)])),
+                                 visible = False,
+                                 mode='lines',
+                                 line=dict(color='rgba(0, 80, 200, 0.5)'),
+                                 name='Scoring function (prefers early predictions than late predictions)',
+                                 row=2,
+                                 col=2
+                                 )
+
         #Invisible x axis line to keep axis consistent
         fig.add_trace(go.Scatter(x=np.array([0, 0.55]),
                                 y=np.array([0, 0]),
