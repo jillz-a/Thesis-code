@@ -127,8 +127,8 @@ for engine in engines[engine_eval: engine_eval+1]:
 
         
     #%% Plot data
-    BNN_error = mean_pred_lst - true_lst #BNN error
-    DNN_error = y_pred_lst - true_lst #DNN error
+    BNN_error = [(mean_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))] #BNN error
+    DNN_error = [(y_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))]#DNN error
     B_RMSE = np.round(np.sqrt(np.mean([(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))])), 2) #Root Mean Squared error of Bayesian prediciton
     D_RMSE = np.round(np.sqrt(np.mean([(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] )), 2) #Root Mean Squared error of Deterministic prediciton
 
@@ -276,7 +276,7 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
-                                y = np.array([alpha_det(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), y_pred_lst[i]) for i in range(len(x_plot))]),
+                                y=np.array([alpha_det(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), y_pred_lst[i]) for i in range(len(x_plot))]),
                                 visible=False,
                                 mode='lines',
                                 line=dict(color='orange'),
@@ -285,11 +285,11 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
-                                 y=np.array([s_score(i) for i in range(BNN_error)])),
-                                 visible = False,
+                                 y=np.array([s_score(i) for i in BNN_error]),
+                                 visible=False,
                                  mode='lines',
                                  line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                 name='Scoring function (prefers early predictions than late predictions)',
+                                 name='Scoring function (prefers early predictions than late predictions)'),
                                  row=2,
                                  col=2
                                  )
