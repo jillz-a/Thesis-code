@@ -191,7 +191,7 @@ if __name__ == "__main__":
     num_cores = mp.cpu_count()
 
     engines = np.arange(len(sample_len))
-    # engines = [0]
+    engines = [0]
 
     chunks = chunk_list(engines, min(num_cores, len(engines)))
 
