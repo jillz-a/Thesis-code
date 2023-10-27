@@ -63,13 +63,6 @@ fig, axes = plt.subplots(nrows=2,
 #%% Plot counterfacutal dataframe
 sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-# m = ['Total temp at LPC outlet [R]', 'Total temp at HPC outlet [R]', 
-#      'Total temp at LPT outlet [R]', 'Total pressure at HPC outlet [psia]', 
-#      'Fan speed [rpm]', 'Core speed [rpm]', 
-#      'Static pressure at HPC outlet [psia]', 'Ratio fuel flow to Ps30 [pps/psia]', 
-#      'Corrected fan speed [rpm]', 'Corrected core speed [rpm]',
-#      'Bypass ratio [-]', 'Bleed enthalpy [-]', 
-#      'HPT cooland bleed [lbm/s]', 'LPT cooland bleed [lbm/s]']
 engine = 0
 engine_len = int(cf_sample_len[engine][0]) #TODO: change later to account for engine length
 # engine_len = 170
@@ -125,7 +118,7 @@ for ax in axes.ravel():
     ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color='green', alpha=0.5)
     ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color='red', alpha=0.5)
 
-    ax.set_title(str(m[sensor]))
+    ax.set_title('Sensor ' + str(m[sensor]))
     ax.set_xlabel('Cycles')
     ax.set_ylim(-1,1)
         
@@ -134,7 +127,7 @@ for ax in axes.ravel():
 axes[0,0].set_ylabel('Sensor input difference')
 axes[1,0].set_ylabel('Sensor input difference')
 
-fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 10-15 extra cycles')
+fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 3-6 extra cycles')
 plt.savefig('DiCE/cf_inputs.png')
 plt.show()
 

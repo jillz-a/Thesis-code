@@ -158,12 +158,6 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 mode='lines',
                                 visible=False,
                                 line=dict(color='red')),
-                    go.Scatter(x=x_plot, 
-                                y=CF_mean_pred_lst, 
-                                mode='lines', 
-                                line=dict(color='green'),
-                                visible=False,
-                                name=f'Counterfactual Mean Predicted RUL values for engine {engine_id}'),  
                     go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
                                 y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
                                 fill='toself',  # Fill to next y values
@@ -179,7 +173,13 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
                                 visible=False,
                                 name='2 Standard Deviation',
-                                hoverinfo='skip'),          
+                                hoverinfo='skip'),
+                     go.Scatter(x=x_plot, 
+                                y=CF_mean_pred_lst, 
+                                mode='lines', 
+                                line=dict(color='green'),
+                                visible=False,
+                                name=f'Counterfactual Mean Predicted RUL values for engine {engine_id}'),            
                     go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
                                 y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
                                 fill='toself',  # Fill to next y values
@@ -289,16 +289,7 @@ for engine in engines[engine_eval: engine_eval+1]:
                                  visible=False,
                                  mode='lines',
                                  line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                 name='Scoring function BNN (prefers early predictions than late predictions)'),
-                                 row=2,
-                                 col=2
-                                 )
-        fig.add_trace(go.Scatter(x=x_plot,
-                                 y=np.array([s_score(i) for i in DNN_error]),
-                                 visible=False,
-                                 mode='lines',
-                                 line=dict(color='orange'),
-                                 name='Scoring function DNN (prefers early predictions than late predictions)'),
+                                 name='Scoring function (prefers early predictions than late predictions)'),
                                  row=2,
                                  col=2
                                  )
