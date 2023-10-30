@@ -1,9 +1,9 @@
 from __future__ import division, print_function
-from src.utils import *
+from CLUE_master.src.utils import *
 from torch.optim import Adam, SGD
 import torch.nn as nn
 import torch.nn.functional as F
-from src.probability import decompose_entropy_cat, decompose_std_gauss
+from CLUE_master.src.probability import decompose_entropy_cat, decompose_std_gauss
 
 
 
