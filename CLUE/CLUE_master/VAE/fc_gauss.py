@@ -1,16 +1,16 @@
 from __future__ import division
 import torch
 import numpy as np
-from src.layers import SkipConnection
-from src.utils import BaseNet, to_variable, cprint
-from src.probability import normal_parse_params, GaussianLoglike
+from CLUE_master.src.layers import SkipConnection
+from CLUE_master.src.utils import BaseNet, to_variable, cprint
+from CLUE_master.src.probability import normal_parse_params, GaussianLoglike
 import torch.nn as nn
 from torch.nn import MSELoss
 from torch.distributions import kl_divergence
 import torch.backends.cudnn as cudnn
 from torch.distributions.normal import Normal
 from .models import MLP_preact_generator_net, MLP_preact_recognition_net, MLP_generator_net, MLP_recognition_net
-from src.radam import RAdam
+from CLUE_master.src.radam import RAdam
 
 
 class VAE_gauss(nn.Module):

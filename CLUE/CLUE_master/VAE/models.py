@@ -1,7 +1,7 @@
 from __future__ import division
 import torch.nn as nn
 import torch.nn.functional as F
-from src.layers import SkipConnection, ResBlock, MLPBlock, leaky_MLPBlock, preact_leaky_MLPBlock
+from CLUE_master.src.layers import SkipConnection, ResBlock, MLPBlock, leaky_MLPBlock, preact_leaky_MLPBlock
 
 
 # MLP based model

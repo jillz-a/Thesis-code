@@ -3,11 +3,11 @@ import sys
 import os
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "%d" % int(sys.argv[1])
+# os.environ["CUDA_VISIBLE_DEVICES"] = "%d" % int(sys.argv[1])
 
 
-dname = str(sys.argv[2])
-print(dname)
+# dname = str(sys.argv[2])
+# print(dname)
 
 
 N_up = 2
@@ -20,11 +20,11 @@ widths = [300, 300, 300, 300] # [200, 200, 200, 200]
 depths = [3, 3, 3, 3] # We go deeper because we are using residual models
 latent_dims = [6, 8, 4, 4]
 
-from src.compas_loader import get_my_COMPAS, X_dims_to_input_dim_vec
+from CLUE_master.src.compas_loader import get_my_COMPAS, X_dims_to_input_dim_vec
 from src.LSAT_loader import get_my_LSAT
 
 if dname == 'wine':
-    from src.UCI_loader import load_UCI
+    from CLUE_master.src.UCI_loader import load_UCI
     import torch
     from torchvision import datasets, transforms
     from VAE.fc_gauss import VAE_gauss_net
