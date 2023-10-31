@@ -38,11 +38,11 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
+TRAINDATASET = f'data/{DATASET}/min-max/train'
+TESTDATASET = f'data/{DATASET}/min-max/test'
 
 save_dir = os.path.join(project_path, f'/CLUE/VAE_model_states/{DATASET}/VAE_model_state_test')
-save_dir = '../saves/VAE_model_test'
+save_dir = 'CLUE/saves/VAE_model_test'
 
 #%% main script
 if __name__ == '__main__':
