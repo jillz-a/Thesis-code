@@ -32,6 +32,7 @@ from CLUE_master.VAE.train import train_VAE
 from CLUE_master.src.utils import Datafeed
 
 from CLUE_master.interpret.CLUE import CLUE
+from CLUE_master.interpret.visualization_tools import latent_map_2d_gauss, latent_project_gauss, latent_project_cat
 from CLUE_master.src.utils import Ln_distance
 from CLUE_master.src.probability import decompose_std_gauss, decompose_entropy_cat
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 
             #Flatten sample and combine with RUL
             sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
-            sample = np.column_stack((sample, label))
+            # sample = np.column_stack((sample, label))
 
             if testtrain == TRAINDATASET:
                 x_train.append(sample)
@@ -95,8 +96,12 @@ if __name__ == '__main__':
     x_test = np.array(x_test)
     x_test = x_test[:,0,:].astype(np.float32) #2D array of flattend testing inputs
 
-    trainset = Datafeed(x_train, x_train, transform=None)
-    valset = Datafeed(x_train, x_test, transform=None)
+    y_train = np.array(y_train)
+    y_test = np.array(y_test)
+    
+
+    trainset = Datafeed(x_train, y_train, transform=None)
+    valset = Datafeed(x_test, y_test, transform=None)
 
 
     cuda = torch.cuda.is_available()
@@ -123,10 +128,30 @@ if __name__ == '__main__':
 
     #%% run CLUE explainer
 
+    tr_aleatoric_vec, tr_epistemic_vec, z_train, x_train, y_train = \
+        latent_project_gauss(BNN, VAE, dset=trainset, batch_size=2048, cuda=cuda)
+    
+    tr_uncertainty_vec = tr_aleatoric_vec + tr_epistemic_vec
+
+    te_aleatoric_vec, te_epistemic_vec, z_test, x_test, y_test = \
+        latent_project_gauss(BNN, VAE, dset=valset, batch_size=2048, cuda=cuda)
+    
+    te_uncertainty_vec = (te_aleatoric_vec**2 + te_epistemic_vec**2)**(1.0/2)
+
+    uncertainty_idxs_sorted = np.flipud(np.argsort(te_uncertainty_vec))
+    aleatoric_idxs_sorted = np.flipud(np.argsort(te_aleatoric_vec))
+    epistemic_idxs_sorted = np.flipud(np.argsort(te_epistemic_vec))
+
 
     torch.cuda.empty_cache()
     
-    x_init_batch = x_test
+    use_index = uncertainty_idxs_sorted 
+
+    Nbatch = 512
+    z_init_batch = z_test[use_index[:Nbatch]]
+    x_init_batch = x_test[use_index[:Nbatch]]
+    y_init_batch = y_test[use_index[:Nbatch]]
+
 
     dist = Ln_distance(n=1, dim=(1))
     x_dim = x_init_batch.reshape(x_init_batch.shape[0], -1).shape[1]
@@ -145,3 +170,11 @@ if __name__ == '__main__':
                  lr=1e-2, desired_preds=None, cond_mask=None, distance_metric=dist,
                  z_init=z_init_batch, norm_MNIST=False,
                  flatten_BNN=False, regression=True, cuda=cuda)
+    
+    torch.autograd.set_detect_anomaly(False)
+
+    z_vec, x_vec, uncertainty_vec, epistemic_vec, aleatoric_vec, cost_vec, dist_vec = CLUE_explainer.optimise(
+                                                        min_steps=3, max_steps=50,
+                                                        n_early_stop=3)
+    
+    print(x_vec)

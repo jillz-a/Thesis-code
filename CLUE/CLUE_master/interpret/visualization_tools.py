@@ -2,10 +2,10 @@ from __future__ import division
 import numpy as np
 import torch
 from torchvision.utils import save_image, make_grid
-from src.utils import generate_ind_batch
-from src.probability import decompose_std_gauss, decompose_entropy_cat
+from CLUE_master.src.utils import generate_ind_batch
+from CLUE_master.src.probability import decompose_std_gauss, decompose_entropy_cat
 import matplotlib.pyplot as plt
-from src.utils import MNIST_mean_std_norm
+from CLUE_master.src.utils import MNIST_mean_std_norm
 
 
 def latent_map_2d_gauss(BNN, VAE, vae_sig=True, steps=300, extent=4, batch_size=2048):

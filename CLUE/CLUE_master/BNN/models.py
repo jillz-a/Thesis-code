@@ -22,11 +22,12 @@ class CustomBayesianNeuralNetwork(nn.Module):
         posterior_rho_init: init std for the trainable rho parameter, sampled from N(0, posterior_rho_init)
 
     """
-    def __init__(self, loop_size = 10, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
+    def __init__(self, loop_size = 10, input_size=14, hidden_size=32, num_layers=1, output_dim=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
         super(CustomBayesianNeuralNetwork, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.loop_size = loop_size
+        self.output_dim = output_dim
         self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
         self.relu = bl.ReLU()
         self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
