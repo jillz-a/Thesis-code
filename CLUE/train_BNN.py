@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
-from CLUE_master.VAE.fc_gauss import VAE_gauss_net
-from CLUE_master.VAE.train import train_VAE
+from CLUE_master.BNN.models import CustomBayesianNeuralNetwork
+from CLUE_master.BNN.train import train_BNN_regression
 from CLUE_master.src.utils import Datafeed
 
 
@@ -41,8 +41,8 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-save_dir = os.path.join(project_path, f'/CLUE/VAE_model_states/{DATASET}/VAE_model_state_test')
-save_dir = 'CLUE/saves/VAE_model_test'
+# save_dir = os.path.join(project_path, f'/CLUE/VAE_model_states/{DATASET}/VAE_model_state_test')
+save_dir = 'CLUE/saves/BNN_model_test'
 
 #%% main script
 if __name__ == '__main__':
@@ -94,9 +94,12 @@ if __name__ == '__main__':
     early_stop = 200
     lr = 1e-4
 
+    input_size = 14
+    hidden_size = 32
+
     cuda = torch.cuda.is_available()
 
-    net = VAE_gauss_net(input_dim=input_dim, width=300, depth=3, latent_dim=2, pred_sig=False, lr=lr, cuda=cuda)
+    net = CustomBayesianNeuralNetwork(input_size, hidden_size)
 
-    vlb_train, vlb_dev = train_VAE(net, save_dir, batch_size, nb_epochs, trainset, valset,
-                                       cuda=cuda, flat_ims=False, train_plot=False, early_stop=early_stop)
+    vlb_train, vlb_dev = train_BNN_regression(net, save_dir, batch_size, nb_epochs, trainset, valset,
+                                       cuda=cuda, flat_ims=False)

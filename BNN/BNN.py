@@ -27,6 +27,8 @@ import matplotlib.pyplot as plt
 from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
+import pickle
+
 
 from variables import *
 
@@ -39,8 +41,8 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
-CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False #If True, will save BNN output to .json files
+CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+SAVE = True #If True, will save BNN output to .json files
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -230,6 +232,9 @@ if __name__ == '__main__':
 
         with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
+
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
+            pickle.dump(BNNmodel.state_dict(), f)
 
         plt.plot(train_loss_lst, label='Train loss')
         plt.plot(val_loss_lst, label='Validation loss')

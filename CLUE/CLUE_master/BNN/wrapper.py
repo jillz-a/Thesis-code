@@ -3,12 +3,12 @@ import copy
 import torch
 import torch.nn as nn
 from .models import MLP, MNIST_small_cnn
-from src.probability import diagonal_gauss_loglike, get_rms, get_loglike
+from CLUE_master.src.probability import diagonal_gauss_loglike, get_rms, get_loglike
 import numpy as np
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from .sampler import H_SA_SGHMC
-from src.utils import BaseNet, to_variable, cprint, save_object, load_object
+from CLUE_master.src.utils import BaseNet, to_variable, cprint, save_object, load_object
 
 
 class BNN_cat(BaseNet):  # for categorical distributions
