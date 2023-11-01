@@ -31,6 +31,10 @@ from CLUE_master.VAE.fc_gauss import VAE_gauss_net
 from CLUE_master.VAE.train import train_VAE
 from CLUE_master.src.utils import Datafeed
 
+from CLUE_master.interpret.CLUE import CLUE
+from CLUE_master.src.utils import Ln_distance
+from CLUE_master.src.probability import decompose_std_gauss, decompose_entropy_cat
+
 from CLUE_master.BNN.models import CustomBayesianNeuralNetwork
 from CLUE_master.BNN.wrapper import BNN_gauss, BNN_cat, MLP
 
@@ -53,6 +57,9 @@ if __name__ == '__main__':
     print('Processing training and testing data')
     x_train = []
     x_test = []
+
+    y_train = []
+    y_test = []
 
     for testtrain in [TRAINDATASET, TESTDATASET]:
         #Import input file paths
@@ -78,6 +85,7 @@ if __name__ == '__main__':
 
             if testtrain == TRAINDATASET:
                 x_train.append(sample)
+                y_train.append(label)
             elif testtrain == TESTDATASET:
                 x_test.append(sample)
 
@@ -85,21 +93,15 @@ if __name__ == '__main__':
     x_train = x_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
 
     x_test = np.array(x_test)
-    x_test = x_test[:,0,:].astype(np.float32)
+    x_test = x_test[:,0,:].astype(np.float32) #2D array of flattend testing inputs
 
     trainset = Datafeed(x_train, x_train, transform=None)
     valset = Datafeed(x_train, x_test, transform=None)
 
-    
-
-    batch_size = 128
-    nb_epochs = 2500
-    early_stop = 200
-    
 
     cuda = torch.cuda.is_available()
 
-    #Load VAE
+    #Load trained VAE
     save_dir = 'CLUE/saves/VAE_model_test_models'
     lr = 1e-4
     input_dim = x_train.shape[1]
@@ -107,7 +109,7 @@ if __name__ == '__main__':
 
     VAE.load(project_path + '/' + save_dir + "/theta_best.dat")
 
-    #Load BNN
+    #Load trained BNN
     # Model input parameters
     input_size = 14 #number of features
     hidden_size = 32
@@ -118,3 +120,28 @@ if __name__ == '__main__':
     BNN = BNN_gauss(model, N_train, lr, cuda)
 
     BNN.load_weights(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pkl')
+
+    #%% run CLUE explainer
+
+
+    torch.cuda.empty_cache()
+    
+    x_init_batch = x_test
+
+    dist = Ln_distance(n=1, dim=(1))
+    x_dim = x_init_batch.reshape(x_init_batch.shape[0], -1).shape[1]
+
+
+    aleatoric_weight = 0
+    epistemic_weight = 0
+    uncertainty_weight = 1
+
+    distance_weight = 2 / x_dim
+    prediction_similarity_weight = 0
+
+    CLUE_explainer = CLUE(VAE, BNN, x_init_batch, uncertainty_weight=uncertainty_weight, aleatoric_weight=aleatoric_weight, epistemic_weight=epistemic_weight,
+                      prior_weight=0, distance_weight=distance_weight,
+                 latent_L2_weight=0, prediction_similarity_weight=prediction_similarity_weight,
+                 lr=1e-2, desired_preds=None, cond_mask=None, distance_metric=dist,
+                 z_init=z_init_batch, norm_MNIST=False,
+                 flatten_BNN=False, regression=True, cuda=cuda)

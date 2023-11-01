@@ -51,6 +51,9 @@ if __name__ == '__main__':
     x_train = []
     x_test = []
 
+    y_train = []
+    y_test = []
+
     for testtrain in [TRAINDATASET, TESTDATASET]:
         #Import input file paths
         file_paths = glob.glob(os.path.join(project_path, testtrain, '*.txt'))  # Get a list of all file paths in the folder
@@ -71,12 +74,14 @@ if __name__ == '__main__':
 
             #Flatten sample and combine with RUL
             sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
-            sample = np.column_stack((sample, label))
+            # sample = np.column_stack((sample, label))
 
             if testtrain == TRAINDATASET:
                 x_train.append(sample)
+                y_train.append(label)
             elif testtrain == TESTDATASET:
                 x_test.append(sample)
+                y_test.append(label)
 
     x_train = np.array(x_train)
     x_train = x_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
@@ -84,8 +89,14 @@ if __name__ == '__main__':
     x_test = np.array(x_test)
     x_test = x_test[:,0,:].astype(np.float32)
 
-    trainset = Datafeed(x_train, x_train, transform=None)
-    valset = Datafeed(x_train, x_test, transform=None)
+    y_train = np.array(y_train)
+    # y_train = y_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
+
+    y_test = np.array(y_test)
+    # y_test = y_test[:,0,:].astype(np.float32)
+
+    trainset = Datafeed(x_train, y_train, transform=None)
+    valset = Datafeed(x_test, y_test, transform=None)
 
     input_dim = x_train.shape[1]
 
