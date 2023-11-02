@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from torchvision.utils import save_image, make_grid
-from src.utils import *
+from CLUE_master.src.utils import *
 from numpy.random import normal
 
 

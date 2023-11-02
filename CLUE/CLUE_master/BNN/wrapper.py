@@ -110,34 +110,42 @@ class BNN_cat(BaseNet):  # for categorical distributions
         probs = F.softmax(out, dim=1).data.cpu()
         return probs.data
 
+    # def sample_predict(self, x, Nsamples, grad=False):
+    #     """return predictions using multiple samples from posterior"""
+    #     self.set_mode_train(train=False)
+    #     if Nsamples == 0:
+    #         Nsamples = len(self.weight_set_samples)
+    #     x, = to_variable(var=(x, ), cuda=self.cuda)
+
+    #     if grad:
+    #         self.optimizer.zero_grad()
+    #         if not x.requires_grad:
+    #             x.requires_grad = True
+
+    #     out = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
+
+    #     # iterate over all saved weight configuration samples
+    #     for idx, weight_dict in enumerate(self.weight_set_samples):
+    #         if idx == Nsamples:
+    #             break
+    #         self.model.load_state_dict(weight_dict)
+    #         out[idx] = self.model(x)
+
+    #     out = out[:idx]
+    #     prob_out = F.softmax(out, dim=2)
+
+    #     if grad:
+    #         return prob_out
+    #     else:
+    #         return prob_out.data
+        
+    #CUSTOM
     def sample_predict(self, x, Nsamples, grad=False):
-        """return predictions using multiple samples from posterior"""
         self.set_mode_train(train=False)
-        if Nsamples == 0:
-            Nsamples = len(self.weight_set_samples)
         x, = to_variable(var=(x, ), cuda=self.cuda)
+        mu, sigma = self.model(x)
 
-        if grad:
-            self.optimizer.zero_grad()
-            if not x.requires_grad:
-                x.requires_grad = True
-
-        out = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
-
-        # iterate over all saved weight configuration samples
-        for idx, weight_dict in enumerate(self.weight_set_samples):
-            if idx == Nsamples:
-                break
-            self.model.load_state_dict(weight_dict)
-            out[idx] = self.model(x)
-
-        out = out[:idx]
-        prob_out = F.softmax(out, dim=2)
-
-        if grad:
-            return prob_out
-        else:
-            return prob_out.data
+        return mu, sigma
 
     def get_weight_samples(self, Nsamples=0):
         """return weight samples from posterior in a single-column array"""
@@ -284,6 +292,14 @@ class BNN_gauss(BaseNet):
             return mu_vec[:idx], std_vec[:idx]
         else:
             return mu_vec[:idx].data, std_vec[:idx].data
+        
+        #CUSTOM
+    # def sample_predict(self, x, Nsamples, grad=False):
+    #     self.set_mode_train(train=False)
+    #     x, = to_variable(var=(x, ), cuda=self.cuda)
+    #     mu, sigma = self.model(x)
+
+    #     return mu, sigma
 
     def get_weight_samples(self, Nsamples=0):
         weight_vec = []
