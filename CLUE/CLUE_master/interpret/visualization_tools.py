@@ -64,9 +64,9 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
         # Note that naming is wrong and this is actually std instead of entropy
         if prob_BNN:
             mu_vec, std_vec = BNN.sample_predict(x, 0, False)
-            total_entropy, aleatoric_entropy, epistemic_entropy = decompose_std_gauss(mu_vec, std_vec)
+            total_entropy, aleatoric_entropy, epistemic_entropy = decompose_std_gauss(mu_vec, std_vec, sum_dims=False)
         else:
-            mu, std = BNN.predict(x, grad=False)
+            mu, std = BNN.predict(x)
             total_entropy = std
             aleatoric_entropy = std
             epistemic_entropy = std*0

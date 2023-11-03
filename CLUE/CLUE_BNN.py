@@ -86,9 +86,10 @@ if __name__ == '__main__':
 
             if testtrain == TRAINDATASET:
                 x_train.append(sample)
-                y_train.append(label)
+                y_train.append([label])
             elif testtrain == TESTDATASET:
                 x_test.append(sample)
+                y_test.append([label])
 
     x_train = np.array(x_train)
     x_train = x_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     input_size = 14 #number of features
     hidden_size = 32
 
-    model = CustomBayesianNeuralNetwork(input_size, hidden_size)
+    model = CustomBayesianNeuralNetwork(input_size=input_size, hidden_size=hidden_size)
     N_train = x_train.shape[0]
     lr = 1e-2
     BNN = BNN_gauss(model, N_train, lr, cuda)
@@ -127,14 +128,14 @@ if __name__ == '__main__':
     BNN.load_weights(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pkl')
 
     #%% run CLUE explainer
-
+    print('Calculating uncertanties')
     tr_aleatoric_vec, tr_epistemic_vec, z_train, x_train, y_train = \
-        latent_project_gauss(BNN, VAE, dset=trainset, batch_size=2048, cuda=cuda)
+        latent_project_gauss(BNN, VAE, dset=trainset, batch_size=2048, cuda=cuda, prob_BNN=True)
     
     tr_uncertainty_vec = tr_aleatoric_vec + tr_epistemic_vec
 
     te_aleatoric_vec, te_epistemic_vec, z_test, x_test, y_test = \
-        latent_project_gauss(BNN, VAE, dset=valset, batch_size=2048, cuda=cuda)
+        latent_project_gauss(BNN, VAE, dset=valset, batch_size=2048, cuda=cuda, prob_BNN=True)
     
     te_uncertainty_vec = (te_aleatoric_vec**2 + te_epistemic_vec**2)**(1.0/2)
 
@@ -164,17 +165,18 @@ if __name__ == '__main__':
     distance_weight = 2 / x_dim
     prediction_similarity_weight = 0
 
+    print('Running CLUE')
     CLUE_explainer = CLUE(VAE, BNN, x_init_batch, uncertainty_weight=uncertainty_weight, aleatoric_weight=aleatoric_weight, epistemic_weight=epistemic_weight,
                       prior_weight=0, distance_weight=distance_weight,
                  latent_L2_weight=0, prediction_similarity_weight=prediction_similarity_weight,
-                 lr=1e-2, desired_preds=None, cond_mask=None, distance_metric=dist,
-                 z_init=z_init_batch, norm_MNIST=False,
+                 lr=1e-2, desired_preds=y_init_batch, cond_mask=None, distance_metric=dist,
+                 z_init=None, norm_MNIST=False,
                  flatten_BNN=False, regression=True, cuda=cuda)
     
     torch.autograd.set_detect_anomaly(False)
 
     z_vec, x_vec, uncertainty_vec, epistemic_vec, aleatoric_vec, cost_vec, dist_vec = CLUE_explainer.optimise(
-                                                        min_steps=3, max_steps=50,
+                                                        min_steps=3, max_steps=100,
                                                         n_early_stop=3)
     
     print(x_vec)

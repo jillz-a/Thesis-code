@@ -22,7 +22,7 @@ class CustomBayesianNeuralNetwork(nn.Module):
         posterior_rho_init: init std for the trainable rho parameter, sampled from N(0, posterior_rho_init)
 
     """
-    def __init__(self, loop_size = 10, input_size=14, hidden_size=32, num_layers=1, output_dim=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
+    def __init__(self, loop_size = 10, input_size=14, hidden_size=32, num_layers=1, output_dim=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0, grad=False):
         super(CustomBayesianNeuralNetwork, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers

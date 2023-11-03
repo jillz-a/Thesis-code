@@ -267,39 +267,44 @@ class BNN_gauss(BaseNet):
 
         return None
 
-    def sample_predict(self, x, Nsamples, grad=False):
-        self.set_mode_train(train=False)
-        if Nsamples == 0:
-            Nsamples = len(self.weight_set_samples)
-        x, = to_variable(var=(x, ), cuda=self.cuda)
-
-        if grad:
-            self.optimizer.zero_grad()
-            if not x.requires_grad:
-                x.requires_grad = True
-
-        mu_vec = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
-        std_vec = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
-
-        # iterate over all saved weight configuration samples
-        for idx, weight_dict in enumerate(self.weight_set_samples):
-            if idx == Nsamples:
-                break
-            self.model.load_state_dict(weight_dict)
-            mu_vec[idx], std_vec[idx] = self.model(x)
-
-        if grad:
-            return mu_vec[:idx], std_vec[:idx]
-        else:
-            return mu_vec[:idx].data, std_vec[:idx].data
-        
-        #CUSTOM
     # def sample_predict(self, x, Nsamples, grad=False):
     #     self.set_mode_train(train=False)
+    #     if Nsamples == 0:
+    #         Nsamples = len(self.weight_set_samples)
     #     x, = to_variable(var=(x, ), cuda=self.cuda)
-    #     mu, sigma = self.model(x)
 
-    #     return mu, sigma
+    #     if grad:
+    #         self.optimizer.zero_grad()
+    #         if not x.requires_grad:
+    #             x.requires_grad = True
+
+    #     mu_vec = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
+    #     std_vec = x.data.new(Nsamples, x.shape[0], self.model.output_dim)
+
+    #     # iterate over all saved weight configuration samples
+    #     for idx, weight_dict in enumerate(self.weight_set_samples):
+    #         if idx == Nsamples:
+    #             break
+    #         self.model.load_state_dict(weight_dict)
+    #         mu_vec[idx], std_vec[idx] = self.model(x)
+
+    #     if grad:
+    #         return mu_vec[:idx], std_vec[:idx]
+    #     else:
+    #         return mu_vec[:idx].data, std_vec[:idx].data
+        
+        #CUSTOM
+    def sample_predict(self, x, Nsamples, grad=False):
+        self.set_mode_train(train=False)
+        x, = to_variable(var=(x, ), cuda=self.cuda)
+        mu_vec = x.data.new(x.shape[0],1, self.model.output_dim)
+        std_vec = x.data.new(x.shape[0],1, self.model.output_dim)
+
+
+        for i, sample in enumerate(x):
+            mu_vec[i], std_vec[i] = self.model(sample.reshape(1,420))
+
+        return mu_vec, std_vec
 
     def get_weight_samples(self, Nsamples=0):
         weight_vec = []

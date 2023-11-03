@@ -92,7 +92,7 @@ class CLUE(BaseNet):
         assert self.desired_preds is not None
 
         if self.regression:
-            dist = F.mse_loss(preds, self.desired_preds, reduction='none')
+            dist = F.mse_loss(preds, torch.tensor(self.desired_preds), reduction='none')
         else:
 
             if len(self.desired_preds.shape) == 1 or self.desired_preds.shape[1] == 1:
@@ -189,6 +189,7 @@ class CLUE(BaseNet):
             total_uncertainty, aleatoric_uncertainty, epistemic_uncertainty, x, preds = self.uncertainty_from_z()
             objective, w_dist = self.get_objective(x, total_uncertainty, aleatoric_uncertainty, epistemic_uncertainty, preds)
             # We sum over features and over batch size in order to make dz invariant of batch (used to average over batch size)
+            objective = objective.float()
             objective.sum(dim=0).backward()  # backpropagate
 
             self.optimizer.step()
