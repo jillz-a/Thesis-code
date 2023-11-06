@@ -6,6 +6,17 @@
 import os
 import zipfile
 
+import sys
+# Get the absolute path of the project directory
+project_path = os.path.dirname(os.path.abspath(os.path.join((__file__))))
+# Add the project directory to sys.path if it's not already present
+if project_path not in sys.path:
+    sys.path.append(project_path)
+
+from variables import *
+import glob
+import csv
+
 import numpy as np
 np.random.seed(seed=42)
 import pandas as pd
@@ -13,6 +24,13 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy.signal import savgol_filter
 import joblib
 import matplotlib.pyplot as plt
+
+#%% import files
+TRAINDATASET = f'data/{DATASET}/min-max/train'
+TESTDATASET = f'data/{DATASET}/min-max/test'
+
+PLOT = True
+GENERATE = False
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -371,67 +389,108 @@ def _load_data_from_file(file, subset="FD001"):
 
 
 if __name__ == "__main__":
-    """Preprocessing."""
-    normalization = "min-max"
-    validation = 0.00
-    maxRUl = 120
+    if GENERATE:
+        """Preprocessing."""
+        normalization = "min-max"
+        validation = 0.00
+        maxRUl = 120
 
-    for subset, window in [("FD001", 30), ("FD002", 20), ("FD003", 30), ("FD004", 15)]:
-        print("**** %s ****" % subset)
-        print("normalization = " + normalization)
-        print("window = " + str(window))
-        print("validation = " + str(validation))
+        for subset, window in [("FD001", 30), ("FD002", 20), ("FD003", 30), ("FD004", 15)]:
+            print("**** %s ****" % subset)
+            print("normalization = " + normalization)
+            print("window = " + str(window))
+            print("validation = " + str(validation))
 
-        # read file into memory
-      
-        file_train = open("data_set/train_" + subset + ".txt")
-        file_test = open("data_set/test_" + subset + ".txt")
-        file_rul = open("data_set/RUL_" + subset + ".txt")
+            # read file into memory
+        
+            file_train = open("data_set/train_" + subset + ".txt")
+            file_test = open("data_set/test_" + subset + ".txt")
+            file_rul = open("data_set/RUL_" + subset + ".txt")
 
-        print("Extracting dataframes...")
-        df_train, df_validation, df_test = extract_dataframes(file_train=file_train, file_test=file_test, subset=subset, validation=validation)
+            print("Extracting dataframes...")
+            df_train, df_validation, df_test = extract_dataframes(file_train=file_train, file_test=file_test, subset=subset, validation=validation)
 
-        #%% build train data
-        print("Preprocessing training data...")
-        scaler = build_train_data(df=df_train, out_path="data/" + subset + "/" + normalization, window=window, normalization=normalization, maxRUL=maxRUl)
+            #%% build train data
+            print("Preprocessing training data...")
+            scaler = build_train_data(df=df_train, out_path="data/" + subset + "/" + normalization, window=window, normalization=normalization, maxRUL=maxRUl)
 
-        #%% build validation data
-        if len(df_validation) > 0:
-            print("Preprocessing validation data...")
-            build_validation_data(df=df_validation, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, maxRUL=maxRUl)
+            #%% build validation data
+            if len(df_validation) > 0:
+                print("Preprocessing validation data...")
+                build_validation_data(df=df_validation, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, maxRUL=maxRUl)
 
-        # build test data
-        print("Preprocessing test data...")
-        build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False, maxRUL=maxRUl)
+            # build test data
+            print("Preprocessing test data...")
+            build_test_data(df=df_test, file_rul=file_rul, out_path="data/" + subset + "/" + normalization, scaler=scaler, window=window, keep_all=False, maxRUL=maxRUl)
 
-        # save scaler
-        print("Saving scaler object to file...")
-        scaler_filename = "data/" + "/" + subset + "/" + normalization + "/scaler.sav"
-        joblib.dump(scaler, scaler_filename)
+            # save scaler
+            print("Saving scaler object to file...")
+            scaler_filename = "data/" + "/" + subset + "/" + normalization + "/scaler.sav"
+            joblib.dump(scaler, scaler_filename)
 
-        # close files
-        file_train.close()
-        file_test.close()
-        file_rul.close()
-        print("Done.")
+            # close files
+            file_train.close()
+            file_test.close()
+            file_rul.close()
+            print("Done.")
+
 
     #%% _______________Plot sensor data________________
-    df1 = pd.read_csv('data/FD001/min-max/test/test_00000-120.txt', sep=' ', header=None)
+    if PLOT== True:
 
-    fig, axes = plt.subplots(nrows=2, ncols=7, sharex=True,
-                                        figsize=(25, 8))
-    id_equipment = 1
-    # mask_equip1 = df1['Engine'] == id_equipment# Select column Equipment with value x
-    nrow = 0
-    ncol = 0
+        with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_samples.csv')) as csvfile:
+            sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
-    i = 0
-    m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
-    for ax in axes.ravel():
-        signal = df1[i]
-        ax.plot(range(len(signal)), signal)
-        ax.set_xlabel('Sensor ' + str(m[i]))
-        i += 1
 
-    plt.show()
-# %%
+        #Input files
+        file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+        file_paths.sort() 
+
+        fig, axes = plt.subplots(nrows=2, 
+                                ncols=7, 
+                                sharex=True, 
+                                figsize=(25, 8))
+
+        #%% Plot input dataframe
+        sensor = 0
+        m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
+        engine = 0
+        engine_len = int(sample_len[engine][0]) #TODO: change later to account for engine length
+        # engine_len = 170
+
+        #Go over every sensor
+        for ax in axes.ravel():
+
+            input_total = [] #2D list containing inputs in sliding window form
+
+            #Go over engine lifetime
+            for i, input in enumerate(file_paths[0:engine_len]):
+
+                df_input = pd.read_csv(input, sep=' ', header=None)
+                true_RUL = float(input[-7:-4])
+
+                input = df_input[sensor] # input sample for sensor m[sensor] and timestep i
+                
+                #Add inputs to an overall total list spanning engine lifetime
+                relative_list = [np.NaN for _ in range(engine_len + len(input)-1)]
+                counter_relative = relative_list.copy()
+                input_relative = relative_list.copy()
+                for j in range(len(input)):
+                    #replace NaN values with values in sliding window format
+                    input_relative[j+i] = input[j]
+                
+                input_total.append(input_relative)
+
+
+            #Take the average value of inputs at every time point
+            input_continuous = np.nanmean(np.array(input_total), axis=0)
+
+            ax.plot(np.arange(len(input_continuous)), input_continuous, label='Filtered sensor input')
+
+            ax.set_title('Sensor ' + str(m[sensor]))
+            ax.set_xlabel('Cycles')
+            # ax.set_ylim(-1,1)
+                
+            sensor += 1
+
+        plt.show()
