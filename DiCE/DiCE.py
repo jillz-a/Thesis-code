@@ -105,7 +105,7 @@ def CMAPSS_counterfactuals(chunk):
         cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
                                                 verbose=False, 
                                                 total_CFs= 1, 
-                                                desired_range=[5, 7],
+                                                desired_range=[10, 11],
                                                 random_seed = 2,
                                                 proximity_weight=0.002,
                                                 time_series=True)
