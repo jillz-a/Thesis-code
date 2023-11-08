@@ -65,7 +65,7 @@ sensor = 0
 m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
 engine = 0
 engine_len = int(cf_sample_len[engine][0]) #TODO: change later to account for engine length
-# engine_len = 170
+engine_len = 1
 
 #Go over every sensor
 for ax in axes.ravel():
@@ -73,7 +73,7 @@ for ax in axes.ravel():
     orig_total = [] #2D list containing original inputs in sliding window form
 
     #Go over engine lifetime
-    for i, cf_sample in enumerate(cf_samples[60:engine_len]):
+    for i, cf_sample in enumerate(cf_samples[0:engine_len]):
 
         #Counterfactuals
         cf_df = pd.read_csv(cf_sample)
@@ -103,31 +103,31 @@ for ax in axes.ravel():
         orig_total.append(orig_relative)
         # diff = [counter_relative[i] - orig_relative[i] for i in range(len(counter_relative))]
 
-        # ax.plot(np.arange(len(counter_relative)), counter_relative)
-        # ax.plot(np.arange(len(counter_relative)), orig_relative)
+        ax.plot(np.arange(len(counter_relative)), counter_relative, color='orange')
+        ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue')
 
 
     #Take the average value of inputs at every time point
-    cf_average = np.nanmedian(np.array(cf_total), axis=0)
+    cf_average = np.nanmean(np.array(cf_total), axis=0)
     orig_average = np.nanmean(np.array(orig_total), axis=0)
 
     #Calculate difference between origninal and counterfactual inputs
     difference = cf_average - orig_average
 
-    ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input')
-    ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color='green', alpha=0.5)
-    ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color='red', alpha=0.5)
+    # ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input')
+    # ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color='green', alpha=0.5)
+    # ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color='red', alpha=0.5)
 
     ax.set_title('Sensor ' + str(m[sensor]))
     ax.set_xlabel('Cycles')
-    # ax.set_ylim(-1,1)
+    ax.set_ylim(-1,1)
         
     sensor += 1
 
-axes[0,0].set_ylabel('Sensor input difference')
-axes[1,0].set_ylabel('Sensor input difference')
+# axes[0,0].set_ylabel('Sensor input difference')
+# axes[1,0].set_ylabel('Sensor input difference')
 
-fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 3-6 extra cycles')
+fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 10-11 extra cycles')
 plt.savefig('DiCE/cf_inputs.png')
 plt.show()
 

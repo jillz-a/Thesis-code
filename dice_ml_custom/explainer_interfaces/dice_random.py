@@ -243,10 +243,10 @@ class DiceRandom(ExplainerBase):
             if feature in fixed_features_values:
                 sample = [fixed_features_values[feature]]*sampling_size
             elif feature in self.data_interface.continuous_feature_names:
-                # feature_range[feature][0] = -1
-                # feature_range[feature][1] = 1
-                low = feature_range[feature][0] - 0.25
-                high = feature_range[feature][1] + 0.25
+                feature_range[feature][0] = -1
+                feature_range[feature][1] = 1
+                low = feature_range[feature][0]
+                high = feature_range[feature][1]
                 sample = self.get_continuous_samples(
                     low, high, precisions[feature], size=sampling_size,
                     seed=sampling_random_seed)
