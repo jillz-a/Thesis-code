@@ -73,7 +73,7 @@ for ax in axes.ravel():
     orig_total = [] #2D list containing original inputs in sliding window form
 
     #Go over engine lifetime
-    for i, cf_sample in enumerate(cf_samples[0:engine_len]):
+    for i, cf_sample in enumerate(cf_samples[60:engine_len]):
 
         #Counterfactuals
         cf_df = pd.read_csv(cf_sample)
@@ -108,7 +108,7 @@ for ax in axes.ravel():
 
 
     #Take the average value of inputs at every time point
-    cf_average = np.nanmean(np.array(cf_total), axis=0)
+    cf_average = np.nanmedian(np.array(cf_total), axis=0)
     orig_average = np.nanmean(np.array(orig_total), axis=0)
 
     #Calculate difference between origninal and counterfactual inputs
@@ -120,7 +120,7 @@ for ax in axes.ravel():
 
     ax.set_title('Sensor ' + str(m[sensor]))
     ax.set_xlabel('Cycles')
-    ax.set_ylim(-1,1)
+    # ax.set_ylim(-1,1)
         
     sensor += 1
 
