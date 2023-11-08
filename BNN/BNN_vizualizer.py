@@ -9,6 +9,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import norm
 
+from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
+
 from torch import load
 from tqdm import tqdm
 import torch
@@ -82,9 +85,10 @@ def s_score(error):
 
 start = time.time()
 
-show_cf = True
+show_cf = False
+GIF = True
 alpha = 0.1 #set the alpha bounds
-engine_eval = 1
+engine_eval = 0
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
@@ -361,6 +365,42 @@ for engine in engines[engine_eval: engine_eval+1]:
 
     # Export the figure to an HTML file
     pyo.plot(fig, filename='interactive-plots/prediction_fig.html', auto_open=False)
+
+    if GIF == True:
+        # Create an empty figure
+        animation_fig = go.Figure()
+
+        # Capture frames of the plot at each step
+        frames = []
+        loop = tqdm(x_plot)
+        for i, _ in enumerate(x_plot):
+            for j in range(n_traces):
+                fig.data[i * n_traces + j].visible = True
+            frame = go.Frame(data=fig.data, name=f'Frame {i}')
+            frames.append(frame)
+            for j in range(n_traces):
+                fig.data[i * n_traces + j].visible = False
+
+        # Update the empty figure with the captured frames
+        animation_fig.frames = frames
+
+        # Define the layout for the animation
+        animation_fig.update_layout(
+            sliders=sliders,
+            title=f'RUL prediction of engine {engine_id}',
+            showlegend=True,
+        )
+
+        # Function to update the slider
+        def update_slider(frame):
+            step = frame % len(x_plot)
+            animation_fig.update(frames=[go.Frame(data=fig.data, name=f'Frame {step}')])
+
+        # Create the animation
+        ani = FuncAnimation(plt.gcf(), update_slider, frames=len(x_plot) * n_traces)
+
+        # Save the animation as a GIF
+        ani.save('interactive-plots/slider_animation.gif', writer='pillow', fps=10)  # Adjust the file name and FPS as needed
 
 
 # %%

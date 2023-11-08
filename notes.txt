@@ -19,3 +19,13 @@ Deterministic Neural Network RMSE for 30 engines = 11.531 cycles
 Smooth BNN cross validation loss:
 Average training loss: 7.274342441558838
 Average test loss: 7.370782416661581
+
+Smooth DNN cross validation loss:
+Average training loss: 7.011705493927002
+Average test loss: 5.707553388277689
+
+
+Evaluation completed for dataset FD001
+Bayesian Neural Network RMSE for 30 engines = 8.235333333333333 cycles
+STD for RMSE: 3.5342898943735874
+COV for RMSE: 0.42916172926093915

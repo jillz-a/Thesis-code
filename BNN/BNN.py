@@ -40,7 +40,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
-TRAIN = True #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
+TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = False #If True, will save BNN output to .json files
 
@@ -63,7 +63,7 @@ class BayesianNeuralNetwork(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
-        self.relu = bl.ReLU()
+        self.relu = bl.ReLU() #TODO not added in forward yet, perhaps something to consider
         self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
         self.l2 = bl.LinearReparameterization(16,1)
         
@@ -381,5 +381,9 @@ if __name__ == '__main__':
                 with open(file_name, 'w') as jsonfile:
                     json.dump(results, jsonfile)
 
+        STD = np.sqrt(1/(len(engines) - 1) * sum([(RMSE_lst[i] - np.mean(RMSE_lst))**2 for i in range(len(RMSE_lst))]))
+        COV = STD/np.mean(RMSE_lst)
         print(f'Evaluation completed for dataset {DATASET}')
         print(f'Bayesian Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
+        print(f'STD for RMSE: {STD}')
+        print(f'COV for RMSE: {COV}')
