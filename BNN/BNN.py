@@ -302,7 +302,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -311,6 +311,7 @@ if __name__ == '__main__':
         file_paths.sort() 
 
         RMSE_lst = []
+        mean_preds = []
        
         engines = np.arange(len(sample_len))
         for engine in engines:
@@ -344,6 +345,7 @@ if __name__ == '__main__':
                 #predict RUL from samples using Monte Carlo Sampling
                 X = ToTensor()(sample).to(device)
                 n_samples = 20
+                NNmodel.eval()
 
                 mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
 
@@ -356,6 +358,7 @@ if __name__ == '__main__':
 
                 #add predictions and true labels to lists
                 mean_pred_lst.append(mean_pred.item())
+                mean_preds.append(mean_pred.item())
                 true_lst.append(y)
                 var_pred_lst.append(var_pred.item())
                 

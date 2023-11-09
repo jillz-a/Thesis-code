@@ -250,11 +250,11 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
             t = traj.drop(["trajectory_id"], axis=1).values
 
             for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], int(len(traj)/4), 3)   #denoising
+                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
             t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
-            num_samples = len(t) - window + 1
+            num_samples = 1
             traj_len_lst.append(num_samples)
             sample = t[-window :]
             # sample = scaler.fit_transform(sample)
