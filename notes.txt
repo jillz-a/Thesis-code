@@ -44,3 +44,22 @@ Average test loss: 7.850002876080964
 BNN Performance of 10 fold cross validation
 Average training loss: 11.740078544616699
 Average test loss: 9.605813673922889
+
+_____True normalization fix___
+Evaluation completed for dataset FD001
+Bayesian Neural Network RMSE for 100 engines = 12.2416 cycles
+STD for RMSE: 12.349637521364379
+COV for RMSE: 1.0088254412302622
+
+Evaluation completed for dataset FD001
+Deterministic Neural Network RMSE for 100 engines = 11.5582 cycles
+STD for RMSE: 11.92912854480091
+COV for RMSE: 1.0320922414217535
+
+Bayesian Performance of 10 fold cross validation
+Average training loss: 8.843575572967529
+Average test loss: 8.412444957933928
+
+Deterministic Performance of 10 fold cross validation
+Average training loss: 3.575304913520813
+Average test loss: 6.365283945987099
