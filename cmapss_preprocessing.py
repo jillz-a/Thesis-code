@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-PLOT = False
-GENERATE = True
+PLOT = True
+GENERATE = False
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -93,8 +93,11 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     traj_len_lst = []
     flag = False
     test_train = 0.7 #fraction of engines to be used for training, rest will be used for testing
-    for traj_id, traj in grouped:
 
+
+    #Denoising per trajectory
+    denoised_trajectories = []
+    for traj_id, traj in grouped:
         while traj_id <= int(test_train*len(grouped)):
             name = "train"
             break
@@ -105,13 +108,33 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
                 name = "test"
                 flag = True
 
-        t = traj.drop(["trajectory_id"], axis=1).values
+        # t = traj.drop(["trajectory_id"], axis=1).values
+        t = traj.values
 
-        for i in range(t.shape[1]):
+        for i in range(1,t.shape[1]):
             t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
-        
-        t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
+        denoised_trajectories.append(t)
+
+    #Normalise over the entire data set to create a global normalisation
+    denoised_data =np.concatenate(denoised_trajectories)
+    denoised_data = pd.DataFrame(denoised_data, index=None)
+    denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
+
+    #Split back up into the trajectories to create individual sliding windows
+    grouped = denoised_data.groupby(0)
+    for traj_id, traj in grouped:
+        while traj_id <= int(test_train*len(grouped)):
+            name = "train"
+            break
+        else:
+            if not flag:
+                sample_id = 0
+                traj_len_lst = []
+                name = "test"
+                flag = True
+
+        t = traj.drop(0, axis=1).values
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
         for i in range(num_samples):
@@ -170,13 +193,28 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
     # sample each trajectory through sliding window segmentation
     sample_id = 0
     traj_len_lst = []
+    #Denoising per trajectory
+    denoised_trajectories = []
     for traj_id, traj in grouped:
-        t = traj.drop(["trajectory_id"], axis=1).values
 
-        for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)   #denoising
+        # t = traj.drop(["trajectory_id"], axis=1).values
+        t = traj.values
 
-        t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
+        for i in range(1,t.shape[1]):
+            t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+
+        denoised_trajectories.append(t)
+
+    #Normalise over the entire data set to create a global normalisation
+    denoised_data =np.concatenate(denoised_trajectories)
+    denoised_data = pd.DataFrame(denoised_data, index=None)
+    denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
+
+    #Split back up into the trajectories to create individual sliding windows
+    grouped = denoised_data.groupby(0)
+    for traj_id, traj in grouped:
+
+        t = traj.drop(0, axis=1).values
 
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
@@ -213,6 +251,7 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
         True to keep all the segments extracted from the series, False to keep only the last one.
     """
     assert scaler, "'scaler' type cannot be None."
+    df.iloc[:, 1 : df.shape[1]] = scaler.fit_transform(df.iloc[:, 1 : df.shape[1]])
 
     # group by trajectory
     grouped = df.groupby("trajectory_id")
@@ -246,32 +285,62 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
     sample_id = 0
     traj_len_lst = []
     if not keep_all:
+        #Denoising per trajectory
+        denoised_trajectories = []
         for traj_id, traj in grouped:
-            t = traj.drop(["trajectory_id"], axis=1).values
 
-            for i in range(t.shape[1]):
+            # t = traj.drop(["trajectory_id"], axis=1).values
+            t = traj.values
+
+            for i in range(1,t.shape[1]):
                 t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
-            t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
+            denoised_trajectories.append(t)
+
+        #Normalise over the entire data set to create a global normalisation
+        denoised_data =np.concatenate(denoised_trajectories)
+        denoised_data = pd.DataFrame(denoised_data, index=None)
+        denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
+
+        #Split back up into the trajectories to create individual sliding windows
+        grouped = denoised_data.groupby(0)
+        for traj_id, traj in grouped:
+
+            t = traj.drop(0, axis=1).values
 
             num_samples = 1
             traj_len_lst.append(num_samples)
             sample = t[-window :]
             # sample = scaler.fit_transform(sample)
-            label = min(rul[traj_id - 1], maxRUL)
+            label = min(rul[int(traj_id) - 1], maxRUL)
             path = os.path.join(out_path, "test_set")
             if not os.path.exists(path): os.makedirs(path)
             file_name = os.path.join(path, "test_{0:0=5d}-{1:0=3d}.txt".format(sample_id, label))
             sample_id += 1
             np.savetxt(file_name, sample, fmt="%.10f")
     else:
+        #Denoising per trajectory
+        denoised_trajectories = []
         for traj_id, traj in grouped:
-            t = traj.drop(["trajectory_id"], axis=1).values
 
-            for i in range(t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)   #denoising
+            # t = traj.drop(["trajectory_id"], axis=1).values
+            t = traj.values
 
-            t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
+            for i in range(1,t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+
+            denoised_trajectories.append(t)
+
+        #Normalise over the entire data set to create a global normalisation
+        denoised_data =np.concatenate(denoised_trajectories)
+        denoised_data = pd.DataFrame(denoised_data, index=None)
+        denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
+
+        #Split back up into the trajectories to create individual sliding windows
+        grouped = denoised_data.groupby(0)
+        for traj_id, traj in grouped:
+
+            t = traj.drop(0, axis=1).values
 
             num_samples = len(t) - window + 1
             traj_len_lst.append(num_samples)

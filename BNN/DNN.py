@@ -23,6 +23,7 @@ from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 from EarlyStopping import  EarlyStopping
+import pickle
 
 from variables import *
 
@@ -36,7 +37,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False
+SAVE = True
 
 
 #Frequentist neural network class
@@ -177,18 +178,34 @@ if __name__ == "__main__":
     if TRAIN == True and CV == False: #Train the model on the entire data set
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
+        es = EarlyStopping()
 
-        train_data = DataLoader(train, batch_size=BATCHSIZE)
-        
-        for epoch in range(EPOCHS):
+        train_set, val_set = random_split(train, [0.8, 0.2])
+
+        train_data = DataLoader(train_set, batch_size=BATCHSIZE)
+        val_data = DataLoader(val_set, batch_size= len(val_set))
+
+        train_loss_lst = []
+        val_loss_lst = []
+        epoch = 0
+        done = False
+        while epoch < EPOCHS and not done:
+            epoch +=1
+
+            train_loss = train_epoch(train_data=train_data, model=NNmodel, loss_fn=loss_fn, opt=opt)
+            val_loss = test_epoch(test_data=val_data, model=NNmodel, loss_fn=loss_fn, val=True)
+
+            train_loss_lst.append(train_loss) 
+            val_loss_lst.append(val_loss) 
             
-            train_loss = train_epoch(train_data=train_data)
-            
-            scheduler.step() 
-            loss_lst.append(train_loss)  
+
+            if es(model=NNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
         with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
+
+        with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pkl', 'wb') as f:
+            pickle.dump(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)
         plt.show()

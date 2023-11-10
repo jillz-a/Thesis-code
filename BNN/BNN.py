@@ -42,7 +42,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False #If True, will save BNN output to .json files
+SAVE = True #If True, will save BNN output to .json files
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -302,7 +302,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory

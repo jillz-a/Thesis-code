@@ -86,9 +86,9 @@ def s_score(error):
 start = time.time()
 
 show_cf = False
-GIF = True
+GIF = False
 alpha = 0.1 #set the alpha bounds
-engine_eval = 0
+engine_eval = 1
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
