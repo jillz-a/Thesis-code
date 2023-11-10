@@ -29,8 +29,8 @@ import matplotlib.pyplot as plt
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-PLOT = True
-GENERATE = False
+PLOT = False
+GENERATE = True
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -108,33 +108,36 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
                 name = "test"
                 flag = True
 
-        # t = traj.drop(["trajectory_id"], axis=1).values
-        t = traj.values
+        t = traj.drop(["trajectory_id"], axis=1).values
+        # t = traj.values
 
-        for i in range(1,t.shape[1]):
+        for i in range(t.shape[1]):
             t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
-        denoised_trajectories.append(t)
+        t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
-    #Normalise over the entire data set to create a global normalisation
-    denoised_data =np.concatenate(denoised_trajectories)
-    denoised_data = pd.DataFrame(denoised_data, index=None)
-    denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
+    #     denoised_trajectories.append(t)
 
-    #Split back up into the trajectories to create individual sliding windows
-    grouped = denoised_data.groupby(0)
-    for traj_id, traj in grouped:
-        while traj_id <= int(test_train*len(grouped)):
-            name = "train"
-            break
-        else:
-            if not flag:
-                sample_id = 0
-                traj_len_lst = []
-                name = "test"
-                flag = True
+    # #Normalise over the entire data set to create a global normalisation
+    # denoised_data =np.concatenate(denoised_trajectories)
+    # denoised_data = pd.DataFrame(denoised_data, index=None)
+    # denoised_data[denoised_data.columns[1:]] = scaler.fit_transform(denoised_data[denoised_data.columns[1:]])
 
-        t = traj.drop(0, axis=1).values
+    # #Split back up into the trajectories to create individual sliding windows
+    # grouped = denoised_data.groupby(0)
+    # for traj_id, traj in grouped:
+    #     while traj_id <= int(test_train*len(grouped)):
+    #         name = "train"
+    #         break
+    #     else:
+    #         if not flag:
+    #             sample_id = 0
+    #             traj_len_lst = []
+    #             name = "test"
+    #             flag = True
+
+        # t = traj.drop(0, axis=1).values
+
         num_samples = len(t) - window + 1
         traj_len_lst.append(num_samples)
         for i in range(num_samples):

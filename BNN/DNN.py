@@ -36,8 +36,8 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = True
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+SAVE = False
 
 
 #Frequentist neural network class
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     #%% Test the model and save files
     else:
-        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 

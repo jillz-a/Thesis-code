@@ -18,6 +18,7 @@ import torch
 from torchvision.transforms import ToTensor
 import time
 import sys
+import scipy.stats as stats
 import json
 
 # Get the absolute path of the project directory
@@ -32,6 +33,28 @@ from DNN import NeuralNetwork
 from variables import *
 
 #definitions
+def calculate_alpha(means, std_devs, true_values, confidence_level=0.9):
+    distances = []
+
+    for mean, std_dev, true_value in zip(means, std_devs, true_values):
+        # Calculate the z-score corresponding to the desired confidence level
+        z_score = stats.norm.ppf(0.5 + confidence_level / 2)
+
+        # Calculate the distance from the mean such that at least 90% of the distribution lies within
+        distance = z_score * std_dev
+
+        # Calculate the lower and upper bounds of the interval
+        lower_bound = mean - distance
+        upper_bound = mean + distance
+
+        # Calculate the distance from the true value
+        distance_from_true_value = np.abs(true_value - upper_bound) if true_value > mean else np.abs(true_value - lower_bound)
+        distance_from_true_value = distance_from_true_value/true_value * 100 if true_value != 0 else distance_from_true_value
+
+        distances.append(distance_from_true_value)
+
+    return max(distances)
+
 def alpha_dist(lower_bound, upper_bound, mean, stdev):
     """Calculates the percentage of of the distribution that lies within a given range
 
@@ -88,7 +111,7 @@ start = time.time()
 show_cf = False
 GIF = False
 alpha = 0.1 #set the alpha bounds
-engine_eval = 1
+engine_eval = 0
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
@@ -275,18 +298,18 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 mode='lines',
                                 fill='tozerox',
                                 line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                name=f'Prediction distribution within \u03B1 +-{alpha*100}%'),
+                                name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
                                 row=1,
                                 col=2)
         
-        fig.add_trace(go.Scatter(x=x_plot,
-                                y=np.array([alpha_det(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), y_pred_lst[i]) for i in range(len(x_plot))]),
-                                visible=False,
-                                mode='lines',
-                                line=dict(color='orange'),
-                                name=f'Prediction within \u03B1 +-{alpha*100}%'),
-                                row=1,
-                                col=2)
+        # fig.add_trace(go.Scatter(x=x_plot,
+        #                         y=np.array([calculate_alpha(mean_pred_lst[i:], np.sqrt(var_pred_lst[i:]), true_lst[i:], confidence_level=0.9) for i in range(len(x_plot))]),
+        #                         visible=False,
+        #                         mode='lines',
+        #                         line=dict(color='orange'),
+        #                         name=f'Prediction within \u03B1 +-{alpha*100}%'),
+        #                         row=1,
+        #                         col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
                                  y=np.array([s_score(i) for i in BNN_error]),
@@ -350,16 +373,16 @@ for engine in engines[engine_eval: engine_eval+1]:
     )
 
     fig.update_xaxes(title_text='Cycles', row=1, col=1)
-    fig.update_yaxes(title_text='RUL', row=1, col=1)
+    fig.update_yaxes(title_text='RUL [cycles]', row=1, col=1)
 
     fig.update_xaxes(title_text='Probability density', row=2, col=1)
-    fig.update_yaxes(title_text='RUL', row=2, col=1)
+    fig.update_yaxes(title_text='RUL [cycles]', row=2, col=1)
 
     fig.update_xaxes(title_text='Cycles', row=1, col=2)
-    fig.update_yaxes(title_text='Fraction of predictions within \u03B1 bounds', row=1, col=2)
+    fig.update_yaxes(title_text='Distance from true values [%]', row=1, col=2)
 
     fig.update_xaxes(title_text='Cycles', row=2, col=2)
-    fig.update_yaxes(title_text='Score', row=2, col=2)
+    fig.update_yaxes(title_text='Score [-]', row=2, col=2)
 
     fig.show()
 

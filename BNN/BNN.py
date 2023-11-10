@@ -41,7 +41,7 @@ TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+CV = True #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True #If True, will save BNN output to .json files
 
 #Bayesian neural network class
