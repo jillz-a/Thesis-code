@@ -292,24 +292,24 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 row=1,
                                 col=2)
          
-        fig.add_trace(go.Scatter(x=x_plot,
-                                y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
-                                visible=False,
-                                mode='lines',
-                                fill='tozerox',
-                                line=dict(color='rgba(0, 80, 200, 0.5)'),
-                                name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
-                                row=1,
-                                col=2)
-        
         # fig.add_trace(go.Scatter(x=x_plot,
-        #                         y=np.array([calculate_alpha(mean_pred_lst[i:], np.sqrt(var_pred_lst[i:]), true_lst[i:], confidence_level=0.9) for i in range(len(x_plot))]),
+        #                         y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
         #                         visible=False,
         #                         mode='lines',
-        #                         line=dict(color='orange'),
+        #                         fill='tozerox',
+        #                         line=dict(color='rgba(0, 80, 200, 0.5)'),
         #                         name=f'Prediction within \u03B1 +-{alpha*100}%'),
         #                         row=1,
         #                         col=2)
+        
+        fig.add_trace(go.Scatter(x=x_plot,
+                                y=np.array([calculate_alpha(mean_pred_lst[i:], np.sqrt(var_pred_lst[i:]), true_lst[i:], confidence_level=0.9) for i in range(len(x_plot))]),
+                                visible=False,
+                                mode='lines',
+                                line=dict(color='orange'),
+                                name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
+                                row=1,
+                                col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
                                  y=np.array([s_score(i) for i in BNN_error]),
