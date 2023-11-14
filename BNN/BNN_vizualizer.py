@@ -33,8 +33,23 @@ from DNN import NeuralNetwork
 from variables import *
 
 #definitions
+def plot_mean_and_percentile(mean, variance, percentile=90, upper_lower = 'upper'):
+    std_dev = np.sqrt(variance)
+
+    # Calculate the z-score corresponding to the desired percentile
+    z_score = stats.norm.ppf(percentile / 100)
+
+    # Calculate the values corresponding to the mean, lower percentile, and upper percentile
+    lower_percentile_value = mean - z_score * std_dev
+    upper_percentile_value = mean + z_score * std_dev
+
+    if upper_lower == 'upper':
+        return upper_percentile_value
+    elif upper_lower == 'lower':
+        return lower_percentile_value
+
 def calculate_alpha(means, std_devs, true_values, confidence_level=0.9):
-    distances = []
+    alphas = []
 
     for mean, std_dev, true_value in zip(means, std_devs, true_values):
         # Calculate the z-score corresponding to the desired confidence level
@@ -48,12 +63,15 @@ def calculate_alpha(means, std_devs, true_values, confidence_level=0.9):
         upper_bound = mean + distance
 
         # Calculate the distance from the true value
-        distance_from_true_value = np.abs(true_value - upper_bound) if true_value > mean else np.abs(true_value - lower_bound)
-        distance_from_true_value = distance_from_true_value/true_value * 100 if true_value != 0 else distance_from_true_value
+        alpha = max(np.abs(upper_bound - true_value)/true_value*100, np.abs(true_value - lower_bound)/true_value*100) if true_value != 0 else 0
+        alphas.append(alpha)
 
-        distances.append(distance_from_true_value)
+        # distance_from_true_value = np.abs(true_value - upper_bound) if true_value > mean else np.abs(true_value - lower_bound)
+        # distance_from_true_value = distance_from_true_value/true_value * 100 if true_value != 0 else distance_from_true_value
 
-    return max(distances)
+        # distances.append(distance_from_true_value)
+
+    return max(alphas)
 
 def alpha_dist(lower_bound, upper_bound, mean, stdev):
     """Calculates the percentage of of the distribution that lies within a given range
@@ -186,20 +204,13 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 visible=False,
                                 line=dict(color='red')),
                     go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
-                                y=np.concatenate((np.array(mean_pred_lst) + np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - np.sqrt(var_pred_lst)[::-1])),
+                                y=np.concatenate((np.array([plot_mean_and_percentile(mean_pred_lst[i], var_pred_lst[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
+                                                  np.array([plot_mean_and_percentile(mean_pred_lst[i], var_pred_lst[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))])[::-1])),
                                 fill='toself',  # Fill to next y values
                                 fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
                                 line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
                                 visible=False,
-                                name='1 Standard Deviation',
-                                hoverinfo='skip'),
-                    go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
-                                y=np.concatenate((np.array(mean_pred_lst) + 2*np.sqrt(var_pred_lst), np.array(mean_pred_lst)[::-1] - 2*np.sqrt(var_pred_lst)[::-1])),
-                                fill='toself',  # Fill to next y values
-                                fillcolor='rgba(0, 90, 80, 0.2)',  # Color of the filled area
-                                line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
-                                visible=False,
-                                name='2 Standard Deviation',
+                                name='90th percentile',
                                 hoverinfo='skip'),
                      go.Scatter(x=x_plot, 
                                 y=CF_mean_pred_lst, 
@@ -302,8 +313,8 @@ for engine in engines[engine_eval: engine_eval+1]:
         #                         row=1,
         #                         col=2)
         
-        fig.add_trace(go.Scatter(x=x_plot,
-                                y=np.array([calculate_alpha(mean_pred_lst[i:], np.sqrt(var_pred_lst[i:]), true_lst[i:], confidence_level=0.9) for i in range(len(x_plot))]),
+        fig.add_trace(go.Scatter(x=x_plot[:-10],
+                                y=np.array([calculate_alpha(mean_pred_lst[i:-10], np.sqrt(var_pred_lst[i:-10]), true_lst[i:-10], confidence_level=0.9) for i in range(len(x_plot[:-10]))]),
                                 visible=False,
                                 mode='lines',
                                 line=dict(color='orange'),
