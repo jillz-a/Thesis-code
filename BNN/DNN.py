@@ -37,7 +37,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False
+SAVE = True
 
 
 #Frequentist neural network class
@@ -334,7 +334,7 @@ if __name__ == "__main__":
                     'RMSE': D_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET)
+                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET, 'test')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 

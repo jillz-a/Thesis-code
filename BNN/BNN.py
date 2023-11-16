@@ -42,7 +42,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False #If True, will save BNN output to .json files
+SAVE = True #If True, will save BNN output to .json files
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -302,7 +302,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -313,7 +313,7 @@ if __name__ == '__main__':
         RMSE_lst = []
         mean_preds = []
 
-        from DNN import RMSE_lst as DRMSE_lst
+        # from DNN import RMSE_lst as DRMSE_lst
        
         engines = np.arange(len(sample_len))
         for engine in engines:
@@ -379,7 +379,7 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET)
+                save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET, 'test')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -396,7 +396,7 @@ if __name__ == '__main__':
         
 
         plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
-        plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
+        # plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
         plt.xlabel('Engines')
         plt.ylabel('RMSE')
         plt.show()

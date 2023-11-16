@@ -313,8 +313,8 @@ for engine in engines[engine_eval: engine_eval+1]:
         #                         row=1,
         #                         col=2)
         
-        fig.add_trace(go.Scatter(x=x_plot[:-10],
-                                y=np.array([calculate_alpha(mean_pred_lst[i:-10], np.sqrt(var_pred_lst[i:-10]), true_lst[i:-10], confidence_level=0.9) for i in range(len(x_plot[:-10]))]),
+        fig.add_trace(go.Scatter(x=x_plot,
+                                y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),
                                 visible=False,
                                 mode='lines',
                                 line=dict(color='orange'),
