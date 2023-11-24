@@ -3,6 +3,7 @@ import os
 import glob
 import csv
 import numpy as np
+import pandas as pd
 
 import plotly.offline as pyo
 import plotly.graph_objects as go
@@ -20,6 +21,8 @@ import sys
 import scipy.stats as stats
 import json
 from itertools import chain
+from collections import defaultdict
+from prettytable import PrettyTable
 
 # Get the absolute path of the project directory
 project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
@@ -61,11 +64,83 @@ def plot_mean_and_percentile(mean, variance, percentile=90, upper_lower = 'upper
         return upper_percentile_value
     elif upper_lower == 'lower':
         return lower_percentile_value
+    
+def alpha_splits(means, vars, trues, key_ranges):
 
-engine_eval = 0
+    pred_dict = defaultdict(list)
+    for key, value in zip(trues, zip(means, vars, trues)):
+        pred_dict[key].append(value)
+
+    pred_dict = dict(pred_dict)
+
+    pred_split_dict = defaultdict(list)
+
+    for key, value in pred_dict.items():
+        for high, low in key_ranges:
+            if low <= key < high:
+                pred_split_dict[high, low].append(value)
+
+    pred_split_dict = dict(pred_split_dict)
+
+    alpha_split_dict = defaultdict(list)
+
+    for key in key_ranges:
+        alphas = []
+        for pred in pred_split_dict[key][0]:
+            mean, var, true = pred
+            upper = plot_mean_and_percentile(mean, var, upper_lower='upper')
+            lower = plot_mean_and_percentile(mean, var, upper_lower='lower')
+            alpha = max(np.abs(true - upper), np.abs(true - lower))/true if int(true) != 0 else 0
+            alphas.append(np.round(alpha,2))
+        alpha_split_dict[key] = max(alphas)
+
+    alpha_split_dict = dict(alpha_split_dict)
+
+    return alpha_split_dict
+    
+def RMSE_split(errors, trues, key_ranges):
+
+    # Create a dict for the errors
+    error_dict = defaultdict(list)
+    for key, value in zip(trues, errors):
+        error_dict[key].append(value)
+
+    # Convert the defaultdict to a regular dictionary
+    error_dict = dict(error_dict)
+
+    # Create a dict that splits the error values over certain RUL sections
+    error_split_dict = defaultdict(list)
+
+
+    # Split up the errors according to their true RUL
+    for key, value in error_dict.items():
+        for high, low in key_ranges:
+            if low <= key < high:
+                error_split_dict[high, low].append(value)
+
+    # Convert to dict split up into sections
+    error_split_dict = dict(error_split_dict)
+
+    RMSE_splits = defaultdict(list)
+    for key in key_ranges:
+        flat_errors = list(chain(*error_split_dict[key]))
+        squared_errors = [error**2 for error in flat_errors]
+        RMSE = np.sqrt(np.mean(squared_errors))
+        RMSE_splits[key] = np.round(RMSE,2)
+
+    return dict(RMSE_splits)
+
+    
+TEST_SET = True
+
+if TEST_SET:
+    test_path = f'{DATASET}/test'
+else:
+    test_path = f'{DATASET}'
+    engine_eval = 0
 #%%
 #import BNN results: every file represents 1 engine
-BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, 'test')
+BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', test_path)
 engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
@@ -75,7 +150,7 @@ CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of a
 CF_engines.sort() 
 
 #import DNN results: every file represents 1 engine
-DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET, 'test')
+DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', test_path)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
 
@@ -92,6 +167,11 @@ trues = [] #list of true RUl values
 
 B_RMSE_lst = [] #list of Bayesian RMSE values
 D_RMSE_lst = [] #list of Deterministic RMSE values
+
+B_errors = [] #list of Bayesian errors
+D_errors = [] #list of Deterministic errors
+
+engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
 for engine in engines:
     engine_id = int(engine[-8:-5])
@@ -141,9 +221,12 @@ for engine in engines:
 
     trues.append(true_lst)
 
+    B_errors.append(BNN_error)
+    D_errors.append(DNN_error)
 
-print(f'BNN score: {sum(BNN_scores)} - RMSE: {np.mean(B_RMSE_lst)}')
-print(f'DNN score: {sum(DNN_scores)} - RMSE: {np.mean(D_RMSE_lst)}')
+
+print(f'BNN score: {sum(BNN_scores)}')
+print(f'DNN score: {sum(DNN_scores)}')
 
 
 
@@ -152,12 +235,33 @@ means = list(chain(*means))
 vars = list(chain(*vars))
 det_preds = list(chain(*det_preds))
 trues = list(chain(*trues))
+B_errors = list(chain(*B_errors))
+D_errors = list(chain(*D_errors))
 
 #sort based on true RUL
-combined_lsts = list(zip(means, vars, det_preds, trues))
+combined_lsts = list(zip(means, vars, det_preds, B_errors, D_errors, trues))
 sorted_lsts = sorted(combined_lsts, key=lambda x: x[-1], reverse=True)
 
-means, vars, det_preds, trues = zip(*sorted_lsts)
+means, vars, det_preds, B_errors, D_errors, trues = zip(*sorted_lsts)
+
+# Look at performance for different sections
+# Define the key ranges for each category
+key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
+# key_ranges = [(float('inf'), 0)]
+B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
+D_RMSE_splits = RMSE_split(D_errors, trues, key_ranges)
+
+B_alpha_splits = alpha_splits(means, vars, trues, key_ranges)
+
+tab = PrettyTable(key_ranges)
+tab.add_row(list(B_RMSE_splits.values()))
+tab.add_row(list(D_RMSE_splits.values()), divider=True)
+tab.add_row(list(B_alpha_splits.values()), divider=True)
+tab.add_column('Metric', ['Bayesian RMSE', 'Deterministic RMSE', '90% alpha value'], align='r')
+print('RMSE (cycles) for RUL sections')
+print(tab)
+
+#plot results
 x_plot = np.arange(len(means))
 
 plt.plot(means)
