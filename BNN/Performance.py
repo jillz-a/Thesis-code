@@ -8,6 +8,7 @@ import pandas as pd
 import plotly.offline as pyo
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 from scipy.stats import norm
 
 import matplotlib.pyplot as plt
@@ -23,6 +24,8 @@ import json
 from itertools import chain
 from collections import defaultdict
 from prettytable import PrettyTable
+
+
 
 # Get the absolute path of the project directory
 project_path = os.path.dirname(os.path.abspath(os.path.join((__file__), os.pardir)))
@@ -85,14 +88,17 @@ def alpha_splits(means, vars, trues, key_ranges):
     alpha_split_dict = defaultdict(list)
 
     for key in key_ranges:
-        alphas = []
-        for pred in pred_split_dict[key][0]:
-            mean, var, true = pred
-            upper = plot_mean_and_percentile(mean, var, upper_lower='upper')
-            lower = plot_mean_and_percentile(mean, var, upper_lower='lower')
-            alpha = max(np.abs(true - upper), np.abs(true - lower))/true if int(true) != 0 else 0
-            alphas.append(np.round(alpha,2))
-        alpha_split_dict[key] = max(alphas)
+        if key in pred_split_dict:
+            alphas = []
+            for pred in pred_split_dict[key][0]:
+                mean, var, true = pred
+                upper = plot_mean_and_percentile(mean, var, upper_lower='upper')
+                lower = plot_mean_and_percentile(mean, var, upper_lower='lower')
+                alpha = max(np.abs(true - upper), np.abs(true - lower))/true if int(true) != 0 else 0
+                alphas.append(np.round(alpha,2))
+            alpha_split_dict[key] = max(alphas)
+        else:
+            alpha_split_dict[key] = np.NaN
 
     alpha_split_dict = dict(alpha_split_dict)
 
@@ -123,15 +129,18 @@ def RMSE_split(errors, trues, key_ranges):
 
     RMSE_splits = defaultdict(list)
     for key in key_ranges:
-        flat_errors = list(chain(*error_split_dict[key]))
-        squared_errors = [error**2 for error in flat_errors]
-        RMSE = np.sqrt(np.mean(squared_errors))
-        RMSE_splits[key] = np.round(RMSE,2)
+        if key in error_split_dict:
+            flat_errors = list(chain(*error_split_dict[key]))
+            squared_errors = [error**2 for error in flat_errors]
+            RMSE = np.sqrt(np.mean(squared_errors))
+            RMSE_splits[key] = np.round(RMSE,2)
+        else:
+            RMSE_splits[key] = np.NaN
 
     return dict(RMSE_splits)
 
     
-TEST_SET = True
+TEST_SET = False
 
 if TEST_SET:
     test_path = f'{DATASET}/test'
@@ -171,7 +180,7 @@ D_RMSE_lst = [] #list of Deterministic RMSE values
 B_errors = [] #list of Bayesian errors
 D_errors = [] #list of Deterministic errors
 
-engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
+# engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
 for engine in engines:
     engine_id = int(engine[-8:-5])
@@ -231,45 +240,79 @@ print(f'DNN score: {sum(DNN_scores)}')
 
 
 #flatten the lists
-means = list(chain(*means))
-vars = list(chain(*vars))
-det_preds = list(chain(*det_preds))
-trues = list(chain(*trues))
-B_errors = list(chain(*B_errors))
-D_errors = list(chain(*D_errors))
+# means = list(chain(*means))
+# vars = list(chain(*vars))
+# det_preds = list(chain(*det_preds))
+# trues = list(chain(*trues))
+# B_errors = list(chain(*B_errors))
+# D_errors = list(chain(*D_errors))
 
-#sort based on true RUL
-combined_lsts = list(zip(means, vars, det_preds, B_errors, D_errors, trues))
-sorted_lsts = sorted(combined_lsts, key=lambda x: x[-1], reverse=True)
+# #sort based on true RUL
+# combined_lsts = list(zip(means, vars, det_preds, B_errors, D_errors, trues))
+# sorted_lsts = sorted(combined_lsts, key=lambda x: x[-1], reverse=True)
 
-means, vars, det_preds, B_errors, D_errors, trues = zip(*sorted_lsts)
+# means, vars, det_preds, B_errors, D_errors, trues = zip(*sorted_lsts)
 
 # Look at performance for different sections
 # Define the key ranges for each category
 key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
-# key_ranges = [(float('inf'), 0)]
-B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
-D_RMSE_splits = RMSE_split(D_errors, trues, key_ranges)
 
-B_alpha_splits = alpha_splits(means, vars, trues, key_ranges)
+total_B_RMSE_splits = {key : [] for key in key_ranges}
+total_D_RMSE_splits = {key : [] for key in key_ranges}
+total_alpha_splits = {key : [] for key in key_ranges}
+
+for means, vars, det_preds, B_errors, D_errors, trues in zip(means, vars, det_preds, B_errors, D_errors, trues):
+    B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
+    D_RMSE_splits = RMSE_split(D_errors, trues, key_ranges)
+    B_alpha_splits = alpha_splits(means, vars, trues, key_ranges)
+
+    for key in key_ranges:
+        total_B_RMSE_splits[key].append(B_RMSE_splits[key])
+        total_D_RMSE_splits[key].append(D_RMSE_splits[key])
+        total_alpha_splits[key].append(B_alpha_splits[key])
+
+
+
+ave_B_RMSE_splits = np.nanmean(list(total_B_RMSE_splits.values()), axis=1)
+ave_D_RMSE_splits = np.nanmean(list(total_D_RMSE_splits.values()), axis=1)
+ave_alpha_splits = np.nanmean(list(total_alpha_splits.values()), axis=1)
 
 tab = PrettyTable(key_ranges)
-tab.add_row(list(B_RMSE_splits.values()))
-tab.add_row(list(D_RMSE_splits.values()), divider=True)
-tab.add_row(list(B_alpha_splits.values()), divider=True)
-tab.add_column('Metric', ['Bayesian RMSE', 'Deterministic RMSE', '90% alpha value'], align='r')
+tab.add_row(np.round(ave_B_RMSE_splits, 2))
+tab.add_row(np.round(ave_D_RMSE_splits, 2), divider=True)
+tab.add_row(np.round(ave_alpha_splits, 2), divider=True)
+tab.add_column('Metric', ['Bayesian RMSE', 'Deterministic RMSE', '90% alpha value (Bayesian)'], align='r')
 print('RMSE (cycles) for RUL sections')
 print(tab)
 
 #plot results
-x_plot = np.arange(len(means))
+# x_plot = np.arange(len(means))
 
-plt.plot(means)
-plt.fill_between(x_plot, 
-                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
-                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))]), 
-                alpha = 0.5)
+# plt.plot(means)
+# plt.fill_between(x_plot, 
+#                 np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
+#                 np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))]), 
+#                 alpha = 0.5)
 
-plt.plot(det_preds)
-plt.plot(trues)
-plt.show()
+# plt.plot(det_preds)
+# plt.plot(trues)
+# plt.show()
+
+fig = make_subplots(rows=2, cols=1, subplot_titles=['RMSE error per section', '90% alpha bounds per section'])
+
+for i, key in enumerate(key_ranges):
+    x_values = [str(key)] * len(total_B_RMSE_splits[key])
+
+    fig.add_trace(trace=go.Box(y=total_B_RMSE_splits[key], x=x_values, name=f'{key} Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
+    fig.add_trace(trace=go.Box(y=total_D_RMSE_splits[key], x=x_values, name=f'{key} Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
+    fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=2, col=1)
+
+fig.update_layout(
+    boxmode='group'
+)
+fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
+fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=2, col=1)
+fig.show()
+
+# Export the figure to an HTML file
+pyo.plot(fig, filename='interactive-plots/boxplots.html', auto_open=False)
