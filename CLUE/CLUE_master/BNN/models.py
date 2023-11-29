@@ -54,15 +54,15 @@ class CustomBayesianNeuralNetwork(nn.Module):
         mu = torch.empty(0)
         sigma = torch.empty(0)
         
-        for i in range(len(x)):
-            input = x[i].reshape(1,30,14)
-            # input = np.random.rand(1,30,14)
-            mc_pred = [self.loop_forward(input) for _ in range(self.loop_size)]
-            # print(mc_pred)
-            predictions = torch.stack(mc_pred)
-            # print(predictions.tolist())
-            mu = torch.cat((mu, torch.mean(predictions, dim=0)), dim=0)      
-            sigma = torch.cat((sigma, torch.std(predictions, dim=0)), dim=0)
+        # for i in range(len(x)):
+        input = x.reshape(np.shape(x)[0],30,14)
+        # input = np.random.rand(1,30,14)
+        mc_pred = [self.loop_forward(input) for _ in range(self.loop_size)]
+        # print(mc_pred)
+        predictions = torch.stack(mc_pred)
+        # print(predictions.tolist())
+        mu = torch.cat((mu, torch.mean(predictions, dim=0)), dim=0)      
+        sigma = torch.cat((sigma, torch.std(predictions, dim=0)), dim=0)
 
         
         return mu, sigma
