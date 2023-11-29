@@ -19,12 +19,7 @@ import bayesian_torch.layers as bl
 torch.manual_seed(42)
 
 device = 'cpu' #device where models whill be run
-DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004]
 
-BATCHSIZE = 100
-EPOCHS = 100
-
-k = 10 #amount of folds for cross validation
 
 #Bayesian neural network class
 class CustomBayesianNeuralNetwork(nn.Module):
@@ -33,7 +28,7 @@ class CustomBayesianNeuralNetwork(nn.Module):
     Args:
         input_size: number of input features
         hidden_szie: size of hidden node vector (also size of output)
-        num_layers: amountof LSTM layers
+        num_layers: amount of LSTM layers
         prior_mean: initial guess for parameter mean
         prior_variance: initial guess for parameter variance
         posterior_mu_init: init std for the trainable mu parameter, sampled from N(0, posterior_mu_init)
@@ -52,10 +47,11 @@ class CustomBayesianNeuralNetwork(nn.Module):
         
         
     def loop_forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial hidden state
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial cell state
+        # h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial hidden state
+        # c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial cell state
 
         x = x.reshape(np.shape(x)[0],30,14)
+        # x = np.random.rand(1,30,14)
 
         out = self.lstm(x)#, (h0, c0))
         

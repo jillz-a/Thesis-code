@@ -66,7 +66,7 @@ if __name__ == '__main__':
         #Import input file paths
         file_paths = glob.glob(os.path.join(project_path, testtrain, '*.txt'))  # Get a list of all file paths in the folder
         file_paths.sort()
-        file_paths = file_paths[0:178]
+        file_paths = file_paths[0:178] #TEMP: select first engine
 
         for file_path in file_paths:
 

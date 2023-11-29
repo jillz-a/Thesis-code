@@ -190,7 +190,7 @@ def train_BNN_regression(net, name, batch_size, nb_epochs, trainset, valset, cud
 
     tic0 = time.time()
     for i in range(epoch, nb_epochs):
-        net.set_mode_train(True)
+        # net.set_mode_train(True)
         tic = time.time()
         nb_samples = 0
         for x, y in trainloader:

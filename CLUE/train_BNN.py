@@ -28,6 +28,7 @@ from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
 from CLUE_master.BNN.models import CustomBayesianNeuralNetwork
+from CLUE_master.BNN.wrapper import BNN_gauss
 from CLUE_master.BNN.train import train_BNN_regression
 from CLUE_master.src.utils import Datafeed
 
@@ -78,14 +79,16 @@ if __name__ == '__main__':
 
             if testtrain == TRAINDATASET:
                 x_train.append(sample)
+                y_train.append(label)
             elif testtrain == TESTDATASET:
                 x_test.append(sample)
+                y_test.append(label)
 
     x_train = np.array(x_train)
-    x_train = x_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
+    x_train = x_train[:,0,:-1].astype(np.float32) #2D array of flattend training inputs without RUL
 
     x_test = np.array(x_test)
-    x_test = x_test[:,0,:].astype(np.float32)
+    x_test = x_test[:,0,:-1].astype(np.float32) #remove RUL
 
     y_train = np.array(y_train)
     # y_train = y_train[:,0,:].astype(np.float32) #2D array of flattend training inputs
@@ -96,9 +99,9 @@ if __name__ == '__main__':
     trainset = Datafeed(x_train, y_train, transform=None)
     valset = Datafeed(x_test, y_test, transform=None)
 
-    input_dim = x_train.shape[1]
+    N_train = x_train.shape[1]
 
-    batch_size = 128
+    batch_size = 100
     nb_epochs = 2500
     early_stop = 200
     lr = 1e-4
@@ -106,9 +109,22 @@ if __name__ == '__main__':
     input_size = 14
     hidden_size = 32
 
+    ## weight saving parameters #######
+    burn_in = 120 # this is in epochs 
+    sim_steps = 20 # We want less correlated samples -> despite having per minibatch noise we see correlations
+    N_saves = 100
+
+    resample_its = 10
+    resample_prior_its = 50
+    re_burn = 1e7
+
+    nb_its_dev = 2
+
     cuda = torch.cuda.is_available()
 
-    net = CustomBayesianNeuralNetwork(input_size, hidden_size)
+    model = CustomBayesianNeuralNetwork(input_size = input_size, hidden_size=hidden_size)
+    net = BNN_gauss(model, N_train, lr=lr, cuda=cuda)
 
-    vlb_train, vlb_dev = train_BNN_regression(net, save_dir, batch_size, nb_epochs, trainset, valset,
-                                       cuda=cuda,flat_ims=False)
+    cost_train, cost_dev, rms_dev, ll_dev = train_BNN_regression(net, save_dir, batch_size, nb_epochs, trainset, valset, cuda,
+                                 burn_in, sim_steps, N_saves, resample_its, resample_prior_its,
+                                 re_burn, flat_ims=False, nb_its_dev=10)
