@@ -162,13 +162,13 @@ def train_BNN_regression(net, name, batch_size, nb_epochs, trainset, valset, cud
     mkdir(results_dir)
 
     if cuda:
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, pin_memory=True,
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, pin_memory=True,
                                                   num_workers=3)
         valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=False, pin_memory=True,
                                                 num_workers=3)
 
     else:
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, pin_memory=False,
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, pin_memory=False,
                                                   num_workers=3)
         valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=False, pin_memory=False,
                                                 num_workers=3)

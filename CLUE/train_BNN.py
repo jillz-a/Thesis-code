@@ -59,7 +59,7 @@ if __name__ == '__main__':
         #Import input file paths
         file_paths = glob.glob(os.path.join(project_path, testtrain, '*.txt'))  # Get a list of all file paths in the folder
         file_paths.sort()
-        file_paths = file_paths[0:178]
+        # file_paths = file_paths[0:178]
 
         for file_path in file_paths:
 
@@ -99,12 +99,12 @@ if __name__ == '__main__':
     trainset = Datafeed(x_train, y_train, transform=None)
     valset = Datafeed(x_test, y_test, transform=None)
 
-    N_train = x_train.shape[1]
+    N_train = x_train.shape[0]
 
     batch_size = 100
     nb_epochs = 2500
     early_stop = 200
-    lr = 1e-4
+    lr = 1e-3
 
     input_size = 14
     hidden_size = 32

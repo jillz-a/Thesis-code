@@ -217,7 +217,9 @@ class BNN_gauss(BaseNet):
         self.optimizer.zero_grad()
         mu, sigma = self.model(x)
         sigma = sigma.clamp(min=self.eps)
-        loss = -diagonal_gauss_loglike(y, mu, sigma).mean(dim=0) * self.N_train
+        # loss = -diagonal_gauss_loglike(y, mu, sigma).mean(dim=0) * self.N_train
+        loss_fn = nn.MSELoss()
+        loss = torch.sqrt(loss_fn(mu[:,0], y.float())) #RMSE loss function
 
         loss.backward()
         if len(self.grad_buff) > 100:
