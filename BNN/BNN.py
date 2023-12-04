@@ -44,6 +44,13 @@ TRAIN = False #If train = True, the model will either train or perfrom cross val
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True #If True, will save BNN output to .json files
 
+TEST_SET = False
+
+if TEST_SET:
+    test_path = f'{DATASET}/test'
+else:
+    test_path = f'{DATASET}'
+
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
     """Bayesian Neural Network using LSTM and linear layers. Deterministic to Bayesian using Reparameterization.
@@ -302,7 +309,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
+        folder_path = f'data/{test_path}/min-max/test'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -310,8 +317,10 @@ if __name__ == '__main__':
         file_paths = glob.glob(os.path.join(folder_path, '*.txt'))  # Get a list of all file paths in the folder
         file_paths.sort() 
 
-        RMSE_lst = []
-        mean_preds = []
+        RMSE_lst = [] #Overal RMSE list of all engines
+        mean_preds = [] #overall means of all engines
+
+        var_dict = {} #dictionary with key: sample id, value: variance. Will be used in DiCE_uncertianty
 
         # from DNN import RMSE_lst as DRMSE_lst
        
@@ -321,7 +330,7 @@ if __name__ == '__main__':
             selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
             # selected_file_paths = file_paths[0:1]
 
-            #setup data to plot
+            #setup data to save
             mean_pred_lst = []
             true_lst = []
             var_pred_lst = []
@@ -337,6 +346,7 @@ if __name__ == '__main__':
             
                 # Process each selected file
                 sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
+                sample_id = int(file_path[-13:-8])
                 label = float(file_path[-7:-4])
 
                 #Import into trained machine learning models
@@ -363,6 +373,7 @@ if __name__ == '__main__':
                 mean_preds.append(mean_pred.item())
                 true_lst.append(y)
                 var_pred_lst.append(var_pred.item())
+                var_dict[int(sample_id)] = var_pred.item()
                 
                 loop.set_description(f"Processing engine {engine}")
 
@@ -379,12 +390,21 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', DATASET, 'test')
+                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path)
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
                 with open(file_name, 'w') as jsonfile:
                     json.dump(results, jsonfile)
+
+        #save variance dictionary to file to be used in DiCE_uncertainty
+        if SAVE:
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET)
+            if not os.path.exists(save_to): os.makedirs(save_to)
+            file_name = os.path.join(save_to, "variance_results.json")
+            
+            with open(file_name, 'w') as jsonfile:
+                json.dump(var_dict, jsonfile)
 
         STD = np.sqrt(1/(len(engines) - 1) * sum([(RMSE_lst[i] - np.mean(RMSE_lst))**2 for i in range(len(RMSE_lst))]))
         COV = STD/np.mean(RMSE_lst)
@@ -395,8 +415,8 @@ if __name__ == '__main__':
 
         
 
-        plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
-        # plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
-        plt.xlabel('Engines')
-        plt.ylabel('RMSE')
-        plt.show()
+        # plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
+        # # plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
+        # plt.xlabel('Engines')
+        # plt.ylabel('RMSE')
+        # plt.show()

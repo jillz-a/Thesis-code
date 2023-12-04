@@ -21,6 +21,7 @@ from torch import load
 import multiprocessing as mp
 import time
 import tqdm
+import json
 
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -29,7 +30,6 @@ import dice_ml_custom as dice_ml_custom
 # import dice_ml as dice_ml_custom
 
 from custom_BNN import CustomBayesianNeuralNetwork
-from custom_DNN import CustomNeuralNetwork
 
 device = 'cpu' #device where models whill be run
 DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004]
@@ -49,8 +49,6 @@ with open(os.path.join(project_path, TESTDATASET, '0-Number_of_samples.csv')) as
 #Import into trained machine learning models
 if BayDet == 'BNN':
     NNmodel = CustomBayesianNeuralNetwork().to(device)
-elif BayDet == 'DNN':
-    model = CustomNeuralNetwork().to(device)
 
 
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
@@ -75,40 +73,45 @@ def chunk_list(input_list, num_chunks):
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
 
+    var_dict = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, 'variance_results.json')
+
+    with open(var_dict, 'r') as jsonfile:
+        var_dict = json.load(jsonfile)
+
     for file_path in chunk:
         #load sample with true RUL
         sample = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
         sample_id = int(file_path[-13:-8])
         label = int(file_path[-7:-4])
+        std = np.sqrt(var_dict[str(sample_id)])
 
         #Create labels for sensors and RUL
         sensors = [2,3,4,7,8,9,11,12,13,14,15,17,20,21]
         head = [[f'Sensor {i,j}' for j in range(len(sample)) for i in sensors]]
-        head[0].append('RUL')
+        head[0].append('STD')
 
         #Flatten sample and combine with RUL
         sample = [[element for row in sample for element in row]] #flatten time series sample into format [(sensor 1, timestep 0),...(sensor n, timestep w)]
-        sample = np.column_stack((sample, label))
+        sample = np.column_stack((sample, std))
 
         #Convert to dataframe and distinguish continuous features
         df = pd.DataFrame(sample, columns=head[0])
-        df_continuous_features = df.drop('RUL', axis=1).columns.tolist()
+        df_continuous_features = df.drop('STD', axis=1).columns.tolist()
 
         #Data and model object for DiCE
-        data = dice_ml_custom.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='RUL')
+        data = dice_ml_custom.Data(dataframe=df, continuous_features=df_continuous_features, outcome_name='STD')
         dice_model = dice_ml_custom.Model(model=NNmodel, backend='PYT', model_type='regressor')
         exp_random = dice_ml_custom.Dice(data, dice_model, method='random')
 
 
 
         #Generate counterfactual explanations
-        cf = exp_random.generate_counterfactuals(df.drop('RUL', axis=1), 
+        cf = exp_random.generate_counterfactuals(df.drop('STD', axis=1), 
                                                 verbose=False, 
                                                 total_CFs= 1, 
-                                                desired_range=[10, 11],
+                                                desired_range=[-1.0, -0.5],
                                                 random_seed = 2,
-                                                proximity_weight=0.002,
-                                                time_series=True)
+                                                time_series=False)
         
         # cf.visualize_as_dataframe(show_only_changes=True)
         
@@ -143,6 +146,8 @@ if __name__ == '__main__':
     file_paths.sort()
     file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
     # file_paths = file_paths[0:170]
+
+
 
     chunks = chunk_list(file_paths, min(num_cores, len(file_paths)))
     print('Starting multiprocessing')

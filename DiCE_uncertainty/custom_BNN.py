@@ -69,7 +69,8 @@ class CustomBayesianNeuralNetwork(nn.Module):
         # print(mc_pred)
         predictions = torch.stack(mc_pred)
         # print(predictions.tolist())
-        mean_pred = torch.mean(predictions, dim=0)      
+        mean_pred = torch.mean(predictions, dim=0)
+        std_pred = torch.std(predictions, dim=0)      
         
 
-        return mean_pred
+        return std_pred
