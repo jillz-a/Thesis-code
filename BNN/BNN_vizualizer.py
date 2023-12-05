@@ -126,7 +126,7 @@ def s_score(error):
 
 start = time.time()
 
-show_cf = False
+show_cf = True
 GIF = False
 alpha = 0.1 #set the alpha bounds
 engine_eval = 0
@@ -137,7 +137,7 @@ engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET)
+CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 
@@ -217,7 +217,16 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 mode='lines', 
                                 line=dict(color='green'),
                                 visible=False,
-                                name=f'Counterfactual Mean Predicted RUL values for engine {engine_id}'),            
+                                name=f'Counterfactual Mean Predicted RUL values for engine {engine_id}'),    
+                    go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
+                                y=np.concatenate((np.array([plot_mean_and_percentile(CF_mean_pred_lst[i], CF_var_pred_lst[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
+                                                  np.array([plot_mean_and_percentile(CF_mean_pred_lst[i], CF_var_pred_lst[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))])[::-1])),
+                                fill='toself',  # Fill to next y values
+                                fillcolor='rgba(0, 100, 80, 0.2)',  # Color of the filled area
+                                line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+                                visible=False,
+                                name='90th percentile',
+                                hoverinfo='skip'),        
                     go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
                                 y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
                                 fill='toself',  # Fill to next y values
@@ -313,14 +322,14 @@ for engine in engines[engine_eval: engine_eval+1]:
         #                         row=1,
         #                         col=2)
         
-        fig.add_trace(go.Scatter(x=x_plot,
-                                y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),
-                                visible=False,
-                                mode='lines',
-                                line=dict(color='orange'),
-                                name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
-                                row=1,
-                                col=2)
+        # fig.add_trace(go.Scatter(x=x_plot,
+        #                         y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),
+        #                         visible=False,
+        #                         mode='lines',
+        #                         line=dict(color='orange'),
+        #                         name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
+        #                         row=1,
+        #                         col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
                                  y=np.array([s_score(i) for i in BNN_error]),

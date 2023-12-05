@@ -82,7 +82,7 @@ def open_cf(file_path):
     with open(file_path, 'r') as file:
         csv_reader = csv.reader(file)
         for row_number, row in enumerate(csv_reader):
-            if row_number == 1:  # Second row (0-based index)
+            if row_number == 1:  # Skip the sensor name row
                 cf_data = [np.float32(value) for value in row]
 
     # Step 2: Remove the final entry

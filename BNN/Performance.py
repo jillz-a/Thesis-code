@@ -154,7 +154,7 @@ engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET)
+CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 
@@ -182,7 +182,7 @@ D_errors = [] #list of Deterministic errors
 
 # engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
-for engine in engines:
+for engine in engines[:1]:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
@@ -286,17 +286,17 @@ print('RMSE (cycles) for RUL sections')
 print(tab)
 
 #plot results
-# x_plot = np.arange(len(means))
+x_plot = np.arange(len(means))
 
-# plt.plot(means)
-# plt.fill_between(x_plot, 
-#                 np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
-#                 np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))]), 
-#                 alpha = 0.5)
+plt.plot(means)
+plt.fill_between(x_plot, 
+                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
+                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))]), 
+                alpha = 0.5)
 
-# plt.plot(det_preds)
-# plt.plot(trues)
-# plt.show()
+plt.plot(det_preds)
+plt.plot(trues)
+plt.show()
 
 fig = make_subplots(rows=2, cols=1, subplot_titles=['RMSE error per section', '90% alpha bounds per section'])
 
