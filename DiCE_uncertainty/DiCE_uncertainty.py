@@ -109,7 +109,7 @@ def CMAPSS_counterfactuals(chunk):
         cf = exp_random.generate_counterfactuals(df.drop('STD', axis=1), 
                                                 verbose=False, 
                                                 total_CFs= 1, 
-                                                desired_range=[-1.0, -0.5],
+                                                desired_range=[-1.5, -1.0],
                                                 random_seed = 2,
                                                 time_series=False)
         
@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
-    file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+    file_paths = file_paths[0:int(sample_len[0][0])+184] #only looking at the first engine
     # file_paths = file_paths[0:170]
 
 

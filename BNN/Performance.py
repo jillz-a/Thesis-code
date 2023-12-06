@@ -139,6 +139,31 @@ def RMSE_split(errors, trues, key_ranges):
 
     return dict(RMSE_splits)
 
+def var_split(vars, key_ranges):
+    # Create a dict for the variances
+    var_dict = defaultdict(list)
+    for key, value in zip(trues, vars):
+        var_dict[key].append(value)
+
+    # Convert the defaultdict to a regular dictionary
+    var_dict = dict(var_dict)
+
+    # Create a dict that splits the variance values over certain RUL sections
+    var_split_dict = defaultdict(list)
+
+
+    # Split up the variance according to their true RUL
+    for key, value in var_dict.items():
+        for high, low in key_ranges:
+            if low <= key < high:
+                var_split_dict[high, low].append(value)
+
+    #take the average
+    for key, value in var_split_dict.items():
+        var_split_dict[key] = np.average(value)
+
+    return dict(var_split_dict)
+
     
 TEST_SET = False
 
@@ -167,22 +192,27 @@ DNN_engines.sort()
 BNN_scores = []
 DNN_scores = []
 
-means = [] #list of prediction means
-vars = [] #list of prediction variance
+B_means = [] #list of Bayesian prediction means
+B_vars = [] #list of Bayesian prediction variance
 
-det_preds = [] #list of deterministic predictions
+D_preds = [] #list of deterministic predictions
+
+CF_means = []
+CF_vars = []
 
 trues = [] #list of true RUl values
 
 B_RMSE_lst = [] #list of Bayesian RMSE values
 D_RMSE_lst = [] #list of Deterministic RMSE values
+CF_RMSE_lst = [] #list of Counterfactual RMSE values
 
 B_errors = [] #list of Bayesian errors
 D_errors = [] #list of Deterministic errors
+CF_errors = [] #list of Counterfactual errors
 
 # engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
-for engine in engines[:1]:
+for engine in engines[0:2]:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
@@ -192,13 +222,13 @@ for engine in engines[:1]:
     var_pred_lst = results['var'] #Variance of the RUL predictions over engine life
     true_lst = results['true'] #Ground truth RUL over engine life
 
-    # with open(CF_engines[engine_id], 'r') as jsonfile:
-    #     CF_results = json.load(jsonfile)
+    with open(CF_engines[engine_id], 'r') as jsonfile:
+        CF_results = json.load(jsonfile)
     
-    # #Counterfactual results
-    # CF_mean_pred_lst = CF_results['mean'] #Mean of the RUL predictions over engine life
-    # CF_var_pred_lst = CF_results['var'] #Variance of the RUL predictions over engine life
-    # CF_true_lst = CF_results['true'] #Ground truth RUL over engine life
+    #Counterfactual results
+    CF_mean_pred_lst = CF_results['mean'] #Mean of the RUL predictions over engine life
+    CF_var_pred_lst = CF_results['var'] #Variance of the RUL predictions over engine life
+    CF_true_lst = CF_results['true'] #Ground truth RUL over engine life
 
     with open(DNN_engines[engine_id], 'r') as jsonfile:
         DNN_results = json.load(jsonfile)
@@ -210,11 +240,14 @@ for engine in engines[:1]:
     #%% Get error data
     BNN_error = [(mean_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))] #BNN error
     DNN_error = [(y_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))]#DNN error
+    CF_error = [(CF_mean_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))] #Counterfactual error
     B_RMSE = np.round(np.sqrt(np.mean([(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))])), 2) #Root Mean Squared error of Bayesian prediciton
     D_RMSE = np.round(np.sqrt(np.mean([(y_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] )), 2) #Root Mean Squared error of Deterministic prediciton
+    CF_RMSE = np.round(np.sqrt(np.mean([(CF_mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))] )), 2)
 
     B_RMSE_lst.append(B_RMSE)
     D_RMSE_lst.append(D_RMSE)
+    CF_RMSE_lst.append(CF_RMSE)
 
 
     #Calculate scores
@@ -224,14 +257,17 @@ for engine in engines[:1]:
     BNN_scores.append(BNN_score)
     DNN_scores.append(DNN_score)
 
-    means.append(mean_pred_lst)
-    vars.append(var_pred_lst)
-    det_preds.append(y_pred_lst)
+    B_means.append(mean_pred_lst)
+    B_vars.append(var_pred_lst)
+    D_preds.append(y_pred_lst)
+    CF_means.append(CF_mean_pred_lst)
+    CF_vars.append(CF_var_pred_lst)
 
     trues.append(true_lst)
 
     B_errors.append(BNN_error)
     D_errors.append(DNN_error)
+    CF_errors.append(CF_error)
 
 
 print(f'BNN score: {sum(BNN_scores)}')
@@ -259,59 +295,80 @@ key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 
 total_B_RMSE_splits = {key : [] for key in key_ranges}
 total_D_RMSE_splits = {key : [] for key in key_ranges}
+total_CF_RMSE_splits = {key : [] for key in key_ranges}
+total_B_var_splits = {key : [] for key in key_ranges}
+total_CF_var_splits = {key : [] for key in key_ranges}
 total_alpha_splits = {key : [] for key in key_ranges}
 
-for means, vars, det_preds, B_errors, D_errors, trues in zip(means, vars, det_preds, B_errors, D_errors, trues):
+for B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues in zip(B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues ):
     B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
     D_RMSE_splits = RMSE_split(D_errors, trues, key_ranges)
-    B_alpha_splits = alpha_splits(means, vars, trues, key_ranges)
+    CF_RMSE_splits = RMSE_split(CF_errors, trues, key_ranges)
+
+    B_var_splits = var_split(B_vars, key_ranges)
+    CF_var_splits = var_split(CF_vars, key_ranges)
+
+    B_alpha_splits = alpha_splits(B_means, B_vars, trues, key_ranges)
 
     for key in key_ranges:
         total_B_RMSE_splits[key].append(B_RMSE_splits[key])
         total_D_RMSE_splits[key].append(D_RMSE_splits[key])
+        total_CF_RMSE_splits[key].append(CF_RMSE_splits[key])
+
+        total_B_var_splits[key].append(B_var_splits[key])
+        total_CF_var_splits[key].append(CF_var_splits[key])
+
         total_alpha_splits[key].append(B_alpha_splits[key])
 
 
 
 ave_B_RMSE_splits = np.nanmean(list(total_B_RMSE_splits.values()), axis=1)
 ave_D_RMSE_splits = np.nanmean(list(total_D_RMSE_splits.values()), axis=1)
+ave_CF_RMSE_splits = np.nanmean(list(total_CF_RMSE_splits.values()), axis=1)
+
+ave_B_var_splits = np.nanmean(list(total_B_var_splits.values()), axis=1)
+ave_CF_var_splits = np.nanmean(list(total_CF_var_splits.values()), axis=1)
+
 ave_alpha_splits = np.nanmean(list(total_alpha_splits.values()), axis=1)
 
 tab = PrettyTable(key_ranges)
 tab.add_row(np.round(ave_B_RMSE_splits, 2))
-tab.add_row(np.round(ave_D_RMSE_splits, 2), divider=True)
+tab.add_row(np.round(ave_D_RMSE_splits, 2))
+tab.add_row(np.round(ave_CF_RMSE_splits,2), divider=True)
+tab.add_row(np.round(ave_B_var_splits, 2))
+tab.add_row(np.round(ave_CF_var_splits,2), divider=True)
 tab.add_row(np.round(ave_alpha_splits, 2), divider=True)
-tab.add_column('Metric', ['Bayesian RMSE', 'Deterministic RMSE', '90% alpha value (Bayesian)'], align='r')
+tab.add_column('Metric', ['Average Bayesian RMSE', 
+                          'Average Deterministic RMSE', 
+                          'Average Counterfactual RMSE', 
+                          'Average Bayesian Variance', 
+                          'Average Counterfactual variance', 
+                          '90% alpha value (Bayesian)'], align='r')
 print('RMSE (cycles) for RUL sections')
 print(tab)
 
 #plot results
-x_plot = np.arange(len(means))
+x_plot = np.arange(len(B_means))
 
-plt.plot(means)
-plt.fill_between(x_plot, 
-                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='upper') for i in range(len(x_plot))]), 
-                np.array([plot_mean_and_percentile(means[i], vars[i], percentile=90, upper_lower='lower') for i in range(len(x_plot))]), 
-                alpha = 0.5)
 
-plt.plot(det_preds)
-plt.plot(trues)
-plt.show()
-
-fig = make_subplots(rows=2, cols=1, subplot_titles=['RMSE error per section', '90% alpha bounds per section'])
+fig = make_subplots(rows=3, cols=1, subplot_titles=['RMSE error per section', 'Varaince per section', '90% alpha bounds per section'])
 
 for i, key in enumerate(key_ranges):
     x_values = [str(key)] * len(total_B_RMSE_splits[key])
 
     fig.add_trace(trace=go.Box(y=total_B_RMSE_splits[key], x=x_values, name=f'{key} Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
     fig.add_trace(trace=go.Box(y=total_D_RMSE_splits[key], x=x_values, name=f'{key} Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
-    fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=2, col=1)
+    fig.add_trace(trace=go.Box(y=total_CF_RMSE_splits[key], x=x_values, name=f'{key} Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
+    fig.add_trace(trace=go.Box(y=total_B_var_splits[key], x=x_values, name=f'{key} Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
+    fig.add_trace(trace=go.Box(y=total_CF_var_splits[key], x=x_values, name=f'{key} Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
+    fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
 
 fig.update_layout(
     boxmode='group'
 )
 fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
-fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=2, col=1)
+fig.update_yaxes(title_text='Variance', row=2, col=1)
+fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
 fig.show()
 
 # Export the figure to an HTML file

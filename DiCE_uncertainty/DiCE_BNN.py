@@ -142,7 +142,6 @@ def CF_results(chunk):
         for file_path in selected_file_paths:
         
             # Process each selected file
-            print(file_path)
             sample, cf_RUL = open_cf(file_path)
             label = float(file_path[-7:-4])
 
@@ -192,7 +191,7 @@ if __name__ == "__main__":
     num_cores = mp.cpu_count() - 1
 
     engines = np.arange(len(sample_len))
-    engines = [0]
+    engines = [0,1]
 
     chunks = chunk_list(engines, min(num_cores, len(engines)))
 
