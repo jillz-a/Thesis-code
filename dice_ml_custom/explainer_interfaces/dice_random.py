@@ -41,7 +41,7 @@ class DiceRandom(ExplainerBase):
                                   desired_class="opposite", permitted_range=None,
                                   features_to_vary="all", stopping_threshold=0.5, posthoc_sparsity_param=0.1,
                                   posthoc_sparsity_algorithm="linear", sample_size=1000, random_seed=None, verbose=False,
-                                  limit_steps_ls=10000, time_series=False):
+                                  limit_steps_ls=10000, time_series=False, variance=False):
         """Generate counterfactuals by randomly sampling features.
 
         :param query_instance: Test point of interest. A dictionary of feature names and values or a single row dataframe.
@@ -90,8 +90,12 @@ class DiceRandom(ExplainerBase):
             self.target_cf_class = self.infer_target_cfs_class(desired_class, test_pred, self.num_output_nodes)
         elif self.model.model_type == ModelTypes.Regressor:
             #CUSTOM: desired range based on initial outcome
+            if not variance:
             # self.target_cf_range = self.infer_target_cfs_range(desired_range)
-            self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
+                self.target_cf_range = [test_pred[0]+desired_range[0], test_pred[0]+desired_range[1]]
+
+            else:
+                self.target_cf_range = [test_pred[0]*desired_range[0], test_pred[0]*desired_range[1]]
             # print(test_pred)
             # print(self.target_cf_range)
         # fixing features that are to be fixed

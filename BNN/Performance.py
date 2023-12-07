@@ -215,7 +215,7 @@ CF_errors = [] #list of Counterfactual errors
 
 # engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
-for engine in engines:
+for engine in engines[0:2]:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)

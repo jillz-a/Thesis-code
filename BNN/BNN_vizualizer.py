@@ -322,14 +322,14 @@ for engine in engines[engine_eval: engine_eval+1]:
         #                         row=1,
         #                         col=2)
         
-        fig.add_trace(go.Scatter(x=x_plot,
-                                y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),
-                                visible=False,
-                                mode='lines',
-                                line=dict(color='orange'),
-                                name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
-                                row=1,
-                                col=2)
+        # fig.add_trace(go.Scatter(x=x_plot,
+        #                         y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),
+        #                         visible=False,
+        #                         mode='lines',
+        #                         line=dict(color='orange'),
+        #                         name=f'Prognostic horizon: Distance from true values where 90% of predictions lie'),
+        #                         row=1,
+        #                         col=2)
         
         fig.add_trace(go.Scatter(x=x_plot,
                                  y=np.array([s_score(i) for i in BNN_error]),
