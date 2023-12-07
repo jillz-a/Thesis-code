@@ -159,8 +159,11 @@ def var_split(vars, key_ranges):
                 var_split_dict[high, low].append(value)
 
     #take the average
-    for key, value in var_split_dict.items():
-        var_split_dict[key] = np.average(value)
+    for key in key_ranges:
+        if key in var_split_dict:
+            var_split_dict[key] = np.average(var_split_dict[key])
+        else:
+            var_split_dict[key] = np.NaN
 
     return dict(var_split_dict)
 
@@ -212,7 +215,7 @@ CF_errors = [] #list of Counterfactual errors
 
 # engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
-for engine in engines[0:2]:
+for engine in engines:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
