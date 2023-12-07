@@ -96,9 +96,9 @@ def alpha_splits(means, vars, trues, key_ranges):
                 lower = plot_mean_and_percentile(mean, var, upper_lower='lower')
                 alpha = max(np.abs(true - upper), np.abs(true - lower))/true if int(true) != 0 else 0
                 alphas.append(np.round(alpha,2))
-            alpha_split_dict[key] = max(alphas)
+            alpha_split_dict[str(key)] = max(alphas)
         else:
-            alpha_split_dict[key] = np.NaN
+            alpha_split_dict[str(key)] = np.NaN
 
     alpha_split_dict = dict(alpha_split_dict)
 
@@ -133,9 +133,9 @@ def RMSE_split(errors, trues, key_ranges):
             flat_errors = list(chain(*error_split_dict[key]))
             squared_errors = [error**2 for error in flat_errors]
             RMSE = np.sqrt(np.mean(squared_errors))
-            RMSE_splits[key] = np.round(RMSE,2)
+            RMSE_splits[str(key)] = np.round(RMSE,2)
         else:
-            RMSE_splits[key] = np.NaN
+            RMSE_splits[str(key)] = np.NaN
 
     return dict(RMSE_splits)
 
@@ -161,9 +161,9 @@ def var_split(vars, key_ranges):
     #take the average
     for key in key_ranges:
         if key in var_split_dict:
-            var_split_dict[key] = np.average(var_split_dict[key])
+            var_split_dict[str(key)] = np.average(var_split_dict[str(key)])
         else:
-            var_split_dict[key] = np.NaN
+            var_split_dict[str(key)] = np.NaN
 
     return dict(var_split_dict)
 
@@ -215,7 +215,7 @@ CF_errors = [] #list of Counterfactual errors
 
 # engines = engines[engine_eval:engine_eval+1] if not TEST_SET else engines #only evaluate a single engine
 
-for engine in engines[0:2]:
+for engine in engines:
     engine_id = int(engine[-8:-5])
     with open(engine, 'r') as jsonfile:
         results = json.load(jsonfile)
@@ -296,12 +296,12 @@ print(f'DNN score: {sum(DNN_scores)}')
 # Define the key ranges for each category
 key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 
-total_B_RMSE_splits = {key : [] for key in key_ranges}
-total_D_RMSE_splits = {key : [] for key in key_ranges}
-total_CF_RMSE_splits = {key : [] for key in key_ranges}
-total_B_var_splits = {key : [] for key in key_ranges}
-total_CF_var_splits = {key : [] for key in key_ranges}
-total_alpha_splits = {key : [] for key in key_ranges}
+total_B_RMSE_splits = {str(key) : [] for key in key_ranges}
+total_D_RMSE_splits = {str(key) : [] for key in key_ranges}
+total_CF_RMSE_splits = {str(key) : [] for key in key_ranges}
+total_B_var_splits = {str(key) : [] for key in key_ranges}
+total_CF_var_splits = {str(key) : [] for key in key_ranges}
+total_alpha_splits = {str(key) : [] for key in key_ranges}
 
 for B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues in zip(B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues ):
     B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
@@ -314,6 +314,7 @@ for B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, 
     B_alpha_splits = alpha_splits(B_means, B_vars, trues, key_ranges)
 
     for key in key_ranges:
+        key = str(key)
         total_B_RMSE_splits[key].append(B_RMSE_splits[key])
         total_D_RMSE_splits[key].append(D_RMSE_splits[key])
         total_CF_RMSE_splits[key].append(CF_RMSE_splits[key])
@@ -356,22 +357,26 @@ x_plot = np.arange(len(B_means))
 
 fig = make_subplots(rows=3, cols=1, subplot_titles=['RMSE error per section', 'Varaince per section', '90% alpha bounds per section'])
 
-for i, key in enumerate(key_ranges):
-    x_values = [str(key)] * len(total_B_RMSE_splits[key])
+# for i, key in enumerate(key_ranges):
+#     x_values = [str(key)] * len(total_B_RMSE_splits[key])
+#     x_values = [str(key)]
 
-    fig.add_trace(trace=go.Box(y=total_B_RMSE_splits[key], x=x_values, name=f'{key} Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
-    fig.add_trace(trace=go.Box(y=total_D_RMSE_splits[key], x=x_values, name=f'{key} Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
-    fig.add_trace(trace=go.Box(y=total_CF_RMSE_splits[key], x=x_values, name=f'{key} Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
-    fig.add_trace(trace=go.Box(y=total_B_var_splits[key], x=x_values, name=f'{key} Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
-    fig.add_trace(trace=go.Box(y=total_CF_var_splits[key], x=x_values, name=f'{key} Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
-    fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
+fig.add_trace(trace = px.b
+              ox(pd.DataFrame(total_B_RMSE_splits)))
 
-fig.update_layout(
-    boxmode='group'
-)
-fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
-fig.update_yaxes(title_text='Variance', row=2, col=1)
-fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_RMSE_splits), name=f'Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_D_RMSE_splits), name=f'Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_RMSE_splits), name=f'Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
+    # fig.add_trace(trace=go.Box(y=total_B_var_splits[key], x=x_values, name=f'{key} Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
+    # fig.add_trace(trace=go.Box(y=total_CF_var_splits[key], x=x_values, name=f'{key} Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
+    # fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
+
+# fig.update_layout(
+#     boxmode='group'
+# )
+# fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
+# fig.update_yaxes(title_text='Variance', row=2, col=1)
+# fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
 fig.show()
 
 # Export the figure to an HTML file
