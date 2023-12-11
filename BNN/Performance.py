@@ -159,13 +159,14 @@ def var_split(vars, key_ranges):
                 var_split_dict[high, low].append(value)
 
     #take the average
+    var_splits = defaultdict(list)
     for key in key_ranges:
         if key in var_split_dict:
-            var_split_dict[str(key)] = np.average(var_split_dict[str(key)])
+            var_splits[str(key)] = np.average(var_split_dict[key])
         else:
-            var_split_dict[str(key)] = np.NaN
+            var_splits[str(key)] = np.NaN
 
-    return dict(var_split_dict)
+    return dict(var_splits)
 
     
 TEST_SET = False
@@ -361,22 +362,21 @@ fig = make_subplots(rows=3, cols=1, subplot_titles=['RMSE error per section', 'V
 #     x_values = [str(key)] * len(total_B_RMSE_splits[key])
 #     x_values = [str(key)]
 
-fig.add_trace(trace = px.b
-              ox(pd.DataFrame(total_B_RMSE_splits)))
+# fig.add_trace(trace = px.box(pd.DataFrame(total_B_RMSE_splits)))
 
-# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_RMSE_splits), name=f'Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
-# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_D_RMSE_splits), name=f'Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
-# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_RMSE_splits), name=f'Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
-    # fig.add_trace(trace=go.Box(y=total_B_var_splits[key], x=x_values, name=f'{key} Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
-    # fig.add_trace(trace=go.Box(y=total_CF_var_splits[key], x=x_values, name=f'{key} Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
-    # fig.add_trace(trace=go.Box(y=total_alpha_splits[key],  x=x_values, name=f'{key} 90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_RMSE_splits), name=f'Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_D_RMSE_splits), name=f'Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_RMSE_splits), name=f'Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_var_splits), name=f'Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_var_splits), name=f'Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
+fig.add_trace(trace=go.Box(y=pd.DataFrame(total_alpha_splits), name=f'90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
 
-# fig.update_layout(
-#     boxmode='group'
-# )
-# fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
-# fig.update_yaxes(title_text='Variance', row=2, col=1)
-# fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
+fig.update_layout(
+    boxmode='group'
+)
+fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
+fig.update_yaxes(title_text='Variance', row=2, col=1)
+fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
 fig.show()
 
 # Export the figure to an HTML file
