@@ -169,7 +169,7 @@ def var_split(vars, key_ranges):
     return dict(var_splits)
 
     
-NOISY = False
+NOISY = True
 
 if NOISY:
     test_path = f'{DATASET}/noisy'
@@ -188,7 +188,7 @@ CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of a
 CF_engines.sort() 
 
 #import DNN results: every file represents 1 engine
-DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', test_path)
+DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
 

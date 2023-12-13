@@ -39,15 +39,15 @@ def plot_segments(data, n):
         ax.plot(x,y)
 
 #%% import files
-TRAINDATASET = f'data/{DATASET}/min-max/train'
-TESTDATASET = f'data/{DATASET}/min-max/test'
+TRAINDATASET = f'data/{DATASET}/min-max/noisy/train'
+TESTDATASET = f'data/{DATASET}/min-max/noisy/test'
 
 
-with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_samples.csv')) as csvfile:
+with open(os.path.join(project_path,f'data/{DATASET}/min-max/noisy/test/0-Number_of_samples.csv')) as csvfile:
     cf_sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
 #counterfactual input cf_samples
-result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/inputs', DATASET)
+result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/inputs', DATASET, 'noisy')
 cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
 cf_samples.sort()
 
@@ -104,7 +104,7 @@ for ax in axes.ravel():
         # diff = [counter_relative[i] - orig_relative[i] for i in range(len(counter_relative))]
 
         ax.scatter(np.arange(len(counter_relative)), counter_relative, color='orange', s=0.5)
-        ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue')
+        ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue', linewidth=0.1)
 
 
     #Take the average value of inputs at every time point
