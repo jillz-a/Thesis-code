@@ -169,10 +169,10 @@ def var_split(vars, key_ranges):
     return dict(var_splits)
 
     
-TEST_SET = False
+NOISY = False
 
-if TEST_SET:
-    test_path = f'{DATASET}/test'
+if NOISY:
+    test_path = f'{DATASET}/noisy'
 else:
     test_path = f'{DATASET}'
     engine_eval = 0
@@ -183,7 +183,7 @@ engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
+CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', test_path)
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 

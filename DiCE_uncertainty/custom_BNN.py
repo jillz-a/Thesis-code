@@ -58,8 +58,12 @@ class CustomBayesianNeuralNetwork(nn.Module):
         out = out[0][:, -1, :]  # Extract the last time step output
         
         out = self.l1(out) #pass through dense layers
+
+        out = self.relu(out)
        
         out = self.l2(out[0])
+
+        out = self.relu(out)
     
         return out[0]
     

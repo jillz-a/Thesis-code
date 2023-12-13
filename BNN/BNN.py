@@ -47,7 +47,7 @@ SAVE = True #If True, will save BNN output to .json files
 TEST_SET = False
 
 if TEST_SET:
-    test_path = f'{DATASET}/test'
+    test_path = f'{DATASET}/noisy/test'
 else:
     test_path = f'{DATASET}'
 
@@ -84,8 +84,12 @@ class BayesianNeuralNetwork(nn.Module):
         out = out[0][:, -1, :]  # Extract the last time step output
         
         out = self.l1(out) #pass through dense layers
+
+        out = self.relu(out)
        
         out = self.l2(out[0])
+
+        out = self.relu(out)
     
         return out
 
@@ -240,8 +244,8 @@ if __name__ == '__main__':
         with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
-            pickle.dump(BNNmodel.state_dict(), f)
+        # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
+        #     pickle.dump(BNNmodel.state_dict(), f)
 
         plt.plot(train_loss_lst, label='Train loss')
         plt.plot(val_loss_lst, label='Validation loss')
@@ -356,7 +360,7 @@ if __name__ == '__main__':
 
                 #predict RUL from samples using Monte Carlo Sampling
                 X = ToTensor()(sample).to(device)
-                n_samples = 20
+                n_samples = 10
                 NNmodel.eval()
 
                 mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]

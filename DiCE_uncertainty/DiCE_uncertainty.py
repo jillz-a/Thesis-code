@@ -38,8 +38,8 @@ BATCHSIZE = 100
 EPOCHS = 100
 
 #%% import files
-TRAINDATASET = f'data/{DATASET}/min-max/train'
-TESTDATASET = f'data/{DATASET}/min-max/test'
+TRAINDATASET = f'data/{DATASET}/min-max/noisy/train'
+TESTDATASET = f'data/{DATASET}/min-max/noisy/test'
 
 BayDet = 'BNN'
 
@@ -51,7 +51,7 @@ if BayDet == 'BNN':
     NNmodel = CustomBayesianNeuralNetwork().to(device)
 
 
-with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_test.pt', 'rb') as f: 
+with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_noisy.pt', 'rb') as f: 
     NNmodel.load_state_dict(load(f)) 
 
 
@@ -73,7 +73,7 @@ def chunk_list(input_list, num_chunks):
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
 
-    var_dict = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, 'variance_results.json')
+    var_dict = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET,'noisy', 'variance_results.json')
 
     with open(var_dict, 'r') as jsonfile:
         var_dict = json.load(jsonfile)
@@ -109,7 +109,7 @@ def CMAPSS_counterfactuals(chunk):
         cf = exp_random.generate_counterfactuals(df.drop('STD', axis=1), 
                                                 verbose=False, 
                                                 total_CFs= 1, 
-                                                desired_range=[0.5, 0.75],
+                                                desired_range=[0.75, 0.85],
                                                 random_seed = 2,
                                                 time_series=False,
                                                 variance=True)
@@ -121,7 +121,7 @@ def CMAPSS_counterfactuals(chunk):
         
         if cf_total is not None:
             #Save cf_result to file
-            save_to = os.path.join(project_path, f'DiCE_uncertainty/{BayDet}_cf_results/inputs', DATASET)
+            save_to = os.path.join(project_path, f'DiCE_uncertainty/{BayDet}_cf_results/inputs', DATASET, 'noisy')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             cf_total.to_csv(file_name, index=False)
@@ -129,11 +129,12 @@ def CMAPSS_counterfactuals(chunk):
 
         else:
             #If no cf found, save a file containing NaN
-            save_to = os.path.join(project_path, f'DiCE_uncertainty/{BayDet}_cf_results/inputs', DATASET)
+            save_to = os.path.join(project_path, f'DiCE_uncertainty/{BayDet}_cf_results/inputs', DATASET, 'noisy')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             # no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
             no_cf = df
+            print('no_cf_found')
             no_cf.to_csv(file_name, index=False)
             # print(f'Saved to: {file_name}')
 

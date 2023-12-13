@@ -28,54 +28,18 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 
 import bayesian_torch.layers as bl
+from BNN.BNN import BayesianNeuralNetwork
 
 from variables import *
 torch.manual_seed(42)
 
-CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}'))
-folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your input folder
+CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/noisy'))
+folder_path = f'data/{DATASET}/min-max/noisy/test'  # Specify the path to your input folder
 with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
         sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 SAVE = True #if true, result will be saved to json files
 
-#Bayesian neural network class
-class BayesianNeuralNetwork(nn.Module):
-    """Bayesian Neural Network using LSTM and linear layers. Deterministic to Bayesian using Reparameterization.
-
-    Args:
-        input_size: number of input features
-        hidden_szie: size of hidden node vector (also size of output)
-        num_layers: amountof LSTM layers
-        prior_mean: initial guess for parameter mean
-        prior_variance: initial guess for parameter variance
-        posterior_mu_init: init std for the trainable mu parameter, sampled from N(0, posterior_mu_init)
-        posterior_rho_init: init std for the trainable rho parameter, sampled from N(0, posterior_rho_init)
-
-    """
-    def __init__(self, input_size=14, hidden_size=32, num_layers=1, prior_mean = 0.0, prior_variance = 1.0, posterior_mu_init = 0.0, posterior_rho_init = -3.0):
-        super(BayesianNeuralNetwork, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
-        self.relu = bl.ReLU()
-        self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
-        self.l2 = bl.LinearReparameterization(16,1)
-        
-        
-    def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial hidden state
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial cell state
-        
-        out = self.lstm(x)#, (h0, c0))
-        
-        out = out[0][:, -1, :]  # Extract the last time step output
-        
-        out = self.l1(out) #pass through dense layers
-       
-        out = self.l2(out[0])
-    
-        return out
 
 def open_cf(file_path):
     cf_data = []
@@ -124,7 +88,7 @@ def CF_results(chunk):
 
     #Import into trained machine learning models
     NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy.pt', 'rb') as f: 
         NNmodel.load_state_dict(load(f)) 
 
     for engine in engines:
@@ -176,7 +140,7 @@ def CF_results(chunk):
                 'RMSE': B_RMSE
             }
 
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET, 'noisy')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_result_{0:0=3d}.json".format(engine))
             

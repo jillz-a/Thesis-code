@@ -29,8 +29,9 @@ import matplotlib.pyplot as plt
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-PLOT = False
+PLOT = True
 GENERATE = True
+noisy = False
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -52,7 +53,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     MinMaxScaler or StandardScaler
         Scaler used to normalize the data.
     """
-    assert normalization in ["z-score", "min-max"], "'normalization' must be either 'z-score' or 'min-max', got '" + normalization + "'."
+    assert normalization in ["z-score", "min-max", "min-max/noisy"], "'normalization' must be either 'z-score' or 'min-max', got '" + normalization + "'."
 
     # normalize data
     if normalization == "z-score":
@@ -110,9 +111,9 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
 
         t = traj.drop(["trajectory_id"], axis=1).values
         # t = traj.values
-
-        for i in range(t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+        if not noisy:
+            for i in range(t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
         t[:, 0 : t.shape[1]] = scaler.fit_transform(t[:, 0 : t.shape[1]]) #normalization
 
@@ -202,9 +203,9 @@ def build_validation_data(df, out_path, scaler, window=30, maxRUL=120):
 
         # t = traj.drop(["trajectory_id"], axis=1).values
         t = traj.values
-
-        for i in range(1,t.shape[1]):
-            t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+        if not noisy:
+            for i in range(1,t.shape[1]):
+                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
         denoised_trajectories.append(t)
 
@@ -294,9 +295,9 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
 
             # t = traj.drop(["trajectory_id"], axis=1).values
             t = traj.values
-
-            for i in range(1,t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+            if not noisy:
+                for i in range(1,t.shape[1]):
+                    t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
             denoised_trajectories.append(t)
 
@@ -328,9 +329,9 @@ def build_test_data(df, file_rul, out_path, scaler, window=30, keep_all=False, m
 
             # t = traj.drop(["trajectory_id"], axis=1).values
             t = traj.values
-
-            for i in range(1,t.shape[1]):
-                t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
+            if not noisy:
+                for i in range(1,t.shape[1]):
+                    t[:,i] = savgol_filter(t[:,i], t.shape[0], 3)  #denoising
 
             denoised_trajectories.append(t)
 
@@ -463,7 +464,7 @@ def _load_data_from_file(file, subset="FD001"):
 if __name__ == "__main__":
     if GENERATE:
         """Preprocessing."""
-        normalization = "min-max"
+        normalization = "min-max" if not noisy else "min-max/noisy"
         validation = 0.00
         maxRUl = 120
 
