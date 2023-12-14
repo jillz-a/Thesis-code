@@ -30,7 +30,7 @@ TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
 PLOT = True
-GENERATE = True
+GENERATE = False
 noisy = False
 
 #%%

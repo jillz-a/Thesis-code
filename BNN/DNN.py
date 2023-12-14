@@ -37,7 +37,7 @@ TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/
 
 TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = True
+SAVE = False
 
 
 #Frequentist neural network class
@@ -204,8 +204,8 @@ if __name__ == "__main__":
         with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
-        with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pkl', 'wb') as f:
-            pickle.dump(NNmodel.state_dict(), f)
+        # with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pkl', 'wb') as f:
+        #     pickle.dump(NNmodel.state_dict(), f)
 
         plt.plot(loss_lst)
         plt.show()
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     #%% Test the model and save files
     else:
-        folder_path = f'data/{DATASET}/min-max/test_set'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
@@ -334,7 +334,7 @@ if __name__ == "__main__":
                     'RMSE': D_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET, 'test')
+                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET)
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -347,5 +347,5 @@ if __name__ == "__main__":
         print(f'Deterministic Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
         print(f'STD for RMSE: {STD}')
         print(f'COV for RMSE: {COV}')
-# %%
+    # %%
 

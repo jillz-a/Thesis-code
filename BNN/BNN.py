@@ -326,7 +326,7 @@ if __name__ == '__main__':
 
         var_dict = {} #dictionary with key: sample id, value: variance. Will be used in DiCE_uncertianty
 
-        # from DNN import RMSE_lst as DRMSE_lst
+        from DNN import RMSE_lst as DRMSE_lst
        
         engines = np.arange(len(sample_len))
         for engine in engines:
@@ -419,8 +419,8 @@ if __name__ == '__main__':
 
         
 
-        # plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
-        # # plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
-        # plt.xlabel('Engines')
-        # plt.ylabel('RMSE')
-        # plt.show()
+        plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
+        plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
+        plt.xlabel('Engines')
+        plt.ylabel('RMSE')
+        plt.show()

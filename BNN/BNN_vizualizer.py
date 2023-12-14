@@ -132,12 +132,12 @@ alpha = 0.1 #set the alpha bounds
 engine_eval =0
 #%%
 #import BNN results: every file represents 1 engine
-BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, 'noisy')
+BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET)
 engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET, 'noisy')
+CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 
