@@ -32,12 +32,12 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
+TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/train'))
+TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/test'))
 
 TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False
+SAVE = True
 
 
 #Frequentist neural network class
@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
             if es(model=NNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_states/DNN_model_state_{DATASET}_noisy.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pkl', 'wb') as f:
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     #%% Test the model and save files
     else:
-        folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/noisy/test'  # Specify the path to your folder
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
                 #Import into trained machine learning models
                 NNmodel = NeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_states/DNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/DNN_model_state_{DATASET}_noisy.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples
@@ -334,7 +334,7 @@ if __name__ == "__main__":
                     'RMSE': D_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET)
+                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET, 'noisy')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 

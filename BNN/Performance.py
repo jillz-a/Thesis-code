@@ -139,7 +139,7 @@ def RMSE_split(errors, trues, key_ranges):
 
     return dict(RMSE_splits)
 
-def var_split(vars, key_ranges):
+def var_split(vars, trues, key_ranges):
     # Create a dict for the variances
     var_dict = defaultdict(list)
     for key, value in zip(trues, vars):
@@ -169,7 +169,7 @@ def var_split(vars, key_ranges):
     return dict(var_splits)
 
     
-NOISY = True
+NOISY = False
 
 if NOISY:
     test_path = f'{DATASET}/noisy'
@@ -304,15 +304,15 @@ total_B_var_splits = {str(key) : [] for key in key_ranges}
 total_CF_var_splits = {str(key) : [] for key in key_ranges}
 total_alpha_splits = {str(key) : [] for key in key_ranges}
 
-for B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues in zip(B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues ):
-    B_RMSE_splits = RMSE_split(B_errors, trues, key_ranges)
-    D_RMSE_splits = RMSE_split(D_errors, trues, key_ranges)
-    CF_RMSE_splits = RMSE_split(CF_errors, trues, key_ranges)
+for B_mean, B_var, B_error, D_pred, D_error, CF_mean, CF_var, CF_error, true in zip(B_means, B_vars, B_errors, D_preds, D_errors, CF_means, CF_vars, CF_errors, trues ):
+    B_RMSE_splits = RMSE_split(B_error, true, key_ranges)
+    D_RMSE_splits = RMSE_split(D_error, true, key_ranges)
+    CF_RMSE_splits = RMSE_split(CF_error, true, key_ranges)
 
-    B_var_splits = var_split(B_vars, key_ranges)
-    CF_var_splits = var_split(CF_vars, key_ranges)
+    B_var_splits = var_split(B_var, true, key_ranges)
+    CF_var_splits = var_split(CF_var, true, key_ranges)
 
-    B_alpha_splits = alpha_splits(B_means, B_vars, trues, key_ranges)
+    B_alpha_splits = alpha_splits(B_mean, B_var, true, key_ranges)
 
     for key in key_ranges:
         key = str(key)
@@ -342,13 +342,17 @@ tab.add_row(np.round(ave_D_RMSE_splits, 2))
 tab.add_row(np.round(ave_CF_RMSE_splits,2), divider=True)
 tab.add_row(np.round(ave_B_var_splits, 2))
 tab.add_row(np.round(ave_CF_var_splits,2), divider=True)
-tab.add_row(np.round(ave_alpha_splits, 2), divider=True)
+# tab.add_row(np.round(ave_alpha_splits, 2), divider=True)
+tab.add_column('Overall average', [np.round(np.mean(B_RMSE_lst),2), 
+                           np.round(np.mean(D_RMSE_lst),2), 
+                           np.round(np.mean(CF_RMSE_lst),2), 
+                           np.round(np.mean([np.mean(B_vars[i]) for i in range(len(B_vars))]),2), 
+                           np.round(np.mean([np.mean(CF_vars[i]) for i in range(len(CF_vars))]),2)])
 tab.add_column('Metric', ['Average Bayesian RMSE', 
                           'Average Deterministic RMSE', 
                           'Average Counterfactual RMSE', 
                           'Average Bayesian Variance', 
-                          'Average Counterfactual variance', 
-                          '90% alpha value (Bayesian)'], align='r')
+                          'Average Counterfactual variance'], align='r')
 print('RMSE (cycles) for RUL sections')
 print(tab)
 
