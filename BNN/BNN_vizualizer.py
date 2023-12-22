@@ -128,8 +128,8 @@ start = time.time()
 
 show_cf = True
 GIF = False
-alpha = 0.1 #set the alpha bounds
-engine_eval = 3
+alpha = 0.2 #set the alpha bounds
+engine_eval = 0
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, 'noisy')
@@ -227,14 +227,14 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 visible=False,
                                 name='90th percentile',
                                 hoverinfo='skip'),        
-                    # go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
-                    #             y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
-                    #             fill='toself',  # Fill to next y values
-                    #             fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
-                    #             visible=False,
-                    #             line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
-                    #             name=f'\u03B1 +-{alpha*100}%, \u03BB',
-                    #             hoverinfo='skip')
+                    go.Scatter(x=np.concatenate((x_plot, x_plot[::-1])), 
+                                y=np.concatenate((np.array([i*(1.0+alpha) for i in true_lst]), np.array([i*(1.0-alpha) for i in true_lst])[::-1])),
+                                fill='toself',  # Fill to next y values
+                                fillcolor='rgba(0, 80, 200, 0.15)',  # Color of the filled area
+                                visible=False,
+                                line=dict(color='rgba(255, 255, 255, 0)'),  # Hide the line
+                                name=f'\u03B1 +-{alpha*100}%, \u03BB',
+                                hoverinfo='skip')
                 ]
                 
 
@@ -312,15 +312,15 @@ for engine in engines[engine_eval: engine_eval+1]:
                                 row=1,
                                 col=2)
          
-        # fig.add_trace(go.Scatter(x=x_plot,
-        #                         y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
-        #                         visible=False,
-        #                         mode='lines',
-        #                         fill='tozerox',
-        #                         line=dict(color='rgba(0, 80, 200, 0.5)'),
-        #                         name=f'Prediction within \u03B1 +-{alpha*100}%'),
-        #                         row=1,
-        #                         col=2)
+        fig.add_trace(go.Scatter(x=x_plot,
+                                y = np.array([alpha_dist(true_lst[i]*(1-alpha), true_lst[i]*(1+alpha), mean_pred_lst[i], np.sqrt(var_pred_lst[i])) for i in range(len(x_plot))]),
+                                visible=False,
+                                mode='lines',
+                                fill='tozerox',
+                                line=dict(color='rgba(0, 80, 200, 0.5)'),
+                                name=f'Prediction within \u03B1 +-{alpha*100}%'),
+                                row=1,
+                                col=2)
         
         # fig.add_trace(go.Scatter(x=x_plot,
         #                         y=np.array([calculate_alpha(mean_pred_lst, np.sqrt(var_pred_lst), true_lst, confidence_level=0.9) for i in range(len(x_plot))]),

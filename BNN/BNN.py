@@ -37,8 +37,8 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/test'))
+TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/train'))
+TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/test'))
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
@@ -241,7 +241,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
@@ -313,7 +313,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{test_path}/min-max/test'  # Specify the path to your folder
+        folder_path = f'data/{test_path}/min-max/noisy/test'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -326,7 +326,7 @@ if __name__ == '__main__':
 
         var_dict = {} #dictionary with key: sample id, value: variance. Will be used in DiCE_uncertianty
 
-        from DNN import RMSE_lst as DRMSE_lst
+        # from DNN import RMSE_lst as DRMSE_lst
        
         engines = np.arange(len(sample_len))
         for engine in engines:
@@ -355,7 +355,7 @@ if __name__ == '__main__':
 
                 #Import into trained machine learning models
                 NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples using Monte Carlo Sampling
@@ -364,6 +364,10 @@ if __name__ == '__main__':
                 NNmodel.eval()
 
                 mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
+
+                # if sample_id == 100:
+                #     plt.hist([mc_pred[i].item() for i in range(n_samples)], bins=50)
+                #     plt.show()
 
 
                 predictions = torch.stack(mc_pred)
@@ -394,7 +398,7 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path)
+                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, 'noisy')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -403,7 +407,7 @@ if __name__ == '__main__':
 
         #save variance dictionary to file to be used in DiCE_uncertainty
         if SAVE:
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET)
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, 'noisy')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "variance_results.json")
             
@@ -419,8 +423,8 @@ if __name__ == '__main__':
 
         
 
-        plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
-        plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
-        plt.xlabel('Engines')
-        plt.ylabel('RMSE')
-        plt.show()
+        # plt.plot(np.arange(len(RMSE_lst)), RMSE_lst, label="Bayesian")
+        # plt.plot(np.arange(len(DRMSE_lst)), DRMSE_lst, label="Deterministic")
+        # plt.xlabel('Engines')
+        # plt.ylabel('RMSE')
+        # plt.show()
