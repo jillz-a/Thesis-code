@@ -33,10 +33,11 @@ from BNN.BNN import BayesianNeuralNetwork
 from variables import *
 torch.manual_seed(42)
 
-CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}'))
-folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your input folder
+CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/noisy'))
+folder_path = f'data/{DATASET}/min-max/noisy/test'  # Specify the path to your input folder
 with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
         sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
+        sample_len = sample_len[0:20] #only use the files to be converted to counterfactuals
 
 SAVE = True #if true, result will be saved to json files
 
@@ -88,7 +89,7 @@ def CF_results(chunk):
 
     #Import into trained machine learning models
     NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy_orig.pt', 'rb') as f: 
         NNmodel.load_state_dict(load(f)) 
 
     for engine in engines:
@@ -140,7 +141,7 @@ def CF_results(chunk):
                 'RMSE': B_RMSE
             }
 
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET)
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET, 'noisy')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_result_{0:0=3d}.json".format(engine))
             

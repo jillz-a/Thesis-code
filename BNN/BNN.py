@@ -39,12 +39,14 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/test'))
+CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/noisy'
 
-TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
+TRAIN = True #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = True #If True, will save BNN output to .json files
+SAVE = False #If True, will save BNN output to .json files
 
 TEST_SET = False
+CF_TRAIN = True #If true, counterfatuals will be added to the training data
 
 if TEST_SET:
     test_path = f'{DATASET}/noisy/test'
@@ -193,8 +195,11 @@ def test_epoch(test_data, model, loss_fn, val = False):
 if __name__ == '__main__':
 
     from Data_loader import CustomDataset
-    train = CustomDataset(TRAINDATASET)
-    test = CustomDataset(TESTDATASET)
+    train = CustomDataset([TRAINDATASET])
+    test = CustomDataset([TESTDATASET])
+
+    if CF_TRAIN:
+        train = CustomDataset([TRAINDATASET, CFDATASET])
 
     # Model input parameters
     input_size = 14
@@ -241,7 +246,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy_cf.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
@@ -355,7 +360,7 @@ if __name__ == '__main__':
 
                 #Import into trained machine learning models
                 NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy_cf.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples using Monte Carlo Sampling
