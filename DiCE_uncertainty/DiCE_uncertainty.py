@@ -55,6 +55,13 @@ if BayDet == 'BNN':
 with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_noisy_orig.pt', 'rb') as f: 
     NNmodel.load_state_dict(load(f)) 
 
+file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+file_paths.sort()
+
+#split test set into 2 distinct parts, 1 to convert to cfs and one to evaluate
+test_to_cf = file_paths[0:sum(sample_len[:20])] # 20% of total data set to be converted to cf
+test_to_eval = file_paths[sum(sample_len[:20]):] # 10 % of total data set to be used for evaluation
+
 
 # Function to split a list into chunks
 def chunk_list(input_list, num_chunks):
@@ -146,12 +153,7 @@ if __name__ == '__main__':
 
     num_cores = mp.cpu_count() - 1
 
-    file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
-    file_paths.sort()
-
-    #split test set into 2 distinct parts, 1 to convert to cfs and one to evaluate
-    test_to_cf = file_paths[0:sum(sample_len[:20])] # 20% of total data set to be converted to cf
-    test_to_eval = file_paths[sum(sample_len[:20]):] # 10 % of total data set to be used for evaluation
+    
 
     # file_paths = file_paths[0:int(sample_len[0][0])+184] #only looking at the first engine
     # file_paths = file_paths[0:170]
