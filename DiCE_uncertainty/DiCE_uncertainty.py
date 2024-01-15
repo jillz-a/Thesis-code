@@ -59,8 +59,8 @@ file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get 
 file_paths.sort()
 
 #split test set into 2 distinct parts, 1 to convert to cfs and one to evaluate
-test_to_cf = file_paths[0:sum(sample_len[:20])] # 20% of total data set to be converted to cf
-test_to_eval = file_paths[sum(sample_len[:20]):] # 10 % of total data set to be used for evaluation
+test_to_cf = file_paths # 20% of total data set to be converted to cf
+
 
 
 # Function to split a list into chunks

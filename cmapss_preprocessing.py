@@ -30,7 +30,7 @@ TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
 PLOT = True
-GENERATE = False
+GENERATE = True
 noisy = True
 
 #%%
@@ -95,8 +95,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     flag_1 = False
     flag_2 = False
     test_train = 0.7 #fraction of engines to be used for training, rest will be used for testing
-    test_to_cf = 0.2
-    test_to_eval = 0.1
+    test_to_cf = 0.2 #fraction of engines to be used for counterfactuals, the rest will be used for evaluation
 
 
     #Denoising per trajectory
@@ -104,12 +103,12 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     for traj_id, traj in grouped:
         if traj_id <= int(test_train*len(grouped)):
             name = "train"
-        elif traj_id <= int((test_train+test_to_cf)*len(grouped)) and not flag_1:
+        elif traj_id <= int((test_train+test_to_cf)*len(grouped))+1 and not flag_1:
             sample_id = 0
             traj_len_lst = []
             name = "test"
             flag_1 = True
-        elif not flag_2:
+        elif traj_id > int((test_train+test_to_cf)*len(grouped))+1 and not flag_2:
             sample_id = 0
             traj_len_lst = []
             name = "test_eval"
