@@ -29,6 +29,8 @@ import bayesian_torch.layers as bl
 
 import pickle
 
+from DiCE_uncertainty.DiCE_uncertainty import test_to_cf
+
 
 from variables import *
 
@@ -246,7 +248,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy_cf.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy_NOCF.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:

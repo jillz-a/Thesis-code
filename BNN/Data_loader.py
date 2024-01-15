@@ -8,7 +8,7 @@ class CustomDataset(Dataset):
     def __init__(self, folder_paths):
         self.file_paths = []
         for folder_path in folder_paths:
-            file_paths = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.txt') or file.endswith('.csv')]
+            file_paths = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.txt') or file.endswith('.csv') and not file.endswith('0-Number_of_samples.csv')]
             self.file_paths += file_paths
 
     def __len__(self):
@@ -49,7 +49,7 @@ class CustomDataset(Dataset):
         #     data = file.read()h
         if file_path.endswith('.txt'):
             data = np.genfromtxt(file_path, delimiter=" ", dtype=np.float32)
-        elif file_path.endswith('.csv'):
+        elif file_path.endswith('.csv'): #When adding countefactual data into the training mix
             data = self.open_csv(file_path)
 
         #Convert data to tensor

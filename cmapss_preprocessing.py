@@ -92,22 +92,28 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     # sample each trajectory through sliding window segmentation
     sample_id = 0
     traj_len_lst = []
-    flag = False
+    flag_1 = False
+    flag_2 = False
     test_train = 0.7 #fraction of engines to be used for training, rest will be used for testing
+    test_to_cf = 0.2
+    test_to_eval = 0.1
 
 
     #Denoising per trajectory
     denoised_trajectories = []
     for traj_id, traj in grouped:
-        while traj_id <= int(test_train*len(grouped)):
+        if traj_id <= int(test_train*len(grouped)):
             name = "train"
-            break
-        else:
-            if not flag:
-                sample_id = 0
-                traj_len_lst = []
-                name = "test"
-                flag = True
+        elif traj_id <= int((test_train+test_to_cf)*len(grouped)) and not flag_1:
+            sample_id = 0
+            traj_len_lst = []
+            name = "test"
+            flag_1 = True
+        elif not flag_2:
+            sample_id = 0
+            traj_len_lst = []
+            name = "test_eval"
+            flag_2 = True
 
         t = traj.drop(["trajectory_id"], axis=1).values
         # t = traj.values
