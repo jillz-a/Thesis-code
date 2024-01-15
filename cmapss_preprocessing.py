@@ -29,9 +29,9 @@ import matplotlib.pyplot as plt
 TRAINDATASET = f'data/{DATASET}/min-max/train'
 TESTDATASET = f'data/{DATASET}/min-max/test'
 
-PLOT = True
+PLOT = False
 GENERATE = True
-noisy = True
+noisy = False
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -53,7 +53,7 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     MinMaxScaler or StandardScaler
         Scaler used to normalize the data.
     """
-    assert normalization in ["z-score", "min-max", "min-max/noisy"], "'normalization' must be either 'z-score' or 'min-max', got '" + normalization + "'."
+    assert normalization in ["z-score", "min-max", "min-max/noisy", "min-max/no-noisy"], "'normalization' must be either 'z-score' or 'min-max', got '" + normalization + "'."
 
     # normalize data
     if normalization == "z-score":
@@ -469,7 +469,7 @@ def _load_data_from_file(file, subset="FD001"):
 if __name__ == "__main__":
     if GENERATE:
         """Preprocessing."""
-        normalization = "min-max" if not noisy else "min-max/noisy"
+        normalization = "min-max/no-noisy" if not noisy else "min-max/noisy"
         validation = 0.00
         maxRUl = 120
 
