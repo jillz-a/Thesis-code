@@ -37,20 +37,24 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/test')) #contains 20% of test data which was used to create counterfactuals
-CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/noisy'
-
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True #If True, will save BNN output to .json files
+NOISY = False #If True, use noisy (normalized) data
 
-TEST_SET = False
+TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
 CF_TRAIN = False #If true, counterfatuals will be added to the training data
-NOCF_TRAIN = True #If true, non cf converted inputs will be added to the training data
+NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data
+
+noisy = 'noisy' if NOISY else 'denoised'
+cf = 'CF' if CF_TRAIN else ('NOCF' if NOCF_TRAIN else 'orig')
+
+TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/train'))
+TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/test')) #contains 20% of test data which was used to create counterfactuals
+CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}'
 
 if TEST_SET:
-    test_path = f'{DATASET}/noisy/test'
+    test_path = f'{DATASET}/{noisy}/test_set'
 else:
     test_path = f'{DATASET}'
 
@@ -249,7 +253,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_noisy_NOCF.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
@@ -321,7 +325,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{test_path}/min-max/noisy/test_eval'  # Specify the path to your folder
+        folder_path = f'data/{test_path}/min-max/{noisy}/test_eval'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -363,7 +367,7 @@ if __name__ == '__main__':
 
                 #Import into trained machine learning models
                 NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_noisy_CF.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples using Monte Carlo Sampling
@@ -406,7 +410,7 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, 'noisy-CF')
+                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, f'{noisy}-{cf}')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -415,7 +419,7 @@ if __name__ == '__main__':
 
         #save variance dictionary to file to be used in DiCE_uncertainty
         if SAVE:
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, 'noisy-CF')
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "variance_results.json")
             
