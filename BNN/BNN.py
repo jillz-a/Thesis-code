@@ -421,14 +421,14 @@ if __name__ == '__main__':
         if SAVE:
             save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "variance_results.json")
+            file_name = os.path.join(save_to, "variance_results_test.json")
             
             with open(file_name, 'w') as jsonfile:
                 json.dump(var_dict, jsonfile)
 
         STD = np.sqrt(1/(len(engines) - 1) * sum([(RMSE_lst[i] - np.mean(RMSE_lst))**2 for i in range(len(RMSE_lst))]))
         COV = STD/np.mean(RMSE_lst)
-        print(f'Evaluation completed for dataset {DATASET}')
+        print(f'Evaluation completed for dataset {DATASET}. Noisy: {NOISY}. Counterfactuals: {cf}')
         print(f'Bayesian Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
         print(f'STD for RMSE: {STD}')
         print(f'COV for RMSE: {COV}')
