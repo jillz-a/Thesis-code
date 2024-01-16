@@ -156,6 +156,7 @@ if __name__ == '__main__':
     start = time.time()
 
     num_cores = mp.cpu_count() - 1
+    num_cores = 200
 
     
 
