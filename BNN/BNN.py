@@ -40,11 +40,11 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True #If True, will save BNN output to .json files
-NOISY = False #If True, use noisy (normalized) data
+NOISY = True #If True, use noisy (normalized) data
 
 TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
-CF_TRAIN = False #If true, counterfatuals will be added to the training data
-NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data
+CF_TRAIN = True #If true, counterfatuals will be added to the training data
+NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True)
 
 noisy = 'noisy' if NOISY else 'denoised'
 cf = 'CF' if CF_TRAIN else ('NOCF' if NOCF_TRAIN else 'orig')
@@ -421,7 +421,7 @@ if __name__ == '__main__':
         if SAVE:
             save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "variance_results_test.json")
+            file_name = os.path.join(save_to, "variance_results.json")
             
             with open(file_name, 'w') as jsonfile:
                 json.dump(var_dict, jsonfile)
