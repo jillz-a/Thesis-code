@@ -168,17 +168,16 @@ def var_split(vars, trues, key_ranges):
 
     return dict(var_splits)
 
-SPLITS = False
 
-test_paths = ['denoised-orig', 'noisy-orig', 'denoised-NOCF', 'noisy-NOCF', 'denoised-CF', 'noisy-CF']
-total_RMSE_dict = {}
-total_var_dict = {}
+test_paths = ['denoised-orig','denoised-NOCF', 'denoised-CF', 'noisy-orig', 'noisy-NOCF', 'noisy-CF']
+key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 
-# Create subplots
-fig, axs = plt.subplots(6, 3, figsize=(8, 12))
-fig.suptitle('Overal model performance per RUL section')
+total_RMSE_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
+total_var_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
+total_alpha_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
 
-for i, test_path in enumerate(test_paths):
+
+for test_path in test_paths:
 #%%
     #import BNN results: every file represents 1 engine
     BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, test_path)
@@ -236,7 +235,6 @@ for i, test_path in enumerate(test_paths):
     print(f'BNN score: {sum(BNN_scores)}')
 
 
-    key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 
     total_B_RMSE_splits = {str(key) : [] for key in key_ranges}
     total_B_var_splits = {str(key) : [] for key in key_ranges}
@@ -253,12 +251,15 @@ for i, test_path in enumerate(test_paths):
             key = str(key)
             if not np.isnan(B_RMSE_splits[key]):
                 total_B_RMSE_splits[key].append(B_RMSE_splits[key])
+                total_RMSE_dict[key][test_path].append(B_RMSE_splits[key])
 
             if not np.isnan(B_var_splits[key]):
                 total_B_var_splits[key].append(B_var_splits[key])
+                total_var_dict[key][test_path].append(B_var_splits[key])
 
             if not np.isnan(B_alpha_splits[key]):
                 total_alpha_splits[key].append(B_alpha_splits[key])
+                total_alpha_dict[key][test_path].append(B_alpha_splits[key])
 
 
 
@@ -279,22 +280,49 @@ for i, test_path in enumerate(test_paths):
     print('RMSE (cycles) for RUL sections')
     print(tab)
 
-    #plot results
 
-    # Create Box plots and add them to subplots
-    box_positions = np.arange(len(key_ranges))
-    axs[i, 0].boxplot(list(total_B_RMSE_splits.values()), labels=total_B_RMSE_splits.keys(), positions=box_positions)
-    axs[0, 0].set_title('RMSE error per section')
-    axs[i, 1].boxplot(total_B_var_splits.values(), labels=total_B_var_splits.keys(), positions=box_positions)
-    axs[0, 1].set_title('Variance per section')
-    axs[i, 2].boxplot(total_alpha_splits.values(), labels=total_alpha_splits.keys(), positions=box_positions)
-    axs[0, 2].set_title('90% alpha bounds per section')
+#plot results
+# Create subplots
+fig, axs = plt.subplots(3, len(key_ranges), figsize=(16, 12))
+fig.suptitle('Overal model performance per RUL section')
 
+for i, key in enumerate(key_ranges):
+    key = str(key)
+    for j, test_path in enumerate(test_paths):
+        positions = np.arange(0, len(test_paths))
+        # Create Box plots and add them to subplots
+        axs[0,i].boxplot(list(total_RMSE_dict[key].values()), labels=total_RMSE_dict[key].keys(), positions=positions)
+        axs[0,i].set_ylim(bottom=0, top=30)
+        axs[0,i].grid(visible=True, which='both', axis='both', alpha=0.5)
+        axs[0,i].tick_params(axis='x', labelrotation = 45)
+        axs[0,0].set_ylabel('RMSE [cycles]')
 
+        # Scatter plots for original data points
+        for box_key, box_value in total_RMSE_dict[key].items():
+            axs[0, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
 
-# Set y-axis labels
-# for ax in axs:
-#     ax.set_ylabel('Values')
+        axs[1,i].boxplot(total_var_dict[key].values(), labels=total_var_dict[key].keys(), positions=positions)
+        axs[1,i].set_ylim(bottom=0, top=225)
+        axs[1,i].grid(visible=True, which='both', axis='both', alpha=0.5)
+        axs[1,i].tick_params(axis='x', labelrotation = 45)
+        axs[1,0].set_ylabel('Variance [cycles^2]')
+
+        # Scatter plots for original data points
+        for box_key, box_value in total_var_dict[key].items():
+            axs[1, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
+
+        axs[2,i].boxplot(total_alpha_dict[key].values(), labels=total_alpha_dict[key].keys(), positions=positions)
+        axs[2,i].set_ylim(bottom=0, top=0.7)
+        axs[2,i].grid(visible=True, which='both', axis='both', alpha=0.5)
+        axs[2,i].tick_params(axis='x', labelrotation = 45)
+        axs[2,0].set_ylabel('90% alppha bounds')
+
+        # Scatter plots for original data points
+        for box_key, box_value in total_alpha_dict[key].items():
+            axs[1, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
+
+        axs[0,i].set_title(f'RUL section: {key}')
+
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust subplot layout
 plt.show()
