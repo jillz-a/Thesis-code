@@ -169,21 +169,15 @@ def var_split(vars, trues, key_ranges):
     return dict(var_splits)
 
     
-NOISY = False
-
-if NOISY:
-    test_path = f'{DATASET}/noisy'
-else:
-    test_path = f'{DATASET}'
-    engine_eval = 0
+test_path = 'noisy-orig'
 #%%
 #import BNN results: every file represents 1 engine
-BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', test_path)
+BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, test_path)
 engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', test_path)
+CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET, 'noisy')
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 
@@ -360,28 +354,51 @@ print(tab)
 x_plot = np.arange(len(B_means))
 
 
-fig = make_subplots(rows=3, cols=1, subplot_titles=['RMSE error per section', 'Varaince per section', '90% alpha bounds per section'])
+# fig = make_subplots(rows=3, cols=1, subplot_titles=['RMSE error per section', 'Varaince per section', '90% alpha bounds per section'])
 
-# for i, key in enumerate(key_ranges):
-#     x_values = [str(key)] * len(total_B_RMSE_splits[key])
-#     x_values = [str(key)]
+# # for i, key in enumerate(key_ranges):
+# #     x_values = [str(key)] * len(total_B_RMSE_splits[key])
+# #     x_values = [str(key)]
 
-# fig.add_trace(trace = px.box(pd.DataFrame(total_B_RMSE_splits)))
+# # fig.add_trace(trace = px.box(pd.DataFrame(total_B_RMSE_splits)))
 
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_RMSE_splits), name=f'Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_D_RMSE_splits), name=f'Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_RMSE_splits), name=f'Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_var_splits), name=f'Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_var_splits), name=f'Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
-fig.add_trace(trace=go.Box(y=pd.DataFrame(total_alpha_splits), name=f'90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_RMSE_splits), name=f'Bayesian RMSE', marker_color='blue', boxmean=True), row=1, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_D_RMSE_splits), name=f'Deterministic RMSE', marker_color='orange', boxmean=True), row=1, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_RMSE_splits), name=f'Counterfactual RMSE', marker_color='green', boxmean=True), row=1, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_B_var_splits), name=f'Bayesian variance', marker_color='blue', boxmean=True), row=2, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_CF_var_splits), name=f'Counterfactual variance', marker_color='green', boxmean=True), row=2, col=1)
+# fig.add_trace(trace=go.Box(y=pd.DataFrame(total_alpha_splits), name=f'90% alpha bound (Bayesian)', marker_color='blue', boxmean=True), row=3, col=1)
 
-fig.update_layout(
-    boxmode='group'
-)
-fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
-fig.update_yaxes(title_text='Variance', row=2, col=1)
-fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
-fig.show()
+# fig.update_layout(
+#     boxmode='group'
+# )
+# fig.update_yaxes(title_text='RMSE (cycles)', row=1, col=1)
+# fig.update_yaxes(title_text='Variance', row=2, col=1)
+# fig.update_yaxes(title_text='Relative distance from true RUL [-]', row=3, col=1)
+# fig.show()
 
-# Export the figure to an HTML file
-pyo.plot(fig, filename='interactive-plots/boxplots.html', auto_open=False)
+# # Export the figure to an HTML file
+# pyo.plot(fig, filename='interactive-plots/boxplots.html', auto_open=False)
+
+# Create subplots
+fig, axs = plt.subplots(3, 1, figsize=(8, 12))
+fig.suptitle('Overal model performance per RUL section')
+
+# Create Box plots and add them to subplots
+box_positions = np.arange(len(key_ranges))
+axs[0].boxplot(total_B_RMSE_splits.values(), labels=total_B_RMSE_splits.keys(), positions=box_positions)
+axs[0].boxplot(total_D_RMSE_splits.values(), labels=total_D_RMSE_splits.keys(), positions=box_positions)
+axs[0].boxplot(total_CF_RMSE_splits.values(), labels=total_CF_RMSE_splits.keys(), positions=box_positions)
+axs[0].set_title('RMSE error per section')
+axs[1].boxplot(total_B_var_splits.values(), labels=total_B_var_splits.keys(), positions=box_positions)
+axs[1].boxplot(total_CF_var_splits.values(), labels=total_CF_var_splits.keys(), positions=box_positions)
+axs[1].set_title('Variance per section')
+axs[2].boxplot(total_alpha_splits.values(), labels=total_alpha_splits.keys(), positions=box_positions)
+axs[2].set_title('90% alpha bounds per section')
+
+# Set y-axis labels
+for ax in axs:
+    ax.set_ylabel('Values')
+
+plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust subplot layout
+plt.show()

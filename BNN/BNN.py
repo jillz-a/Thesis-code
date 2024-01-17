@@ -200,13 +200,15 @@ def test_epoch(test_data, model, loss_fn, val = False):
 if __name__ == '__main__':
 
     from Data_loader import CustomDataset
-    train = CustomDataset([TRAINDATASET])
+    
     test = CustomDataset([TESTDATASET])
 
     if CF_TRAIN:
-        train = CustomDataset([TRAINDATASET, CFDATASET])
+        train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
     elif NOCF_TRAIN:
-        train = CustomDataset([TRAINDATASET, TESTDATASET])
+        train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
+    else:
+        train = CustomDataset([TRAINDATASET])
 
     # Model input parameters
     input_size = 14
