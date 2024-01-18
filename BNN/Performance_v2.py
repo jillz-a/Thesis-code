@@ -299,7 +299,7 @@ for i, key in enumerate(key_ranges):
 
         # Scatter plots for original data points
         for box_key, box_value in total_RMSE_dict[key].items():
-            axs[0, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
+            axs[0, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
         axs[1,i].boxplot(total_var_dict[key].values(), labels=total_var_dict[key].keys(), positions=positions)
         axs[1,i].set_ylim(bottom=0, top=225)
@@ -309,7 +309,7 @@ for i, key in enumerate(key_ranges):
 
         # Scatter plots for original data points
         for box_key, box_value in total_var_dict[key].items():
-            axs[1, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
+            axs[1, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
         axs[2,i].boxplot(total_alpha_dict[key].values(), labels=total_alpha_dict[key].keys(), positions=positions)
         axs[2,i].set_ylim(bottom=0, top=0.7)
@@ -319,7 +319,7 @@ for i, key in enumerate(key_ranges):
 
         # Scatter plots for original data points
         for box_key, box_value in total_alpha_dict[key].items():
-            axs[1, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=2.5)
+            axs[2, i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
         axs[0,i].set_title(f'RUL section: {key}')
 
