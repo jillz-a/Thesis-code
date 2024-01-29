@@ -37,7 +37,7 @@ DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004
 BATCHSIZE = 100
 EPOCHS = 100
 
-NOISY = False
+NOISY = True
 
 noisy = 'noisy' if NOISY else 'denoised'
 
@@ -85,7 +85,7 @@ def chunk_list(input_list, num_chunks):
 #%%Go over each sample
 def CMAPSS_counterfactuals(chunk):
 
-    var_dict = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-orig/variance_results_test.json')
+    var_dict = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-orig/variance_results.json')
 
     with open(var_dict, 'r') as jsonfile:
         var_dict = json.load(jsonfile)
