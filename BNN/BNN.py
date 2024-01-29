@@ -37,13 +37,13 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
+TRAIN = True #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True #If True, will save BNN output to .json files
 NOISY = True #If True, use noisy (normalized) data
 
 TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
-CF_TRAIN = True #If true, counterfatuals will be added to the training data
+CF_TRAIN = False #If true, counterfatuals will be added to the training data
 NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True)
 
 noisy = 'noisy' if NOISY else 'denoised'

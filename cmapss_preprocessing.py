@@ -31,7 +31,7 @@ TESTDATASET = f'data/{DATASET}/min-max/test'
 
 PLOT = False
 GENERATE = True
-noisy = False
+noisy = True    
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -94,8 +94,8 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     traj_len_lst = []
     flag_1 = False
     flag_2 = False
-    test_train = 0.7 #fraction of engines to be used for training, rest will be used for testing
-    test_to_cf = 0.2 #fraction of engines to be used for counterfactuals, the rest will be used for evaluation
+    test_train = 0.5 #fraction of engines to be used for training, rest will be used for testing
+    test_to_cf = 0.4 #fraction of engines to be used for counterfactuals, the rest will be used for evaluation
 
 
     #Denoising per trajectory
