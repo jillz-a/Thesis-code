@@ -27,8 +27,7 @@ import matplotlib.pyplot as plt
 from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
 
-import pickle
-
+import scipy.stats as stats
 
 from variables import *
 
@@ -39,15 +38,19 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = True #If True, will save BNN output to .json files
+SAVE = False #If True, will save BNN output to .json files
 NOISY = True #If True, use noisy (normalized) data
 
 TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
 CF_TRAIN = False #If true, counterfatuals will be added to the training data
 NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True)
 
+EVAL = True #If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals)
+CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
+
 noisy = 'noisy' if NOISY else 'denoised'
 cf = 'CF' if CF_TRAIN else ('NOCF' if NOCF_TRAIN else 'orig')
+eval = 'test_eval' if EVAL else 'test'
 
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/test')) #contains 20% of test data which was used to create counterfactuals
@@ -327,7 +330,7 @@ if __name__ == '__main__':
         plt.show()
     #%% Test the model and save results
     else:
-        folder_path = f'data/{test_path}/min-max/{noisy}/test'  # Specify the path to your folder
+        folder_path = f'data/{test_path}/min-max/{noisy}/{eval}'  # Specify the path to your folder
 
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
@@ -337,13 +340,14 @@ if __name__ == '__main__':
 
         RMSE_lst = [] #Overal RMSE list of all engines
         mean_preds = [] #overall means of all engines
+        pred_dist_lst = [] #List containing all prediciton distributions
 
         var_dict = {} #dictionary with key: sample id, value: variance. Will be used in DiCE_uncertianty
 
         # from DNN import RMSE_lst as DRMSE_lst
        
         engines = np.arange(len(sample_len))
-        for engine in engines:
+        for engine in engines[:1]:
             index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
             selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
             # selected_file_paths = file_paths[0:1]
@@ -374,7 +378,7 @@ if __name__ == '__main__':
 
                 #predict RUL from samples using Monte Carlo Sampling
                 X = ToTensor()(sample).to(device)
-                n_samples = 10
+                n_samples = 100
                 NNmodel.eval()
 
                 mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
@@ -403,6 +407,10 @@ if __name__ == '__main__':
             B_RMSE = np.round(np.sqrt(np.mean(error)), 2) #Root Mean Squared error of Bayesian prediciton
             RMSE_lst.append(B_RMSE)
 
+            if CHECK_DIST:
+                pred_dist = [predictions.detach().numpy()[i][0][0] for i in range(len(predictions.detach().numpy()))]
+                pred_dist_lst.append(pred_dist)
+
             #save engine results to file
             if SAVE:
                 results = {
@@ -423,7 +431,7 @@ if __name__ == '__main__':
         if SAVE:
             save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
-            file_name = os.path.join(save_to, "variance_results.json")
+            file_name = os.path.join(save_to, f"variance_results-{eval}.json")
             
             with open(file_name, 'w') as jsonfile:
                 json.dump(var_dict, jsonfile)
@@ -434,6 +442,31 @@ if __name__ == '__main__':
         print(f'Bayesian Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
         print(f'STD for RMSE: {STD}')
         print(f'COV for RMSE: {COV}')
+
+    if CHECK_DIST:
+        # List of distribution types to compare against
+        distribution_types = ['norm', 'expon', 'uniform', 'gamma', 'poisson']
+
+        # Create a figure with subplots
+        num_subplots = len(distribution_types)
+        fig, axs = plt.subplots(1, num_subplots, figsize=(15, 5))
+
+        # Iterate through each distribution type and plot a Q-Q plot on a separate subplot
+        for i, dist_type in enumerate(distribution_types):
+            for pred_dist in pred_dist_lst:
+                if dist_type == 'gamma':
+                    shape, loc, scale = stats.gamma.fit(pred_dist)
+                    stats.probplot(pred_dist, dist=dist_type, sparams=(shape,), plot=axs[i])
+                elif dist_type == 'poisson':
+                    mu = np.mean(pred_dist)
+                    stats.probplot(pred_dist, dist=dist_type, sparams=(mu,), plot=axs[i])
+                else:
+                    stats.probplot(pred_dist, dist=dist_type, plot=axs[i])
+                axs[i].set_title(f'Distribution: {dist_type}')
+
+        # Adjust layout for better visualization
+        plt.tight_layout()
+        plt.show()
 
         
 

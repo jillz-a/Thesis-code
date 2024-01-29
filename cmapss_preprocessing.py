@@ -31,7 +31,7 @@ TESTDATASET = f'data/{DATASET}/min-max/test'
 
 PLOT = False
 GENERATE = True
-noisy = True    
+noisy = False
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -103,12 +103,12 @@ def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=12
     for traj_id, traj in grouped:
         if traj_id <= int(test_train*len(grouped)):
             name = "train"
-        elif traj_id <= int((test_train+test_to_cf)*len(grouped))+1 and not flag_1:
+        elif traj_id < int((test_train+test_to_cf)*len(grouped))+1 and not flag_1:
             sample_id = 0
             traj_len_lst = []
             name = "test"
             flag_1 = True
-        elif traj_id > int((test_train+test_to_cf)*len(grouped))+1 and not flag_2:
+        elif traj_id >= int((test_train+test_to_cf)*len(grouped))+1 and not flag_2:
             sample_id = 0
             traj_len_lst = []
             name = "test_eval"
