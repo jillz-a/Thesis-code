@@ -22,6 +22,7 @@ import multiprocessing as mp
 import time
 import tqdm
 import json
+import argparse
 
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -37,9 +38,12 @@ DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004
 BATCHSIZE = 100
 EPOCHS = 100
 
-NOISY = True
+parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
+parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
+args = parser.parse_args()
+# NOISY = True
 
-noisy = 'noisy' if NOISY else 'denoised'
+noisy = 'noisy' if args.NOISY else 'denoised'
 
 #%% import files
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
@@ -156,7 +160,7 @@ if __name__ == '__main__':
     start = time.time()
 
     num_cores = mp.cpu_count() - 1
-    num_cores = 200
+    num_cores = min(128, num_cores)
 
     
 

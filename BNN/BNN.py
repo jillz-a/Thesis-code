@@ -23,6 +23,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
+import argparse
 
 from bayesian_torch.models.dnn_to_bnn import get_kl_loss
 import bayesian_torch.layers as bl
@@ -36,27 +37,43 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
-CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
-SAVE = False #If True, will save BNN output to .json files
-NOISY = True #If True, use noisy (normalized) data
+parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
-CF_TRAIN = False #If true, counterfatuals will be added to the training data
-NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True)
+parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
+parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
+parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
-EVAL = True #If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals)
-CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
+parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
+parser.add_argument('--CF_TRAIN', action='store_true', default=False, help="If true, counterfactuals will be added to the training data.")
+parser.add_argument('--NOCF_TRAIN', action='store_true', default=False, help="If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True).")
 
-noisy = 'noisy' if NOISY else 'denoised'
-cf = 'CF' if CF_TRAIN else ('NOCF' if NOCF_TRAIN else 'orig')
-eval = 'test_eval' if EVAL else 'test'
+parser.add_argument('--EVAL', action='store_true', default=False, help="If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals).")
+parser.add_argument('--CHECK_DIST', action='store_true', default=False, help="If True, output distribution will be plotted using a QQ plot.")
+
+args = parser.parse_args()
+
+# TRAIN = False #If train = True, the model will either train or perfrom cross validation, if both TRAIN and CV = False, the model will run and save results
+# CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
+# SAVE = False #If True, will save BNN output to .json files
+# NOISY = True #If True, use noisy (normalized) data
+
+# TEST_SET = False #Uses the provided test set of CMAPSS instead of test-train split
+# CF_TRAIN = False #If true, counterfatuals will be added to the training data
+# NOCF_TRAIN = False #If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True)
+
+# EVAL = True #If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals)
+# CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
+
+noisy = 'noisy' if args.NOISY else 'denoised'
+cf = 'CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig')
+eval = 'test_eval' if args.EVAL else 'test'
 
 TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/train'))
 TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/test')) #contains 20% of test data which was used to create counterfactuals
 CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}'
 
-if TEST_SET:
+if args.TEST_SET:
     test_path = f'{DATASET}/{noisy}/test_set'
 else:
     test_path = f'{DATASET}'
@@ -206,9 +223,9 @@ if __name__ == '__main__':
     
     test = CustomDataset([TESTDATASET])
 
-    if CF_TRAIN:
+    if args.CF_TRAIN:
         train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
-    elif NOCF_TRAIN:
+    elif args.NOCF_TRAIN:
         train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
     else:
         train = CustomDataset([TRAINDATASET])
@@ -232,7 +249,7 @@ if __name__ == '__main__':
     es = EarlyStopping()
 
     #%% Train the model
-    if TRAIN == True and CV == False:
+    if args.TRAIN == True and args.CV == False:
 
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
@@ -270,7 +287,7 @@ if __name__ == '__main__':
         plt.show()
 
     #%% Cross validation
-    elif CV == True: #Perfrom Cross Validation
+    elif args.CV == True: #Perfrom Cross Validation
         splits = KFold(n_splits=k)
         history = {'Fold': [], 'Train loss': [], 'Test loss': []}
         total_set = ConcatDataset([train, test]) #for cross validation we look at the entire data set
@@ -407,12 +424,12 @@ if __name__ == '__main__':
             B_RMSE = np.round(np.sqrt(np.mean(error)), 2) #Root Mean Squared error of Bayesian prediciton
             RMSE_lst.append(B_RMSE)
 
-            if CHECK_DIST:
+            if args.CHECK_DIST:
                 pred_dist = [predictions.detach().numpy()[i][0][0] for i in range(len(predictions.detach().numpy()))]
                 pred_dist_lst.append(pred_dist)
 
             #save engine results to file
-            if SAVE:
+            if args.SAVE:
                 results = {
                     'mean': mean_pred_lst,
                     'var': var_pred_lst,
@@ -428,7 +445,7 @@ if __name__ == '__main__':
                     json.dump(results, jsonfile)
 
         #save variance dictionary to file to be used in DiCE_uncertainty
-        if SAVE:
+        if args.SAVE:
             save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, f"variance_results-{eval}.json")
@@ -438,12 +455,12 @@ if __name__ == '__main__':
 
         STD = np.sqrt(1/(len(engines) - 1) * sum([(RMSE_lst[i] - np.mean(RMSE_lst))**2 for i in range(len(RMSE_lst))]))
         COV = STD/np.mean(RMSE_lst)
-        print(f'Evaluation completed for dataset {DATASET}. Noisy: {NOISY}. Counterfactuals: {cf}')
+        print(f'Evaluation completed for dataset {DATASET}. Noisy: {args.NOISY}. Counterfactuals: {cf}')
         print(f'Bayesian Neural Network RMSE for {len(engines)} engines = {np.mean(RMSE_lst)} cycles')
         print(f'STD for RMSE: {STD}')
         print(f'COV for RMSE: {COV}')
 
-    if CHECK_DIST:
+    if args.CHECK_DIST:
         # List of distribution types to compare against
         distribution_types = ['norm', 'expon', 'uniform', 'gamma', 'poisson']
 
