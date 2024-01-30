@@ -69,8 +69,8 @@ noisy = 'noisy' if args.NOISY else 'denoised'
 cf = 'CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig')
 eval = 'test_eval' if args.EVAL else 'test'
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/{noisy}/test')) #contains 20% of test data which was used to create counterfactuals
+TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
+TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
 CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}'
 
 if args.TEST_SET:
@@ -364,7 +364,7 @@ if __name__ == '__main__':
         # from DNN import RMSE_lst as DRMSE_lst
        
         engines = np.arange(len(sample_len))
-        for engine in engines[:1]:
+        for engine in engines:
             index = sum([int(sample_len[0:i+1][i][0]) for i in range(engine)])
             selected_file_paths = file_paths[index:index + int(sample_len[engine][0])]  # Select the desired number of files
             # selected_file_paths = file_paths[0:1]

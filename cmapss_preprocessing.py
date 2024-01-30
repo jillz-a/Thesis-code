@@ -31,7 +31,7 @@ TESTDATASET = f'data/{DATASET}/min-max/test'
 
 PLOT = False
 GENERATE = True
-noisy = False
+noisy = True
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
