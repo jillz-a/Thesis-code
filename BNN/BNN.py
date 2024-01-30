@@ -281,10 +281,10 @@ if __name__ == '__main__':
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
         #     pickle.dump(BNNmodel.state_dict(), f)
 
-        plt.plot(train_loss_lst, label='Train loss')
-        plt.plot(val_loss_lst, label='Validation loss')
-        plt.legend()
-        plt.show()
+        # plt.plot(train_loss_lst, label='Train loss')
+        # plt.plot(val_loss_lst, label='Validation loss')
+        # plt.legend()
+        # plt.show()
 
     #%% Cross validation
     elif args.CV == True: #Perfrom Cross Validation
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
                 #predict RUL from samples using Monte Carlo Sampling
                 X = ToTensor()(sample).to(device)
-                n_samples = 100
+                n_samples = 10
                 NNmodel.eval()
 
                 mc_pred = [NNmodel(X)[0] for _ in range(n_samples)]
