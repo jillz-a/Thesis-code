@@ -126,7 +126,7 @@ def s_score(error):
 
 start = time.time()
 
-show_cf = True
+show_cf = False
 GIF = False
 alpha = 0.2 #set the alpha bounds
 engine_eval = 1
@@ -144,12 +144,12 @@ engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE_uncertainty/BNN_cf_results/outputs', DATASET, f'{noisy}')
+CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, f'{noisy}')
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 
 #import DNN results: every file represents 1 engine
-DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET, f'{noisy}')
+DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET, noisy)
 DNN_engines= glob.glob(os.path.join(DNN_result_path, '*.json'))  # Get a list of all file paths in the folder
 DNN_engines.sort() 
 

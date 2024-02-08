@@ -39,10 +39,10 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--TRAIN', action='store_true', default=True, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
-parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
+parser.add_argument('--NOISY', action='store_true', default=True, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
 parser.add_argument('--CF_TRAIN', action='store_true', default=False, help="If true, counterfactuals will be added to the training data.")
@@ -97,7 +97,7 @@ class BayesianNeuralNetwork(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.lstm = bl.LSTMReparameterization(in_features= input_size, out_features= hidden_size, prior_mean=prior_mean, prior_variance=prior_variance, posterior_mu_init=posterior_mu_init, posterior_rho_init=posterior_rho_init)
-        self.relu = bl.ReLU() #TODO not added in forward yet, perhaps something to consider
+        self.relu = bl.ReLU() 
         self.l1 = bl.LinearReparameterization(in_features=hidden_size, out_features=16)
         self.l2 = bl.LinearReparameterization(16,1)
         
@@ -275,7 +275,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}_test.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:

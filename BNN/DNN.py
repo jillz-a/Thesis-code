@@ -22,7 +22,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.optim import Adam
 from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
-from EarlyStopping import  EarlyStopping
 import pickle
 
 from variables import *
@@ -32,12 +31,16 @@ torch.manual_seed(42)
 current_directory = os.getcwd()  # Get the current working directory
 parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  # Get the absolute path of the parent directory
 
-TRAINDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/train'))
-TESTDATASET = os.path.abspath(os.path.join(parent_directory, f'Thesis Code/data/{DATASET}/min-max/noisy/test'))
 
 TRAIN = False
 CV = False #Cross validation, if Train = True and CV = False, the model will train on the entire train data-set
 SAVE = True
+NOISY = True
+
+noisy = 'noisy' if NOISY else 'denoised'
+
+TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
+TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
 
 
 #Frequentist neural network class
@@ -49,9 +52,9 @@ class NeuralNetwork(nn.Module):
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.dense_layers = nn.Sequential(
             nn.Linear(hidden_size, 16), 
-            nn.Softplus(),
+            # nn.ReLU(),
             nn.Linear(16,1),
-            nn.Softplus(),
+            # nn.ReLU(),
         )
         
         
@@ -59,7 +62,7 @@ class NeuralNetwork(nn.Module):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial hidden state
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device) #initial cell state
         
-        out, _ = self.lstm(x, (h0, c0))
+        out, _ = self.lstm(x)#, (h0, c0))
         out = out[:, -1, :]  # Extract the last time step output
         
         out = self.dense_layers(out) #pass through dense layers
@@ -155,8 +158,8 @@ if __name__ == "__main__":
     #training and validation data
     # %%Create an instance of the custom dataset
     from Data_loader import CustomDataset
-    train = CustomDataset(TRAINDATASET)
-    test = CustomDataset(TESTDATASET)
+    train = CustomDataset([TRAINDATASET])
+    test = CustomDataset([TESTDATASET])
 
     # Model input parameters
     input_size = 14 #number of features
@@ -173,12 +176,15 @@ if __name__ == "__main__":
     # Create the learning rate scheduler
     scheduler = LambdaLR(opt, lr_lambda=lr_lambda)
 
+    #early stopping class that stops training to prevent overfitting
+    from EarlyStopping import  EarlyStopping
+    es = EarlyStopping()
+
     #%% Train the model
     loss_lst = []
     if TRAIN == True and CV == False: #Train the model on the entire data set
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
-        es = EarlyStopping()
 
         train_set, val_set = random_split(train, [0.8, 0.2])
 
@@ -201,7 +207,7 @@ if __name__ == "__main__":
 
             if es(model=NNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/DNN_model_state_{DATASET}_noisy.pt', 'wb') as f:
+        with open(f'BNN/model_states/DNN_model_state_{DATASET}_{noisy}.pt', 'wb') as f:
             save(NNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/DNN_model_state_{DATASET}_test.pkl', 'wb') as f:
@@ -273,7 +279,7 @@ if __name__ == "__main__":
 
     #%% Test the model and save files
     else:
-        folder_path = f'data/{DATASET}/min-max/noisy/test'  # Specify the path to your folder
+        folder_path = f'data/{DATASET}/min-max/{noisy}/test_eval'  # Specify the path to your folder
         with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
             sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
@@ -306,7 +312,7 @@ if __name__ == "__main__":
 
                 #Import into trained machine learning models
                 NNmodel = NeuralNetwork(input_size, hidden_size).to(device)
-                with open(f'{project_path}/BNN/model_states/DNN_model_state_{DATASET}_noisy.pt', 'rb') as f: 
+                with open(f'{project_path}/BNN/model_states/DNN_model_state_{DATASET}_{noisy}.pt', 'rb') as f: 
                     NNmodel.load_state_dict(load(f)) 
 
                 #predict RUL from samples
@@ -334,7 +340,7 @@ if __name__ == "__main__":
                     'RMSE': D_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET, 'noisy')
+                save_to = os.path.join(project_path, 'BNN/DNN_results', DATASET, noisy)
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 

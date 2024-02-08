@@ -38,14 +38,16 @@ BATCHSIZE = 100
 EPOCHS = 100
 
 NOISY = False
-INCREASE = False #If True, the RUL will be increased in the counterfacutal, if False, it will be decreased
+INCREASE = True #If True, the RUL will be increased in the counterfacutal, if False, it will be decreased
+EVAL = True
 
 noisy = 'noisy' if NOISY else 'denoised'
 increase = 'increase' if INCREASE else 'decrease'
+eval = 'test_eval' if EVAL else 'test'
 
 #%% import files
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
-TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
+TESTDATASET = f'data/{DATASET}/min-max/{noisy}/{eval}'
 
 BayDet = 'BNN'
 
@@ -59,7 +61,7 @@ elif BayDet == 'DNN':
     model = CustomNeuralNetwork().to(device)
 
 
-with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_denoised_orig.pt', 'rb') as f: 
+with open(f'{project_path}/BNN/model_states/{BayDet}_model_state_{DATASET}_{noisy}_orig.pt', 'rb') as f: 
     NNmodel.load_state_dict(load(f)) 
 
 
@@ -124,7 +126,7 @@ def CMAPSS_counterfactuals(chunk):
         
         if cf_total is not None:
             #Save cf_result to file
-            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase)
+            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase, noisy)
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             cf_total.to_csv(file_name, index=False)
@@ -132,7 +134,7 @@ def CMAPSS_counterfactuals(chunk):
 
         else:
             #If no cf found, save a file containing NaN
-            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase)
+            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase, noisy)
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
@@ -148,7 +150,7 @@ if __name__ == '__main__':
 
     file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
     file_paths.sort()
-    file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
+    # file_paths = file_paths[0:int(sample_len[0][0])] #only looking at the first engine
     # file_paths = file_paths[0:170]
 
     chunks = chunk_list(file_paths, min(num_cores, len(file_paths)))

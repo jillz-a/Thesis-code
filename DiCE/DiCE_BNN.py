@@ -32,12 +32,19 @@ import bayesian_torch.layers as bl
 from variables import *
 torch.manual_seed(42)
 
-CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE/BNN_cf_results/inputs/{DATASET}'))
-folder_path = f'data/{DATASET}/min-max/test'  # Specify the path to your input folder
-with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
-        sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 SAVE = True #if true, result will be saved to json files
+NOISY = False
+INCREASE = True
+
+noisy = 'noisy' if NOISY else 'denoised'
+increase = 'increase' if INCREASE else 'decrease'
+
+CF_DATASET = os.path.abspath(os.path.join(project_path, f'DiCE/BNN_cf_results/inputs/{DATASET}', increase, noisy))
+folder_path = f'data/{DATASET}/min-max/{noisy}/test'  # Specify the path to your input folder
+
+with open(os.path.join(project_path, folder_path, '0-Number_of_samples.csv')) as csvfile:
+        sample_len = list(csv.reader(csvfile)) #list containing the amount of samples per engine/trajectory
 
 #Bayesian neural network class
 class BayesianNeuralNetwork(nn.Module):
@@ -124,7 +131,7 @@ def CF_results(chunk):
 
     #Import into trained machine learning models
     NNmodel = BayesianNeuralNetwork(input_size, hidden_size).to(device)
-    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_test.pt', 'rb') as f: 
+    with open(f'{project_path}/BNN/model_states/BNN_model_state_{DATASET}_{noisy}_orig.pt', 'rb') as f: 
         NNmodel.load_state_dict(load(f)) 
 
     for engine in engines:
@@ -176,7 +183,7 @@ def CF_results(chunk):
                 'RMSE': B_RMSE
             }
 
-            save_to = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET)
+            save_to = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, increase, noisy)
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, "cf_result_{0:0=3d}.json".format(engine))
             
