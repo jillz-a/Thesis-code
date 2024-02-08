@@ -39,10 +39,10 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-parser.add_argument('--TRAIN', action='store_true', default=True, help="If train = True, the model will either train or perform cross-validation.")
-parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
+parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--CV', action='store_true', default=True, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
-parser.add_argument('--NOISY', action='store_true', default=True, help="If True, use noisy (normalized) data.")
+parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
 parser.add_argument('--CF_TRAIN', action='store_true', default=False, help="If true, counterfactuals will be added to the training data.")
@@ -71,6 +71,7 @@ eval = 'test_eval' if args.EVAL else 'test'
 
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
 TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
+EVALDATASET = f'data/{DATASET}/min-max/{noisy}/test_eval'
 CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}'
 
 if args.TEST_SET:
@@ -222,6 +223,7 @@ if __name__ == '__main__':
     from Data_loader import CustomDataset
     
     test = CustomDataset([TESTDATASET])
+    test_eval = CustomDataset([EVALDATASET])
 
     if args.CF_TRAIN:
         train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
@@ -290,7 +292,7 @@ if __name__ == '__main__':
     elif args.CV == True: #Perfrom Cross Validation
         splits = KFold(n_splits=k)
         history = {'Fold': [], 'Train loss': [], 'Test loss': []}
-        total_set = ConcatDataset([train, test]) #for cross validation we look at the entire data set
+        total_set = ConcatDataset([train, test, test_eval]) #for cross validation we look at the entire data set
 
         train_test_set, val_set = random_split(total_set, [0.8, 0.2])
 
