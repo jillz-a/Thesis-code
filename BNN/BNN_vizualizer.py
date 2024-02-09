@@ -129,14 +129,16 @@ start = time.time()
 show_cf = False
 GIF = False
 alpha = 0.2 #set the alpha bounds
-engine_eval = 1
+engine_eval = 3
 
-NOISY = True
+NOISY = False
 CF = False
 NOCF = False
+INCREASE = True
 
 noisy = 'noisy' if NOISY else 'denoised'
 cf = 'CF' if CF else ('NOCF' if NOCF else 'orig')
+increase = 'increase' if INCREASE else 'decrease'
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, f'{noisy}-{cf}')
@@ -144,7 +146,7 @@ engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of all
 engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, f'{noisy}')
+CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, increase, noisy)
 CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
 CF_engines.sort() 
 

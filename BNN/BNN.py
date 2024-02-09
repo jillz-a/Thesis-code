@@ -332,7 +332,7 @@ if __name__ == '__main__':
             history['Train loss'].append(train_loss)
             history['Fold'].append(fold)
 
-            print(f'Fold {fold}: Training loss = {train_loss}, Test loss = {test_loss}')
+            print(f'Fold {fold + 1}: Training loss = {train_loss}, Test loss = {test_loss}')
 
         print(f'Performance of {k} fold cross validation')
         print(f'Average training loss: {np.mean(history["Train loss"])}')

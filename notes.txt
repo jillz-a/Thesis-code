@@ -63,3 +63,8 @@ Average test loss: 8.412444957933928
 Deterministic Performance of 10 fold cross validation
 Average training loss: 3.575304913520813
 Average test loss: 6.365283945987099
+
+___For final paper____
+Denoised orig CV
+Average training loss: 6.332392883300781
+Average test loss: 7.534818299611411

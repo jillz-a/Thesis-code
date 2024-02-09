@@ -170,6 +170,7 @@ def var_split(vars, trues, key_ranges):
 
 
 test_paths = ['denoised-orig','denoised-NOCF', 'denoised-CF', 'noisy-orig', 'noisy-NOCF', 'noisy-CF']
+test_paths = ['denoised-orig', 'noisy-orig']
 key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 
 total_RMSE_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
