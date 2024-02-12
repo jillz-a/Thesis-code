@@ -134,7 +134,7 @@ engine_eval = 3
 NOISY = False
 CF = False
 NOCF = False
-INCREASE = True
+INCREASE = False
 
 noisy = 'noisy' if NOISY else 'denoised'
 cf = 'CF' if CF else ('NOCF' if NOCF else 'orig')

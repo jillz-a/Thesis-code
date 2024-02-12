@@ -16,35 +16,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from trend_classifier import Segmenter
 
-#definitions
-def plot_segments(data, n):
-    """Plots trend segments over original data
-
-    Args:
-        segments (Segment): Segment object containing information for linear trends
-        n (int): Number of cf_samples in a window
-    """
-    trend = Segmenter(list(np.arange(len(data))), data.to_list(), n=n)
-    trend.calculate_segments()
-    df = trend.segments.to_dataframe()
-    for i in range(len(df)):
-        start = df['start'][i]
-        stop = df['stop'][i]
-        slope = df['slope'][i]
-        offset = df['offset'][i]
-
-        x = np.arange(start=start, stop=stop)
-        y = x*slope + offset
-
-        ax.plot(x,y)
-
 NOISY = False
 
 noisy = 'noisy' if NOISY else 'denoised'
 
 #%% import files
-TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
-TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
+TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test_eval'
 
 
 with open(os.path.join(project_path,f'{TESTDATASET}/0-Number_of_samples.csv')) as csvfile:
@@ -60,7 +37,7 @@ fig, axes = plt.subplots(nrows=2,
 
 
 for in_de in in_decrease:
-    result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET, in_de)
+    result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET, in_de, noisy)
     cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
     cf_samples.sort()
 
@@ -72,8 +49,10 @@ for in_de in in_decrease:
     #%% Plot counterfacutal dataframe
     sensor = 0
     m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-    engine = 0
+    engine = 1
+
     engine_len = int(cf_sample_len[engine][0]) #TODO: change later to account for engine length
+    engine_len_prev = sum([int(cf_sample_len[engine - i - 1][0]) for i in range(engine)]) if engine != 0 else 0
     # engine_len = 1
 
     #Go over every sensor
@@ -82,7 +61,7 @@ for in_de in in_decrease:
         orig_total = [] #2D list containing original inputs in sliding window form
 
         #Go over engine lifetime
-        for i, cf_sample in enumerate(cf_samples[0:engine_len]):
+        for i, cf_sample in enumerate(cf_samples[engine_len_prev: engine_len_prev + engine_len]):
 
             #Counterfactuals
             cf_df = pd.read_csv(cf_sample)
@@ -94,8 +73,8 @@ for in_de in in_decrease:
             counter = cf_df[sensor] #Counterfactual input sample for sensor m[sensor] and timestep i
 
             #Original inputs
-            df_orig = pd.read_csv(file_paths[i], sep=' ', header=None)
-            true_RUL = float(file_paths[i][-7:-4])
+            df_orig = pd.read_csv(file_paths[i+engine_len_prev], sep=' ', header=None)
+            true_RUL = float(file_paths[i+engine_len_prev][-7:-4])
 
             orig = df_orig[sensor] #Origninal input sample for sensor m[sensor] and timestep i
             
@@ -105,15 +84,18 @@ for in_de in in_decrease:
             orig_relative = relative_list.copy()
             for j in range(len(counter)):
                 #replace NaN values with cf and original values in sliding window format
-                counter_relative[j+i] = counter[j]
                 orig_relative[j+i] = orig[j]
-            
+                if np.round(counter[j], 5) != np.round(orig[j],5):
+                    counter_relative[j+i] = counter[j]
+        
             cf_total.append(counter_relative)
             orig_total.append(orig_relative)
             # diff = [counter_relative[i] - orig_relative[i] for i in range(len(counter_relative))]
             color = 'red' if in_de == 'decrease' else 'green'
             ax.scatter(np.arange(len(counter_relative)), counter_relative, color=color, s=0.5, alpha=0.5)
             ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue')
+            # sns.scatterplot(x=np.arange(len(counter_relative)), y=counter_relative, color=color, ax=ax, s=5, alpha=0.5, legend=False)
+            # sns.lineplot(x=np.arange(len(counter_relative)), y=orig_relative, color='blue', ax=ax, alpha=0.75, legend=False)
 
 
         #Take the average value of inputs at every time point
@@ -122,22 +104,24 @@ for in_de in in_decrease:
 
         #Calculate difference between origninal and counterfactual inputs
         difference = cf_average - orig_average
+        # difference = difference[:-5]
 
-        # ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input')
-        # ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color='green', alpha=0.5)
-        # ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color='red', alpha=0.5)
+
+        # ax.plot(np.arange(len(difference)), difference, label='Relative counterfactual input', alpha=0.3)
+        # ax.fill_between(np.arange(len(difference)), difference, where=(difference>0), interpolate=True, color=color, alpha=0.3)
+        # ax.fill_between(np.arange(len(difference)), difference, where=(difference<0), interpolate=True, color=color, alpha=0.3)
 
         ax.set_title('Sensor ' + str(m[sensor]))
         ax.set_xlabel('Cycles')
-        # ax.set_ylim(-1,1)
+        # ax.set_ylim(-1.5,1.5)
             
         sensor += 1
 
 # axes[0,0].set_ylabel('Sensor input difference')
 # axes[1,0].set_ylabel('Sensor input difference')
 
-fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 10-11 extra cycles')
-plt.savefig('DiCE/cf_inputs.png')
+# fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 10-11 extra cycles')
+plt.savefig(f'DiCE/cf_inputs_increase_decrease_engine_{engine}.pdf')
 plt.show()
 
     
