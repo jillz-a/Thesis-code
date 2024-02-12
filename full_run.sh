@@ -54,8 +54,8 @@ printf "\nModels retrained. Runtime: $runtime seconds"
 
 #Evaluate and save models
 printf '\nEvaluating all model variantions and saving to .json files'
-python3 BNN/BNN.py --SAVE --EVAL 
-python3 BNN/BNN.py --SAVE --EVAL --NOISY 
+# python3 BNN/BNN.py --SAVE --EVAL 
+# python3 BNN/BNN.py --SAVE --EVAL --NOISY 
 python3 BNN/BNN.py --SAVE --EVAL --CF_TRAIN 
 python3 BNN/BNN.py --SAVE --EVAL --NOISY --CF_TRAIN 
 python3 BNN/BNN.py --SAVE --EVAL --NOCF_TRAIN 

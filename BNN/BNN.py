@@ -40,7 +40,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
 parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
-parser.add_argument('--CV', action='store_true', default=True, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
+parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
             if es(model=BNNmodel, val_loss=val_loss): done = True #checks for validation loss threshold
 
-        with open(f'BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}_test.pt', 'wb') as f:
+        with open(f'BNN/model_states/BNN_model_state_{DATASET}_{noisy}_{cf}.pt', 'wb') as f:
             save(BNNmodel.state_dict(), f)
 
         # with open(f'BNN/model_states/BNN_model_state_{DATASET}_test.pkl', 'wb') as f:
