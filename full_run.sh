@@ -3,40 +3,40 @@ printf 'Starting full run of training-saving-counterfactuals-retraining-evaluati
 start=`date +%s`
 
 #Train denoised and noisy models on training data
-printf '\nTraining models on original training set'
-python3 BNN/BNN.py --TRAIN 
-python3 BNN/BNN.py --TRAIN --NOISY 
+# printf '\nTraining models on original training set'
+# python3 BNN/BNN.py --TRAIN 
+# python3 BNN/BNN.py --TRAIN --NOISY 
 
-wait
+# wait
 
-end=`date +%s`
-runtime=$((end-start))
+# end=`date +%s`
+# runtime=$((end-start))
 
-printf "\nTraining completed. Runtime: $runtime seconds"
+# printf "\nTraining completed. Runtime: $runtime seconds"
 
-#Save results to .json files to be used for counterfactuals
-printf '\nSaving results to .json files'
-python3 BNN/BNN.py --SAVE 
-python3 BNN/BNN.py --SAVE --NOISY 
+# #Save results to .json files to be used for counterfactuals
+# printf '\nSaving results to .json files'
+# python3 BNN/BNN.py --SAVE 
+# python3 BNN/BNN.py --SAVE --NOISY 
 
-wait
+# wait
 
-end=`date +%s`
-runtime=$((end-start))
+# end=`date +%s`
+# runtime=$((end-start))
 
-printf "\nFiles saved. Runtime: $runtime seconds"
+# printf "\nFiles saved. Runtime: $runtime seconds"
 
-#Convert files to counterfactuals
-printf '\nGenerating counterfactuals'
-python3 DiCE_uncertainty/DiCE_uncertainty.py 
-python3 DiCE_uncertainty/DiCE_uncertainty.py --NOISY 
+# #Convert files to counterfactuals
+# printf '\nGenerating counterfactuals'
+# python3 DiCE_uncertainty/DiCE_uncertainty.py 
+# python3 DiCE_uncertainty/DiCE_uncertainty.py --NOISY 
 
-wait
+# wait
 
-end=`date +%s`
-runtime=$((end-start))
+# end=`date +%s`
+# runtime=$((end-start))
 
-printf "\nCounterfactuals generated. Runtime: $runtime seconds"
+# printf "\nCounterfactuals generated. Runtime: $runtime seconds"
 
 #Retrain models with noisy, denoised and original data
 printf '\nRetraining models with/without counterfactuals'
@@ -54,8 +54,8 @@ printf "\nModels retrained. Runtime: $runtime seconds"
 
 #Evaluate and save models
 printf '\nEvaluating all model variantions and saving to .json files'
-python3 BNN/BNN.py --SAVE --EVAL 
-python3 BNN/BNN.py --SAVE --EVAL --NOISY 
+# python3 BNN/BNN.py --SAVE --EVAL 
+# python3 BNN/BNN.py --SAVE --EVAL --NOISY 
 python3 BNN/BNN.py --SAVE --EVAL --CF_TRAIN 
 python3 BNN/BNN.py --SAVE --EVAL --NOISY --CF_TRAIN 
 python3 BNN/BNN.py --SAVE --EVAL --NOCF_TRAIN 
