@@ -47,7 +47,7 @@ def plot_mean_and_percentile(mean, variance, percentile=90, upper_lower = 'upper
     elif upper_lower == 'lower':
         return lower_percentile_value
 
-engine_eval = 3
+engine_eval = 1
 
 NOISY = False
 CF = False
@@ -64,9 +64,14 @@ BNN_engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of
 BNN_engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, increase, noisy)
-CF_engines= glob.glob(os.path.join(CF_result_path, '*.json'))  # Get a list of all file paths in the folder
-CF_engines.sort() 
+CF_result_path_inc = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'increase', noisy)
+CF_engines_inc= glob.glob(os.path.join(CF_result_path_inc, '*.json'))  # Get a list of all file paths in the folder
+CF_engines_inc.sort() 
+
+#import CF results: every file represents 1 engine
+CF_result_path_dec = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'decrease', noisy)
+CF_engines_dec= glob.glob(os.path.join(CF_result_path_dec, '*.json'))  # Get a list of all file paths in the folder
+CF_engines_dec.sort() 
 
 #import DNN results: every file represents 1 engine
 DNN_result_path = os.path.join(project_path, 'BNN/DNN_results', DATASET, noisy)
@@ -92,6 +97,28 @@ for BNN_engine in BNN_engines[engine_eval: engine_eval+1]:
     #Deterministic results
     DNN_pred_lst = DNN_results['pred'] #RUl predictions over engine life
 
+    with open(CF_engines_inc[engine_id], 'r') as jsonfile:
+        CF_results_inc = json.load(jsonfile)
+    
+    #Counterfactual results increase
+    CF_mean_pred_lst_inc = CF_results_inc['mean'] #Mean of the RUL predictions over engine life
+    CF_var_pred_lst_inc = CF_results_inc['var'] #Variance of the RUL predictions over engine life
+    CF_true_lst_inc = CF_results_inc['true'] #Ground truth RUL over engine life
+
+    CF_upper_90_inc = np.array([plot_mean_and_percentile(CF_mean_pred_lst_inc[i], CF_var_pred_lst_inc[i], percentile=90, upper_lower='upper') for i in range(len(CF_mean_pred_lst_inc))])
+    CF_lower_90_inc = np.array([plot_mean_and_percentile(CF_mean_pred_lst_inc[i], CF_var_pred_lst_inc[i], percentile=90, upper_lower='lower') for i in range(len(CF_mean_pred_lst_inc))])
+
+    with open(CF_engines_dec[engine_id], 'r') as jsonfile:
+        CF_results_dec = json.load(jsonfile)
+    
+    #Counterfactual results decrease
+    CF_mean_pred_lst_dec = CF_results_dec['mean'] #Mean of the RUL predictions over engine life
+    CF_var_pred_lst_dec = CF_results_dec['var'] #Variance of the RUL predictions over engine life
+    CF_true_lst_dec = CF_results_dec['true'] #Ground truth RUL over engine life
+
+    CF_upper_90_dec = np.array([plot_mean_and_percentile(CF_mean_pred_lst_dec[i], CF_var_pred_lst_dec[i], percentile=90, upper_lower='upper') for i in range(len(CF_mean_pred_lst_dec))])
+    CF_lower_90_dec = np.array([plot_mean_and_percentile(CF_mean_pred_lst_dec[i], CF_var_pred_lst_dec[i], percentile=90, upper_lower='lower') for i in range(len(CF_mean_pred_lst_dec))])
+
     BNN_error = [(mean_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))] #BNN error
     DNN_error = [(DNN_pred_lst[i] - true_lst[i]) for i in range(len(true_lst))]#DNN error
     B_RMSE = np.round(np.sqrt(np.mean([(mean_pred_lst[i] - true_lst[i])**2 for i in range(len(true_lst))])), 2) #Root Mean Squared error of Bayesian prediciton
@@ -100,30 +127,53 @@ for BNN_engine in BNN_engines[engine_eval: engine_eval+1]:
     cycles = len(mean_pred_lst)
 
     BNN_df = pd.DataFrame({
-    'Mean': mean_pred_lst,
-    'RUL': true_lst,
-    'Lower Bound': lower_90,
-    'Upper Bound': upper_90,
-    'Cycle': range(cycles)
+        'Mean': mean_pred_lst,
+        'RUL': true_lst,
+        'Lower Bound': lower_90,
+        'Upper Bound': upper_90,
+        'Cycle': range(cycles)
 })
     
     DNN_df = pd.DataFrame({
-    'Mean': DNN_pred_lst,
-    'RUL': true_lst,
-    'Cycle': range(cycles)
+        'Mean': DNN_pred_lst,
+        'RUL': true_lst,
+        'Cycle': range(cycles)
 })
+    
+    CF_inc_df = pd.DataFrame({
+        'Mean': CF_mean_pred_lst_inc,
+        'RUL': CF_true_lst_inc,
+        'Lower Bound': CF_lower_90_inc,
+        'Upper Bound': CF_upper_90_inc,
+        'Cycle': range(cycles)
+    })
+
+    CF_dec_df = pd.DataFrame({
+        'Mean': CF_mean_pred_lst_dec,
+        'RUL': CF_true_lst_dec,
+        'Lower Bound': CF_lower_90_dec,
+        'Upper Bound': CF_upper_90_dec,
+        'Cycle': range(cycles)
+    })
 
 
     # Alternatively, for a clearer distinction between mean, bounds, and true values:
-    plt.figure(figsize=(6, 2.2))
+    plt.figure(figsize=(9, 3.3))
     sns.lineplot(x='Cycle', y='RUL', data=BNN_df, color='red', label='RUL')
     sns.lineplot(x='Cycle', y='Mean', data=BNN_df, color='blue', label=f'Bayesian Mean Prediction.')
-    sns.lineplot(x='Cycle', y='Mean', data=DNN_df, color='orange', label=f'Deterministic Prediction.', linestyle='--')
+    # sns.lineplot(x='Cycle', y='Mean', data=DNN_df, color='orange', label=f'Deterministic Prediction.', linestyle='--')
     plt.fill_between(BNN_df['Cycle'], BNN_df['Lower Bound'], BNN_df['Upper Bound'], color='blue', alpha=0.2, label='90% Prediction Interval')
+
+    sns.lineplot(x ='Cycle', y='Mean', data=CF_inc_df, color='green', label='CF [+10, +11]', alpha=0.6)
+    # plt.fill_between(CF_inc_df['Cycle'], CF_inc_df['Lower Bound'], CF_inc_df['Upper Bound'], color='blue', alpha=0.2)
+
+    sns.lineplot(x ='Cycle', y='Mean', data=CF_dec_df, color='red', label='CF [-11, -10]', alpha=0.6)
+    # plt.fill_between(CF_dec_df['Cycle'], CF_dec_df['Lower Bound'], CF_dec_df['Upper Bound'], color='blue', alpha=0.2)
+
     plt.legend()
     # plt.title(f'BNN RUL prediction of test engine {engine_id + 1}')
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     # Save the figure
-    # plt.savefig(f'/Users/jillesandringa/Documents/AE/MSc/Thesis/Graphs_and_figures/prediction_interval_plot_{noisy}.pdf', format='pdf', bbox_inches='tight')
+    plt.savefig(f'/Users/jillesandringa/Documents/AE/MSc/Thesis/Graphs_and_figures/prediction_interval_plot_{noisy}_CF.pdf', format='pdf', bbox_inches='tight')
     print(f'Bayesian RMSE: {B_RMSE}, Deterministic RMSE: {D_RMSE}')
     plt.show()
