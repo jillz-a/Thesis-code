@@ -37,7 +37,7 @@ torch.manual_seed(42)
 
 SAVE = True #if true, result will be saved to json files
 
-NOISY = False
+NOISY = True
 
 noisy = 'noisy' if NOISY else 'denoised'
 

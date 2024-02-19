@@ -46,10 +46,45 @@ def plot_mean_and_percentile(mean, variance, percentile=90, upper_lower = 'upper
         return upper_percentile_value
     elif upper_lower == 'lower':
         return lower_percentile_value
+    
+def alpha_dist(lower_bound, upper_bound, mean, stdev):
+    """Calculates the percentage of of the distribution that lies within a given range
 
-engine_eval = 1
+    Args:
+        lower_bound (float): lower bound of range
+        upper_bound (float): upper bound of range
+        mean (float): mean of distribution
+        stdev (float): standard deviation of distribution
 
-NOISY = False
+    Returns:
+        float: Percentage of distribution within specified range
+    """
+    prob_lower = norm.cdf(lower_bound, loc=mean, scale=stdev)
+    prob_upper = norm.cdf(upper_bound, loc=mean, scale=stdev)
+
+    percentage_in_range = (prob_upper - prob_lower)
+
+    return percentage_in_range
+
+def s_score(error):
+    """S score specifically for RUL prediction. The characteristic of this scoring funciton is that it favours early predictions
+    more than late predicitons.
+
+    Args:
+        error (float): Predicted RUL - True RUL
+
+    Returns:
+        float: scoring function result
+    """
+    if error < 0:
+        return np.exp(-error/13) - 1
+    else:
+        return np.exp(error/10) - 1
+
+engine_eval = 3
+alpha = 0.2
+
+NOISY = True
 CF = False
 NOCF = False
 INCREASE = True
@@ -57,6 +92,8 @@ INCREASE = True
 noisy = 'noisy' if NOISY else 'denoised'
 cf = 'CF' if CF else ('NOCF' if NOCF else 'orig')
 increase = 'increase' if INCREASE else 'decrease'
+
+
 #%%
 #import BNN results: every file represents 1 engine
 BNN_result_path = os.path.join(project_path, 'BNN/BNN_results', DATASET, f'{noisy}-{cf}')
@@ -64,12 +101,12 @@ BNN_engines= glob.glob(os.path.join(BNN_result_path, '*.json'))  # Get a list of
 BNN_engines.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path_inc = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'increase', noisy)
+CF_result_path_inc = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'increase', 'denoised')
 CF_engines_inc= glob.glob(os.path.join(CF_result_path_inc, '*.json'))  # Get a list of all file paths in the folder
 CF_engines_inc.sort() 
 
 #import CF results: every file represents 1 engine
-CF_result_path_dec = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'decrease', noisy)
+CF_result_path_dec = os.path.join(project_path, 'DiCE/BNN_cf_results/outputs', DATASET, 'decrease', 'denoised')
 CF_engines_dec= glob.glob(os.path.join(CF_result_path_dec, '*.json'))  # Get a list of all file paths in the folder
 CF_engines_dec.sort() 
 
@@ -156,24 +193,41 @@ for BNN_engine in BNN_engines[engine_eval: engine_eval+1]:
         'Cycle': range(cycles)
     })
 
+    alpha_df = pd.DataFrame({
+        'upper': np.array([i*(1.0+alpha) for i in true_lst]),
+        'lower': np.array([i*(1.0-alpha) for i in true_lst]),
+        'Cycle': range(cycles)
+    })
 
-    # Alternatively, for a clearer distinction between mean, bounds, and true values:
-    plt.figure(figsize=(9, 3.3))
+    plt.figure(figsize=(6, 2.5))
+
+    # Plot True, Deterministic and Bayesian models
     sns.lineplot(x='Cycle', y='RUL', data=BNN_df, color='red', label='RUL')
     sns.lineplot(x='Cycle', y='Mean', data=BNN_df, color='blue', label=f'Bayesian Mean Prediction.')
-    # sns.lineplot(x='Cycle', y='Mean', data=DNN_df, color='orange', label=f'Deterministic Prediction.', linestyle='--')
+    sns.lineplot(x='Cycle', y='Mean', data=DNN_df, color='orange', label=f'Deterministic Prediction.', linestyle='--')
     plt.fill_between(BNN_df['Cycle'], BNN_df['Lower Bound'], BNN_df['Upper Bound'], color='blue', alpha=0.2, label='90% Prediction Interval')
 
-    sns.lineplot(x ='Cycle', y='Mean', data=CF_inc_df, color='green', label='CF [+10, +11]', alpha=0.6)
+    #alpha-lambda dist
+    sns.lineplot(x='Cycle', y='upper', data=alpha_df, color='green', alpha=0.3)
+    sns.lineplot(x='Cycle', y='lower', data=alpha_df, color='green',  alpha=0.3)
+    plt.fill_between(alpha_df['Cycle'], alpha_df['lower'], alpha_df['upper'], color='grey', alpha=0.2)
+
+    #score calculator
+    # sns.lineplot(x=BNN_df['Cycle'], y=np.array([s_score(i) for i in BNN_error]), label=f'Bayesian score {noisy}')
+    # sns.lineplot(x=BNN_df['Cycle'], y=np.array([s_score(i) for i in DNN_error]), label=f'Deterministic score {noisy}', linestyle='--')
+
+    #Plot increasing CF
+    # sns.lineplot(x ='Cycle', y='Mean', data=CF_inc_df, color='green', label='CF [+10, +11]', alpha=0.6)
     # plt.fill_between(CF_inc_df['Cycle'], CF_inc_df['Lower Bound'], CF_inc_df['Upper Bound'], color='blue', alpha=0.2)
 
-    sns.lineplot(x ='Cycle', y='Mean', data=CF_dec_df, color='red', label='CF [-11, -10]', alpha=0.6)
+    #Plot decreasing CF
+    # sns.lineplot(x ='Cycle', y='Mean', data=CF_dec_df, color='red', label='CF [-11, -10]', alpha=0.6)
     # plt.fill_between(CF_dec_df['Cycle'], CF_dec_df['Lower Bound'], CF_dec_df['Upper Bound'], color='blue', alpha=0.2)
 
-    plt.legend()
-    # plt.title(f'BNN RUL prediction of test engine {engine_id + 1}')
-    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    # Save the figure
-    plt.savefig(f'/Users/jillesandringa/Documents/AE/MSc/Thesis/Graphs_and_figures/prediction_interval_plot_{noisy}_CF.pdf', format='pdf', bbox_inches='tight')
-    print(f'Bayesian RMSE: {B_RMSE}, Deterministic RMSE: {D_RMSE}')
-    plt.show()
+plt.legend()
+# plt.title(f'BNN RUL prediction of test engine {engine_id + 1}')
+plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+# Save the figure
+plt.savefig(f'/Users/jillesandringa/Documents/AE/MSc/Thesis/Graphs_and_figures/alpha_lambda_plot_{noisy}.pdf', format='pdf', bbox_inches='tight')
+print(f'Bayesian RMSE: {B_RMSE}, Deterministic RMSE: {D_RMSE}')
+plt.show()

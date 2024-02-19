@@ -41,8 +41,8 @@ parser = argparse.ArgumentParser(description="Script to train, evaluate and retr
 
 parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
-parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
-parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
+parser.add_argument('--SAVE', action='store_true', default=True, help="If True, will save BNN output to .json files.")
+parser.add_argument('--NOISY', action='store_true', default=True, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
 parser.add_argument('--CF_TRAIN', action='store_true', default=False, help="If true, counterfactuals will be added to the training data.")
@@ -439,7 +439,7 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, f'{noisy}-{cf}')
+                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, f'{noisy}-{cf}-test')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -448,7 +448,7 @@ if __name__ == '__main__':
 
         #save variance dictionary to file to be used in DiCE_uncertainty
         if args.SAVE:
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}-test')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, f"variance_results-{eval}.json")
             
