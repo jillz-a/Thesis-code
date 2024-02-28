@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 import csv
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -8,7 +9,12 @@ class CustomDataset(Dataset):
     def __init__(self, folder_paths):
         self.file_paths = []
         for folder_path in folder_paths:
-            file_paths = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.txt') or file.endswith('.csv') and not file.endswith('0-Number_of_samples.csv')]
+            file_paths = [
+                os.path.join(folder_path, file) 
+                for file in os.listdir(folder_path) 
+                if (file.endswith('.txt') or (file.endswith('.csv') and not (file.endswith('0-Number_of_samples.csv') or self.check_nan_in_csv(os.path.join(folder_path, file)))))
+            ]
+
             self.file_paths += file_paths
 
     def __len__(self):
@@ -23,6 +29,15 @@ class CustomDataset(Dataset):
 
         # Return the processed data and its corresponding label (if applicable)
         return data, label
+    
+    def check_nan_in_csv(self, file_path):
+        # Load the CSV file into a DataFrame
+        df = pd.read_csv(file_path)
+        
+        # Check if there are any NaN values in the DataFrame
+        contains_nan = df.isna().any().any()
+        
+        return contains_nan
     
     def open_csv(self, file_path):
         cf_data = []

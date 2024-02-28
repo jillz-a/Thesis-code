@@ -41,14 +41,15 @@ parser = argparse.ArgumentParser(description="Script to train, evaluate and retr
 
 parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
-parser.add_argument('--SAVE', action='store_true', default=False, help="If True, will save BNN output to .json files.")
+parser.add_argument('--SAVE', action='store_true', default=True, help="If True, will save BNN output to .json files.")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
-parser.add_argument('--CF_TRAIN', action='store_true', default=False, help="If true, counterfactuals will be added to the training data.")
+parser.add_argument('--TRAIN_SET', action='store_true', default=True, help="Uses the 40 RUL counterfactuals from the training set to be added in the training.")
+parser.add_argument('--CF_TRAIN', action='store_true', default=True, help="If true, counterfactuals will be added to the training data.")
 parser.add_argument('--NOCF_TRAIN', action='store_true', default=False, help="If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True).")
 
-parser.add_argument('--EVAL', action='store_true', default=False, help="If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals).")
+parser.add_argument('--EVAL', action='store_true', default=True, help="If true, the eval test set will be saved. If false, the normal test set will be saved (to be converted to counterfactuals).")
 parser.add_argument('--CHECK_DIST', action='store_true', default=False, help="If True, output distribution will be plotted using a QQ plot.")
 
 args = parser.parse_args()
@@ -66,13 +67,13 @@ args = parser.parse_args()
 # CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
 
 noisy = 'noisy' if args.NOISY else 'denoised'
-cf = 'CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig')
+cf = 'CF_RUL' if args.TRAIN_SET else ('CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig'))
 eval = 'test_eval' if args.EVAL else 'test'
 
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
 TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
 EVALDATASET = f'data/{DATASET}/min-max/{noisy}/test_eval'
-CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}'
+CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}' if not args.TRAIN_SET else f'DiCE/BNN_cf_results/inputs/{DATASET}/increase/{noisy}/train'
 
 if args.TEST_SET:
     test_path = f'{DATASET}/{noisy}/test_set'
@@ -225,12 +226,6 @@ if __name__ == '__main__':
     test = CustomDataset([TESTDATASET])
     test_eval = CustomDataset([EVALDATASET])
 
-    if args.CF_TRAIN:
-        train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
-    elif args.NOCF_TRAIN:
-        train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
-    else:
-        train = CustomDataset([TRAINDATASET])
 
     # Model input parameters
     input_size = 14
@@ -252,6 +247,13 @@ if __name__ == '__main__':
 
     #%% Train the model
     if args.TRAIN == True and args.CV == False:
+
+        if args.CF_TRAIN:
+            train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
+        elif args.NOCF_TRAIN:
+            train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
+        else:
+            train = CustomDataset([TRAINDATASET])
 
         print(f"Training model: {DATASET}")
         print(f"Batch size: {BATCHSIZE}, Epochs: {EPOCHS}")
@@ -290,6 +292,14 @@ if __name__ == '__main__':
 
     #%% Cross validation
     elif args.CV == True: #Perfrom Cross Validation
+
+        if args.CF_TRAIN:
+            train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
+        elif args.NOCF_TRAIN:
+            train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
+        else:
+            train = CustomDataset([TRAINDATASET])
+            
         splits = KFold(n_splits=k)
         history = {'Fold': [], 'Train loss': [], 'Test loss': []}
         total_set = ConcatDataset([train, test, test_eval]) #for cross validation we look at the entire data set
@@ -439,7 +449,7 @@ if __name__ == '__main__':
                     'RMSE': B_RMSE
                 }
 
-                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, f'{noisy}-{cf}-test')
+                save_to = os.path.join(project_path, 'BNN/BNN_results', test_path, f'{noisy}-{cf}')
                 if not os.path.exists(save_to): os.makedirs(save_to)
                 file_name = os.path.join(save_to, "result_{0:0=3d}.json".format(engine))
                 
@@ -448,7 +458,7 @@ if __name__ == '__main__':
 
         #save variance dictionary to file to be used in DiCE_uncertainty
         if args.SAVE:
-            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}-test')
+            save_to = os.path.join(project_path, 'DiCE_uncertainty/BNN_results', DATASET, f'{noisy}-{cf}')
             if not os.path.exists(save_to): os.makedirs(save_to)
             file_name = os.path.join(save_to, f"variance_results-{eval}.json")
             

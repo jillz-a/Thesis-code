@@ -84,13 +84,14 @@ def s_score(error):
 engine_eval = 3
 alpha = 0.2
 
-NOISY = True
+NOISY = False
 CF = False
 NOCF = False
 INCREASE = True
+TRAIN = True
 
 noisy = 'noisy' if NOISY else 'denoised'
-cf = 'CF' if CF else ('NOCF' if NOCF else 'orig')
+cf = 'CF_RUL' if TRAIN else ('CF' if CF else ('NOCF' if NOCF else 'orig'))
 increase = 'increase' if INCREASE else 'decrease'
 
 

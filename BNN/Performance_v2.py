@@ -192,9 +192,9 @@ def alpha_dist(lower_bound, upper_bound, mean, stdev):
 
 
 test_paths = ['denoised-orig','denoised-NOCF', 'denoised-CF', 'noisy-orig', 'noisy-NOCF', 'noisy-CF']
-# test_paths = ['denoised-orig', 'noisy-orig']
-key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
-# key_ranges = [(float('inf'), 0)]
+test_paths = ['denoised-orig', 'denoised-NOCF', 'denoised-CF_RUL']
+# key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
+key_ranges = [(float('inf'), 0)]
 
 total_RMSE_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
 total_var_dict = {str(key) : {test_path : [] for test_path in test_paths} for key in key_ranges}
@@ -332,37 +332,37 @@ for i, key in enumerate(key_ranges):
     # for j, test_path in enumerate(test_paths):
     positions = np.arange(0, len(test_paths))
     # Create Box plots and add them to subplots
-    axs[0,i].boxplot(list(total_RMSE_dict[key].values()), labels=total_RMSE_dict[key].keys(), positions=positions)
-    axs[0,i].set_ylim(bottom=0, top=35)
-    axs[0,i].grid(visible=True, which='both', axis='both', alpha=0.5)
-    axs[0,i].tick_params(axis='x', labelrotation = 45)
-    axs[0,0].set_ylabel('RMSE [cycles]')
+    axs[0].boxplot(list(total_RMSE_dict[key].values()), labels=total_RMSE_dict[key].keys(), positions=positions)
+    axs[0].set_ylim(bottom=0, top=35)
+    axs[0].grid(visible=True, which='both', axis='both', alpha=0.5)
+    axs[0].tick_params(axis='x', labelrotation = 45)
+    axs[0].set_ylabel('RMSE [cycles]')
 
     # Scatter plots for original data points
     for box_key, box_value in total_RMSE_dict[key].items():
-        axs[0,i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
+        axs[0].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
-    axs[1,i].boxplot(total_std_dict[key].values(), labels=total_std_dict[key].keys(), positions=positions)
-    axs[1,i].set_ylim(bottom=0, top=14)
-    axs[1,i].grid(visible=True, which='both', axis='both', alpha=0.5)
-    axs[1,i].tick_params(axis='x', labelrotation = 45)
-    axs[1,0].set_ylabel('STD [cycles]')
+    axs[1].boxplot(total_std_dict[key].values(), labels=total_std_dict[key].keys(), positions=positions)
+    axs[1].set_ylim(bottom=0, top=14)
+    axs[1].grid(visible=True, which='both', axis='both', alpha=0.5)
+    axs[1].tick_params(axis='x', labelrotation = 45)
+    axs[1].set_ylabel('STD [cycles]')
 
     # Scatter plots for original data points
     for box_key, box_value in total_std_dict[key].items():
-        axs[1,i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
+        axs[1].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
-    axs[2,i].boxplot(total_alpha_dict[key].values(), labels=total_alpha_dict[key].keys(), positions=positions)
-    axs[2,i].set_ylim(bottom=0, top=1.0)
-    axs[2,i].grid(visible=True, which='both', axis='both', alpha=0.5)
-    axs[2,i].tick_params(axis='x', labelrotation = 45)
-    axs[2,0].set_ylabel(f'Distribution within alpha={alpha}')
+    axs[2].boxplot(total_alpha_dict[key].values(), labels=total_alpha_dict[key].keys(), positions=positions)
+    axs[2].set_ylim(bottom=0, top=1.0)
+    axs[2].grid(visible=True, which='both', axis='both', alpha=0.5)
+    axs[2].tick_params(axis='x', labelrotation = 45)
+    axs[2].set_ylabel(f'Distribution within alpha={alpha}')
 
     # Scatter plots for original data points
     for box_key, box_value in total_alpha_dict[key].items():
-        axs[2,i].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
+        axs[2].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
-    axs[0,i].set_title(f'RUL section: {key}')
+    axs[0].set_title(f'RUL section: {key}')
 
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust subplot layout
