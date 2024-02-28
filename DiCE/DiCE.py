@@ -136,14 +136,15 @@ def CMAPSS_counterfactuals(chunk):
             # print(f'Saved to: {file_name}')
 
         else:
-            if not TRAIN:
-                #If no cf found, save a file containing NaN
-                save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase, noisy, eval)
-                if not os.path.exists(save_to): os.makedirs(save_to)
-                file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
-                no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
-                no_cf.to_csv(file_name, index=False)
-                # print(f'Saved to: {file_name}')
+          
+            #If no cf found, save a file containing NaN
+            save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase, noisy, eval)
+            if not os.path.exists(save_to): os.makedirs(save_to)
+            file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
+            # no_cf = pd.DataFrame([[np.NAN for _ in range(len(sample[0]))]], columns=head[0])
+            no_cf = df
+            no_cf.to_csv(file_name, index=False)
+            # print(f'Saved to: {file_name}')
 
 
 if __name__ == '__main__':
