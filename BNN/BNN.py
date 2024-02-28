@@ -39,7 +39,7 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--TRAIN', action='store_true', default=True, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=True, help="If True, will save BNN output to .json files.")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
@@ -299,7 +299,7 @@ if __name__ == '__main__':
             train = CustomDataset([TRAINDATASET, TESTDATASET]) #include non-counterfactual (original) inputs in training data
         else:
             train = CustomDataset([TRAINDATASET])
-            
+
         splits = KFold(n_splits=k)
         history = {'Fold': [], 'Train loss': [], 'Test loss': []}
         total_set = ConcatDataset([train, test, test_eval]) #for cross validation we look at the entire data set
