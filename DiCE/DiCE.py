@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     if TRAIN:
         file_paths = file_paths[0:sum([int(sample_len[i][0]) for i in range(40)])]
-        file_paths = [path for path in file_paths if not path.endswith('120.txt')]
+        # file_paths = [path for path in file_paths if not path.endswith('120.txt')]
 
     chunks = chunk_list(file_paths, min(num_cores, len(file_paths)))
     print('Starting multiprocessing')
