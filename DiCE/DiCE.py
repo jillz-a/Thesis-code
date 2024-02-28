@@ -124,13 +124,13 @@ def CMAPSS_counterfactuals(chunk):
         
         cf_total = cf.cf_examples_list[0].final_cfs_df
 
-        label = int(cf_total['RUL']) if TRAIN else label
         
         
         if cf_total is not None:
             #Save cf_result to file
             save_to = os.path.join(project_path, f'DiCE/{BayDet}_cf_results/inputs', DATASET, increase, noisy, eval)
             if not os.path.exists(save_to): os.makedirs(save_to)
+            label = int(cf_total['RUL']) if TRAIN else label
             file_name = os.path.join(save_to, "cf_{0:0=5d}_{1:0=3d}.csv".format(sample_id, label))
             cf_total.to_csv(file_name, index=False)
             # print(f'Saved to: {file_name}')
