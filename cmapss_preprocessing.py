@@ -24,14 +24,17 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy.signal import savgol_filter
 import joblib
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 #%% import files
-TRAINDATASET = f'data/{DATASET}/min-max/train'
-TESTDATASET = f'data/{DATASET}/min-max/test'
+TRAINDATASET = f'data/{DATASET}/min-max/noisy/train'
+TESTDATASET = f'data/{DATASET}/min-max/noisy/test'
 
-PLOT = False
-GENERATE = True
+PLOT = True
+GENERATE = False
 noisy = True
+
+
 
 #%%
 def build_train_data(df, out_path, window=30, normalization="min-max", maxRUL=120):
@@ -516,59 +519,86 @@ if __name__ == "__main__":
     #%% _______________Plot sensor data________________
     if PLOT== True:
 
-        with open(os.path.join(project_path,f'data/{DATASET}/min-max/test/0-Number_of_samples.csv')) as csvfile:
-            sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
+        # with open(os.path.join(project_path,f'data/{DATASET}/min-max/noisy/test_eval/0-Number_of_samples.csv')) as csvfile:
+        #     sample_len = list(csv.reader(csvfile)) #list containing the amount of cf_samples per engine/trajectory
 
 
-        #Input files
-        file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
-        file_paths.sort() 
+        # #Input files
+        # file_paths = glob.glob(os.path.join(project_path, TESTDATASET, '*.txt'))  # Get a list of all file paths in the folder
+        # file_paths.sort() 
 
-        fig, axes = plt.subplots(nrows=2, 
-                                ncols=7, 
-                                sharex=True, 
-                                figsize=(25, 8))
+        # fig, axes = plt.subplots(nrows=2, 
+        #                         ncols=7, 
+        #                         sharex=True, 
+        #                         figsize=(25, 8))
 
-        #%% Plot input dataframe
-        sensor = 0
-        m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
-        engine = 0
-        engine_len = int(sample_len[engine][0]) #TODO: change later to account for engine length
-        # engine_len = 170
+        # #%% Plot input dataframe
+        # sensor = 0
+        # m = [2,3,4,7,8,9,11,12,13,14,15,17,20,21] #useful sensors
+        # engine = 0
+        # engine_len = int(sample_len[engine][0]) #TODO: change later to account for engine length
+        # # engine_len = 170
 
-        #Go over every sensor
-        for ax in axes.ravel():
+        # #Go over every sensor
+        # for ax in axes.ravel():
 
-            input_total = [] #2D list containing inputs in sliding window form
+        #     input_total = [] #2D list containing inputs in sliding window form
 
-            #Go over engine lifetime
-            for i, input in enumerate(file_paths[0:engine_len]):
+        #     #Go over engine lifetime
+        #     for i, input in enumerate(file_paths[0:engine_len]):
 
-                df_input = pd.read_csv(input, sep=' ', header=None)
-                true_RUL = float(input[-7:-4])
+        #         df_input = pd.read_csv(input, sep=' ', header=None)
+        #         true_RUL = float(input[-7:-4])
 
-                input = df_input[sensor] # input sample for sensor m[sensor] and timestep i
+        #         input = df_input[sensor] # input sample for sensor m[sensor] and timestep i
                 
-                #Add inputs to an overall total list spanning engine lifetime
-                relative_list = [np.NaN for _ in range(engine_len + len(input)-1)]
-                counter_relative = relative_list.copy()
-                input_relative = relative_list.copy()
-                for j in range(len(input)):
-                    #replace NaN values with values in sliding window format
-                    input_relative[j+i] = input[j]
+        #         #Add inputs to an overall total list spanning engine lifetime
+        #         relative_list = [np.NaN for _ in range(engine_len + len(input)-1)]
+        #         counter_relative = relative_list.copy()
+        #         input_relative = relative_list.copy()
+        #         for j in range(len(input)):
+        #             #replace NaN values with values in sliding window format
+        #             input_relative[j+i] = input[j]
                 
-                input_total.append(input_relative)
+        #         input_total.append(input_relative)
 
 
-            #Take the average value of inputs at every time point
-            input_continuous = np.nanmean(np.array(input_total), axis=0)
+        #     #Take the average value of inputs at every time point
+        #     input_continuous = np.nanmean(np.array(input_total), axis=0)
 
-            ax.plot(np.arange(len(input_continuous)), input_continuous, label='Filtered sensor input')
+        #     ax.plot(np.arange(len(input_continuous)), input_continuous, label='Filtered sensor input')
 
-            ax.set_title('Sensor ' + str(m[sensor]))
-            ax.set_xlabel('Cycles')
-            # ax.set_ylim(-1,1)
+        #     ax.set_title('Sensor ' + str(m[sensor]))
+        #     ax.set_xlabel('Cycles')
+        #     # ax.set_ylim(-1,1)
                 
-            sensor += 1
+        #     sensor += 1
 
+        # plt.show()
+
+        # Load the data
+        data = pd.read_csv(f'{project_path}/raw_sensors.csv', delimiter=';')
+
+        # Convert the DataFrame to a long format
+        data_long = pd.melt(data.reset_index(), id_vars='index', value_vars=data.columns[1:])
+        data_long.columns = ['Cycles', 'Sensor', 'Reading']
+
+        # Adjust the 'Sensor' column to reflect the correct naming
+        data_long['Sensor'] = data_long['Sensor'].apply(lambda x: f'Sensor {int(x) - 1}')
+
+        # Set the aesthetic style of the plots
+        sns.set(style="whitegrid")
+
+        # Create a FacetGrid, mapping each sensor to a separate plot
+        g = sns.FacetGrid(data_long, col='Sensor', col_wrap=5, sharex=False, sharey=False, height=3, aspect=1.5)
+        g = g.map(sns.lineplot, 'Cycles', 'Reading', color='blue').set_titles("{col_name}").set_axis_labels("Cycles", "Reading")
+
+        # Adjust the title of each subplot
+        for ax, title in zip(g.axes.flat, data_long['Sensor'].unique()):
+            ax.set_title(title)
+
+        # Adjust the layout
+        plt.tight_layout()
+
+        # Display the plot
         plt.show()
