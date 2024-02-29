@@ -192,7 +192,7 @@ def alpha_dist(lower_bound, upper_bound, mean, stdev):
 
 
 test_paths = ['denoised-orig','denoised-NOCF', 'denoised-CF', 'noisy-orig', 'noisy-NOCF', 'noisy-CF']
-test_paths = ['denoised-orig', 'denoised-NOCF', 'denoised-CF_RUL']
+test_paths = ['denoised-orig', 'denoised-NOCF', 'denoised-CF-combined']
 # key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 key_ranges = [(float('inf'), 0)]
 
