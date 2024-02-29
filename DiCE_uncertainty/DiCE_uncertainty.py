@@ -38,7 +38,7 @@ DATASET = 'FD001' #which data set to use from cmpass [FD001, FD002, FD003, FD004
 BATCHSIZE = 100
 EPOCHS = 100
 
-parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
+parser = argparse.ArgumentParser(description="Script to generate counterfactual explanations")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 args = parser.parse_args()
 # NOISY = True
