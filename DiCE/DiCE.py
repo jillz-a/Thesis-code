@@ -38,7 +38,7 @@ BATCHSIZE = 100
 EPOCHS = 100
 
 NOISY = False
-INCREASE = True #If True, the RUL will be increased in the counterfacutal, if False, it will be decreased
+INCREASE = False #If True, the RUL will be increased in the counterfacutal, if False, it will be decreased
 EVAL = False
 TRAIN = False #if True, will convert part of the training set to counterfactuals
 
