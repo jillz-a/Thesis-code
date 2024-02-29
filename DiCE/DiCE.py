@@ -39,8 +39,8 @@ EPOCHS = 100
 
 NOISY = False
 INCREASE = True #If True, the RUL will be increased in the counterfacutal, if False, it will be decreased
-EVAL = True
-TRAIN = True #if True, will convert part of the training set to counterfactuals
+EVAL = False
+TRAIN = False #if True, will convert part of the training set to counterfactuals
 
 noisy = 'noisy' if NOISY else 'denoised'
 increase = 'increase' if INCREASE else 'decrease'
