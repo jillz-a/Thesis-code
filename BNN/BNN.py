@@ -39,13 +39,13 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-parser.add_argument('--TRAIN', action='store_true', default=True, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=True, help="If True, will save BNN output to .json files.")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
-parser.add_argument('--CF_RUL', action='store_true', default=True, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
+parser.add_argument('--CF_RUL', action='store_true', default=False, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
 
 parser.add_argument('--CF_TRAIN', action='store_true', default=True, help="If true, counterfactuals will be added to the training data.")
 parser.add_argument('--NOCF_TRAIN', action='store_true', default=False, help="If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True).")
