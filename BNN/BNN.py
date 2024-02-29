@@ -39,13 +39,14 @@ parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))  
 
 parser = argparse.ArgumentParser(description="Script to train, evaluate and retrain BNN model")
 
-parser.add_argument('--TRAIN', action='store_true', default=False, help="If train = True, the model will either train or perform cross-validation.")
+parser.add_argument('--TRAIN', action='store_true', default=True, help="If train = True, the model will either train or perform cross-validation.")
 parser.add_argument('--CV', action='store_true', default=False, help="Cross-validation. If Train = True and CV = False, the model will train on the entire train dataset.")
 parser.add_argument('--SAVE', action='store_true', default=True, help="If True, will save BNN output to .json files.")
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
-parser.add_argument('--TRAIN_SET', action='store_true', default=False, help="Uses the 40 RUL counterfactuals from the training set to be added in the training.")
+parser.add_argument('--CF_RUL', action='store_true', default=True, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
+
 parser.add_argument('--CF_TRAIN', action='store_true', default=True, help="If true, counterfactuals will be added to the training data.")
 parser.add_argument('--NOCF_TRAIN', action='store_true', default=False, help="If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True).")
 
@@ -68,14 +69,14 @@ args = parser.parse_args()
 # CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
 
 noisy = 'noisy' if args.NOISY else 'denoised'
-cf = 'CF_RUL' if args.TRAIN_SET else ('CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig'))
+cf = 'CF_RUL' if args.CF_RUL else ('CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig'))
 eval = 'test_eval' if args.EVAL else 'test'
 combine = 'combined' if args.COMBINE else 'seperate'
 
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
 TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
 EVALDATASET = f'data/{DATASET}/min-max/{noisy}/test_eval'
-CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}' if not args.TRAIN_SET else f'DiCE/BNN_cf_results/inputs/{DATASET}/increase/{noisy}/train'
+CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}' if not args.CF_RUL else f'DiCE/BNN_cf_results/inputs/{DATASET}/increase/{noisy}/test'
 
 if args.TEST_SET:
     test_path = f'{DATASET}/{noisy}/test_set'
