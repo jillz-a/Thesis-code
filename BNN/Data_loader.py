@@ -12,7 +12,7 @@ class CustomDataset(Dataset):
             file_paths = [
                 os.path.join(folder_path, file) 
                 for file in os.listdir(folder_path) 
-                if (file.endswith('.txt') or (file.endswith('.csv') and not (file.endswith('0-Number_of_samples.csv') or self.check_nan_in_csv(os.path.join(folder_path, file)))))
+                if (file.endswith('.txt') or (file.endswith('.csv') and not (file.endswith('0-Number_of_samples.csv'))))# or self.check_nan_in_csv(os.path.join(folder_path, file)))))
             ]
 
             self.file_paths += file_paths
