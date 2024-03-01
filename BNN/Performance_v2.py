@@ -192,7 +192,7 @@ def alpha_dist(lower_bound, upper_bound, mean, stdev):
 
 
 test_paths = ['denoised-orig','denoised-NOCF', 'denoised-CF', 'noisy-orig', 'noisy-NOCF', 'noisy-CF']
-test_paths = ['denoised-orig', 'denoised-NOCF', 'denoised-CF-combined', 'denoised-CF_RUL-combined']
+test_paths = ['denoised-orig', 'denoised-NOCF', 'denoised-CF-combined', 'denoised-CF_RUL_increase-combined', 'denoised-CF_RUL_decrease-combined']
 # key_ranges = [(float('inf'), 120), (120, 60), (60, 30), (30, 10), (10, 0)]
 key_ranges = [(float('inf'), 0)]
 
@@ -333,7 +333,7 @@ for i, key in enumerate(key_ranges):
     positions = np.arange(0, len(test_paths))
     # Create Box plots and add them to subplots
     axs[0].boxplot(list(total_RMSE_dict[key].values()), labels=total_RMSE_dict[key].keys(), positions=positions)
-    axs[0].set_ylim(bottom=0, top=35)
+    # axs[0].set_ylim(bottom=0, top=35)
     axs[0].grid(visible=True, which='both', axis='both', alpha=0.5)
     axs[0].tick_params(axis='x', labelrotation = 45)
     axs[0].set_ylabel('RMSE [cycles]')
@@ -343,7 +343,7 @@ for i, key in enumerate(key_ranges):
         axs[0].scatter(np.repeat(box_key, len(box_value)), box_value, alpha=0.7, color='orange', s=15)
 
     axs[1].boxplot(total_std_dict[key].values(), labels=total_std_dict[key].keys(), positions=positions)
-    axs[1].set_ylim(bottom=0, top=14)
+    # axs[1].set_ylim(bottom=0, top=14)
     axs[1].grid(visible=True, which='both', axis='both', alpha=0.5)
     axs[1].tick_params(axis='x', labelrotation = 45)
     axs[1].set_ylabel('STD [cycles]')

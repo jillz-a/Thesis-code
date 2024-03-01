@@ -46,6 +46,7 @@ parser.add_argument('--NOISY', action='store_true', default=False, help="If True
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
 parser.add_argument('--CF_RUL', action='store_true', default=False, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
+parser.add_argument('--INCREASE', action='store_true', default=True, help="Uses CF to increase the RUL if True, else decreases the RUL")
 
 parser.add_argument('--CF_TRAIN', action='store_true', default=True, help="If true, counterfactuals will be added to the training data.")
 parser.add_argument('--NOCF_TRAIN', action='store_true', default=False, help="If true, non cf converted inputs will be added to the training data (unless CF_TRAIN = True).")
@@ -69,14 +70,15 @@ args = parser.parse_args()
 # CHECK_DIST = True #If True, output distribution will be plotted using a QQ plot
 
 noisy = 'noisy' if args.NOISY else 'denoised'
-cf = 'CF_RUL' if args.CF_RUL else ('CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig'))
+increase = 'increase' if args.INCREASE else 'decrease'
+cf = f'CF_RUL_{increase}' if args.CF_RUL else ('CF' if args.CF_TRAIN else ('NOCF' if args.NOCF_TRAIN else 'orig'))
 eval = 'test_eval' if args.EVAL else 'test'
 combine = 'combined' if args.COMBINE else 'seperate'
 
 TRAINDATASET = f'data/{DATASET}/min-max/{noisy}/train'
 TESTDATASET = f'data/{DATASET}/min-max/{noisy}/test'
 EVALDATASET = f'data/{DATASET}/min-max/{noisy}/test_eval'
-CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}' if not args.CF_RUL else f'DiCE/BNN_cf_results/inputs/{DATASET}/increase/{noisy}/test'
+CFDATASET = f'DiCE_uncertainty/BNN_cf_results/inputs/{DATASET}/{noisy}-v2' if not args.CF_RUL else f'DiCE/BNN_cf_results/inputs/{DATASET}/{increase}/{noisy}/test'
 
 if args.TEST_SET:
     test_path = f'{DATASET}/{noisy}/test_set'
@@ -253,7 +255,10 @@ if __name__ == '__main__':
 
         if args.CF_TRAIN:
             if args.COMBINE:
-                train = CustomDataset([TRAINDATASET, TESTDATASET, CFDATASET]) #include counterfactual inputs + non-counterfactual inputs in the training data
+                if args.CF_RUL:
+                    train = CustomDataset([TRAINDATASET, TESTDATASET, CFDATASET])
+                else:
+                    train = CustomDataset([TRAINDATASET, TESTDATASET, CFDATASET]) #include counterfactual inputs + non-counterfactual inputs in the training data
             else:
                 train = CustomDataset([TRAINDATASET, CFDATASET]) #include counterfactual inputs in the training data
         elif args.NOCF_TRAIN:
