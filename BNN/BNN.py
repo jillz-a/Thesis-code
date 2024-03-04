@@ -45,7 +45,7 @@ parser.add_argument('--SAVE', action='store_true', default=True, help="If True, 
 parser.add_argument('--NOISY', action='store_true', default=False, help="If True, use noisy (normalized) data.")
 
 parser.add_argument('--TEST_SET', action='store_true', default=False, help="Uses the provided test set of CMAPSS instead of the test-train split.")
-parser.add_argument('--CF_RUL', action='store_true', default=False, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
+parser.add_argument('--CF_RUL', action='store_true', default=True, help="Uses the 40 RUL counterfactuals from the testing set to be added in the training.")
 parser.add_argument('--INCREASE', action='store_true', default=True, help="Uses CF to increase the RUL if True, else decreases the RUL")
 
 parser.add_argument('--CF_TRAIN', action='store_true', default=True, help="If true, counterfactuals will be added to the training data.")
