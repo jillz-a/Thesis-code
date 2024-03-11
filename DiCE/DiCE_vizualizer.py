@@ -40,7 +40,7 @@ matplotlib.rcParams['font.size'] = 10
 
 
 for in_de in in_decrease:
-    result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET, in_de, noisy)
+    result_path = os.path.join(project_path, 'DiCE/BNN_cf_results/inputs', DATASET, in_de, noisy, 'test_eval')
     cf_samples = glob.glob(os.path.join(result_path, '*.csv'))  # Get a list of all file paths in the folder
     cf_samples.sort()
 
@@ -100,8 +100,8 @@ for in_de in in_decrease:
             orig_total.append(orig_relative)
             # diff = [counter_relative[i] - orig_relative[i] for i in range(len(counter_relative))]
             color = 'red' if in_de == 'decrease' else 'green'
-            ax.scatter(np.arange(len(counter_relative)), counter_relative, color=color, s=0.5, alpha=0.5)
-            ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue')
+            # ax.scatter(np.arange(len(counter_relative)), counter_relative, color=color, s=0.5, alpha=0.5)
+            # ax.plot(np.arange(len(counter_relative)), orig_relative, color='blue')
             # sns.scatterplot(x=np.arange(len(counter_relative)), y=counter_relative, color=color, ax=ax, s=5, alpha=0.5, legend=False)
             # sns.lineplot(x=np.arange(len(counter_relative)), y=orig_relative, color='blue', ax=ax, alpha=0.75, legend=False)
 
@@ -115,9 +115,9 @@ for in_de in in_decrease:
         difference = difference[30:-30]
 
 
-        # ax.plot(np.arange(30, 30 + len(difference)), difference, label='Relative counterfactual input', alpha=0.3)
-        # ax.fill_between(np.arange(30,30+ len(difference)), difference, where=(difference>0), interpolate=True, color=color, alpha=0.3)
-        # ax.fill_between(np.arange(30, 30+ len(difference)), difference, where=(difference<0), interpolate=True, color=color, alpha=0.3)
+        ax.plot(np.arange(30, 30 + len(difference)), difference, label='Relative counterfactual input', alpha=0.3)
+        ax.fill_between(np.arange(30,30+ len(difference)), difference, where=(difference>0), interpolate=True, color=color, alpha=0.3)
+        ax.fill_between(np.arange(30, 30+ len(difference)), difference, where=(difference<0), interpolate=True, color=color, alpha=0.3)
 
         ax.set_title('Sensor ' + str(m[sensor_index]))
         ax.set_xlabel('Cycles')
@@ -129,7 +129,8 @@ for in_de in in_decrease:
 # axes[1,0].set_ylabel('Sensor input difference')
 
 # fig.suptitle(f'Counterfactual explanations: input difference to achieve +- 10-11 extra cycles')
-plt.savefig(f'DiCE/cf_inputs_increase_decrease_engine_{engine}_selection.pdf', format='pdf', bbox_inches='tight')
+fig.tight_layout()
+plt.savefig(f'DiCE/cf_inputs_increase_decrease_engine_{engine}_selection_difference.pdf', format='pdf', bbox_inches='tight')
 plt.show()
 
     
